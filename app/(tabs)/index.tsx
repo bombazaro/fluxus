@@ -1,21 +1,30 @@
 import { StyleSheet, Text, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { useTema } from '@/src/theme';
 
 export default function HomeScreen() {
+  const { colors, typography } = useTema();
+
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Fluxus</Text>
-    </View>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+      <View style={styles.header}>
+        <Text style={[styles.title, { color: colors.text, fontFamily: typography.fontFamily.bold }]}>
+          Início
+        </Text>
+      </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
+  },
+  header: {
+    paddingHorizontal: 20,
+    paddingVertical: 16,
   },
   title: {
     fontSize: 24,
-    fontWeight: 'bold',
   },
 });
