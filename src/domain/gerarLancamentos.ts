@@ -1,0 +1,162 @@
+import { Conta, Lancamento } from '@/src/types';
+import { SQLiteDatabase } from 'expo-sqlite';
+
+/**
+ * Retorna o último dia de um determinado mês e ano.
+ * Ex: ano 2026, mes 2 -> 28
+ * Ex: ano 2024, mes 2 -> 29 (bissexto)
+ * Ex: ano 2026, mes 4 -> 30
+ */
+export function obterUltimoDiaDoMes(ano: number, mes: number): number {
+  return new Date(ano, mes, 0).getDate();
+}
+
+/**
+ * Ajusta o dia de vencimento desejado para caber no mês correspondente.
+ * Se o dia for 31 e o mês tiver 30 dias (ou 28/29 em fevereiro), retorna o último dia do mês.
+ * Retorna string no formato YYYY-MM-DD.
+ */
+export function ajustarDiaDoMes(
+  ano: number,
+  mes: number,
+  diaDesejado: number
+): string {
+  const ultimoDia = obterUltimoDiaDoMes(ano, mes);
+  const diaReal = Math.min(Math.max(1, diaDesejado), ultimoDia);
+  const mesFormatado = String(mes).padStart(2, '0');
+  const diaFormatado = String(diaReal).padStart(2, '0');
+  return `${ano}-${mesFormatado}-${diaFormatado}`;
+}
+
+/**
+ * Adiciona N meses a um mês de referência (formato YYYY-MM).
+ * Ex: adicionarMeses('2026-01', 3) -> '2026-04'
+ * Ex: adicionarMeses('2026-11', 3) -> '2027-02'
+ */
+export function adicionarMeses(mesRef: string, quantidade: number): string {
+  const [anoStr, mesStr] = mesRef.split('-');
+  const ano = parseInt(anoStr, 10);
+  const mes = parseInt(mesStr, 10);
+
+  const data = new Date(ano, mes - 1 + quantidade, 1);
+  const novoAno = data.getFullYear();
+  const novoMes = String(data.getMonth() + 1).padStart(2, '0');
+  return `${novoAno}-${novoMes}`;
+}
+
+/**
+ * Gera os lançamentos previstos para uma conta recém-cadastrada.
+ * - 'unica': gera 1 lançamento
+ * - 'parcelada': gera todas as parcelas (1 até N)
+ * - 'fixa' ou 'variavel': gera o primeiro lançamento do mês inicial
+ */
+export function gerarLancamentosParaConta(
+  conta: Omit<Conta, 'id' | 'criado_em'> & { id?: number }
+): Omit<Lancamento, 'id'>[] {
+  const lancamentos: Omit<Lancamento, 'id'>[] = [];
+  const contaId = conta.id ?? 0;
+
+  if (conta.tipo === 'unica') {
+    const dataVenc = conta.data_unica || conta.data_inicio;
+    const mesRef = dataVenc.slice(0, 7);
+    lancamentos.push({
+      conta_id: contaId,
+      mes_ref: mesRef,
+      vencimento: dataVenc,
+      valor_centavos: conta.valor_centavos,
+      pago: 0,
+      pago_em: null,
+      parcela_numero: null,
+    });
+    return lancamentos;
+  }
+
+  if (conta.tipo === 'parcelada') {
+    const totalParcelas = conta.parcelas_total || 1;
+    const mesInicioRef = conta.data_inicio.slice(0, 7);
+    const diaVenc = conta.dia_vencimento || parseInt(conta.data_inicio.slice(8, 10), 10) || 1;
+
+    for (let i = 1; i <= totalParcelas; i++) {
+      const mesRef = adicionarMeses(mesInicioRef, i - 1);
+      const [anoStr, mesStr] = mesRef.split('-');
+      const vencimento = ajustarDiaDoMes(
+        parseInt(anoStr, 10),
+        parseInt(mesStr, 10),
+        diaVenc
+      );
+
+      lancamentos.push({
+        conta_id: contaId,
+        mes_ref: mesRef,
+        vencimento,
+        valor_centavos: conta.valor_centavos,
+        pago: 0,
+        pago_em: null,
+        parcela_numero: i,
+      });
+    }
+    return lancamentos;
+  }
+
+  // 'fixa' ou 'variavel'
+  const mesRef = conta.data_inicio.slice(0, 7);
+  const [anoStr, mesStr] = mesRef.split('-');
+  const diaVenc = conta.dia_vencimento || 1;
+  const vencimento = ajustarDiaDoMes(
+    parseInt(anoStr, 10),
+    parseInt(mesStr, 10),
+    diaVenc
+  );
+
+  lancamentos.push({
+    conta_id: contaId,
+    mes_ref: mesRef,
+    vencimento,
+    valor_centavos: conta.valor_centavos,
+    pago: 0,
+    pago_em: null,
+    parcela_numero: null,
+  });
+
+  return lancamentos;
+}
+
+/**
+ * Garante que todas as contas fixas e variáveis ativas possuam lançamento no mês informado.
+ * É idempotente: só insere se o lançamento daquele mês ainda não existir.
+ */
+export async function garantirMes(
+  db: SQLiteDatabase,
+  mesRef: string
+): Promise<void> {
+  const [anoStr, mesStr] = mesRef.split('-');
+  const ano = parseInt(anoStr, 10);
+  const mes = parseInt(mesStr, 10);
+
+  // Busca contas ativas fixas e variáveis
+  const contas = await db.getAllAsync<Conta>(
+    `SELECT * FROM contas
+     WHERE ativa = 1
+       AND tipo IN ('fixa', 'variavel')
+       AND data_inicio <= ?
+       AND (data_fim IS NULL OR data_fim >= ?);`,
+    [`${mesRef}-31`, `${mesRef}-01`]
+  );
+
+  for (const c of contas) {
+    const existente = await db.getFirstAsync<{ id: number }>(
+      'SELECT id FROM lancamentos WHERE conta_id = ? AND mes_ref = ?;',
+      [c.id, mesRef]
+    );
+
+    if (!existente) {
+      const vencimento = ajustarDiaDoMes(ano, mes, c.dia_vencimento || 1);
+      await db.runAsync(
+        `INSERT INTO lancamentos (
+          conta_id, mes_ref, vencimento, valor_centavos, pago, pago_em, parcela_numero
+        ) VALUES (?, ?, ?, ?, 0, NULL, NULL);`,
+        [c.id, mesRef, vencimento, c.valor_centavos]
+      );
+    }
+  }
+}
