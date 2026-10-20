@@ -1,5 +1,6 @@
 import { SQLiteDatabase } from 'expo-sqlite';
-import { Lancamento, LancamentoComDetalhes } from '@/src/types';
+import { Conta, Lancamento, LancamentoComDetalhes } from '@/src/types';
+import { ajustarDiaDoMes } from '@/src/domain/gerarLancamentos';
 
 export const lancamentosRepo = {
   async criar(
@@ -130,5 +131,41 @@ export const lancamentosRepo = {
       'DELETE FROM lancamentos WHERE conta_id = ? AND mes_ref >= ? AND pago = 0;',
       [contaId, mesRefApartirDe]
     );
+  },
+
+  /**
+   * Garante que todas as contas fixas e variáveis ativas possuam lançamento no mês informado.
+   * É idempotente: só insere se o lançamento daquele mês ainda não existir.
+   */
+  async garantirMes(db: SQLiteDatabase, mesRef: string): Promise<void> {
+    const [anoStr, mesStr] = mesRef.split('-');
+    const ano = parseInt(anoStr, 10);
+    const mes = parseInt(mesStr, 10);
+
+    const contas = await db.getAllAsync<Conta>(
+      `SELECT * FROM contas
+       WHERE ativa = 1
+         AND tipo IN ('fixa', 'variavel')
+         AND data_inicio <= ?
+         AND (data_fim IS NULL OR data_fim >= ?);`,
+      [`${mesRef}-31`, `${mesRef}-01`]
+    );
+
+    for (const c of contas) {
+      const existente = await db.getFirstAsync<{ id: number }>(
+        'SELECT id FROM lancamentos WHERE conta_id = ? AND mes_ref = ?;',
+        [c.id, mesRef]
+      );
+
+      if (!existente) {
+        const vencimento = ajustarDiaDoMes(ano, mes, c.dia_vencimento || 1);
+        await db.runAsync(
+          `INSERT INTO lancamentos (
+            conta_id, mes_ref, vencimento, valor_centavos, pago, pago_em, parcela_numero
+          ) VALUES (?, ?, ?, ?, 0, NULL, NULL);`,
+          [c.id, mesRef, vencimento, c.valor_centavos]
+        );
+      }
+    }
   },
 };

@@ -27,7 +27,7 @@ import { categoriasRepo } from '@/src/db/repositorios/categoriasRepo';
 import { lancamentosRepo } from '@/src/db/repositorios/lancamentosRepo';
 import { useMesStore } from '@/src/store/useMesStore';
 import { formatarData, formatarMesAno, formatarMoeda } from '@/src/utils/formatadores';
-import { sugerirValorParaConta } from '@/src/domain/sugerirValor';
+import { calcularMediaLancamentos, SugestaoValor } from '@/src/domain/sugerirValor';
 
 export default function DetalheContaScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -43,10 +43,7 @@ export default function DetalheContaScreen() {
   const [categoria, setCategoria] = useState<Categoria | null>(null);
   const [lancamentoDoMes, setLancamentoDoMes] = useState<Lancamento | null>(null);
   const [historico, setHistorico] = useState<Lancamento[]>([]);
-  const [sugestaoMedia, setSugestaoMedia] = useState<{
-    valorSugeridoCentavos: number | null;
-    mesesConsiderados: number;
-  } | null>(null);
+  const [sugestaoMedia, setSugestaoMedia] = useState<SugestaoValor | null>(null);
 
   // Estados de edição
   const [editando, setEditando] = useState(false);
@@ -74,8 +71,11 @@ export default function DetalheContaScreen() {
         setHistorico(hist);
 
         if (c.tipo === 'variavel') {
-          const sug = await sugerirValorParaConta(db, contaId, 3);
-          setSugestaoMedia(sug);
+          const pagos = await lancamentosRepo.listarPagosDaConta(db, contaId, 3);
+          setSugestaoMedia({
+            valorSugeridoCentavos: calcularMediaLancamentos(pagos, 3),
+            mesesConsiderados: pagos.length,
+          });
         }
       }
     }

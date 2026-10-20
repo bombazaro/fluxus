@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { SQLiteDatabase } from 'expo-sqlite';
 import { LancamentoComDetalhes, Renda } from '@/src/types';
 import { ResumoMes, resumoDoMes } from '@/src/domain/resumoDoMes';
-import { garantirMes, adicionarMeses } from '@/src/domain/gerarLancamentos';
+import { adicionarMeses } from '@/src/domain/gerarLancamentos';
 import { lancamentosRepo } from '@/src/db/repositorios/lancamentosRepo';
 import { rendasRepo } from '@/src/db/repositorios/rendasRepo';
 import { divisoesRepo } from '@/src/db/repositorios/divisoesRepo';
@@ -106,7 +106,7 @@ export const useMesStore = create<MesState>((set, get) => ({
 
     try {
       // 1. Garante que lançamentos de contas fixas e variáveis existam
-      await garantirMes(db, mes);
+      await lancamentosRepo.garantirMes(db, mes);
 
       // 2. Busca lançamentos com detalhes de categoria e conta
       const lancamentos = await lancamentosRepo.listarPorMes(db, mes);
