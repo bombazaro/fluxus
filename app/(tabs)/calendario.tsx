@@ -5,8 +5,8 @@ import { useSQLiteContext } from 'expo-sqlite';
 import { Ionicons } from '@expo/vector-icons';
 import { useTema } from '@/src/theme';
 import { obterHojeIso, useMesStore } from '@/src/store/useMesStore';
-import { montarCalendario } from '@/src/domain/montarCalendario';
-import { GradeMensal } from '@/src/components/calendario/GradeMensal';
+import { MarcaDia, montarCalendario } from '@/src/domain/montarCalendario';
+import { corDaMarca, GradeMensal, ROTULO_MARCA } from '@/src/components/calendario/GradeMensal';
 import { Cartao } from '@/src/components/ui';
 import { formatarMesAno } from '@/src/utils/formatadores';
 
@@ -81,6 +81,24 @@ export default function CalendarioScreen() {
             diaSelecionado={diaSelecionado}
             onSelecionarDia={setDiaSelecionado}
           />
+
+          {/* Legenda das cores */}
+          <View style={[styles.legenda, { marginTop: spacing.md, gap: spacing.md }]}>
+            {(Object.keys(ROTULO_MARCA) as MarcaDia[]).map((marca) => (
+              <View key={marca} style={styles.legendaItem}>
+                <View style={[styles.ponto, { backgroundColor: corDaMarca(marca, colors) }]} />
+                <Text
+                  style={{
+                    color: colors.textSecondary,
+                    fontFamily: typography.fontFamily.regular,
+                    fontSize: typography.fontSize.caption,
+                    marginLeft: spacing.xs,
+                  }}>
+                  {ROTULO_MARCA[marca]}
+                </Text>
+              </View>
+            ))}
+          </View>
         </Cartao>
       </ScrollView>
     </SafeAreaView>
@@ -101,5 +119,19 @@ const styles = StyleSheet.create({
   },
   mesTexto: {
     fontSize: 18,
+  },
+  legenda: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+  },
+  legendaItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  ponto: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
   },
 });

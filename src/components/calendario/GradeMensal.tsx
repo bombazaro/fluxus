@@ -1,9 +1,24 @@
 import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useTema } from '@/src/theme';
-import { SemanaCalendario } from '@/src/domain/montarCalendario';
+import { MarcaDia, SemanaCalendario } from '@/src/domain/montarCalendario';
+import { ThemeColors } from '@/src/theme/colors';
 
 const DIAS_DA_SEMANA = ['D', 'S', 'T', 'Q', 'Q', 'S', 'S'];
+
+export const ROTULO_MARCA: Record<MarcaDia, string> = {
+  atrasada: 'Atrasada',
+  pendente: 'Pendente',
+  paga: 'Paga',
+  renda: 'Renda',
+};
+
+export function corDaMarca(marca: MarcaDia, colors: ThemeColors): string {
+  if (marca === 'atrasada') return colors.danger;
+  if (marca === 'pendente') return colors.warning;
+  if (marca === 'paga') return colors.success;
+  return colors.info;
+}
 
 export interface GradeMensalProps {
   semanas: SemanaCalendario[];
@@ -47,7 +62,13 @@ export function GradeMensal({ semanas, diaSelecionado, onSelecionarDia }: GradeM
               <Pressable
                 key={j}
                 accessibilityRole="button"
-                accessibilityLabel={`Dia ${dia.dia}${dia.ehHoje ? ', hoje' : ''}`}
+                accessibilityLabel={[
+                  `Dia ${dia.dia}`,
+                  dia.ehHoje ? 'hoje' : null,
+                  ...dia.marcas.map((m) => ROTULO_MARCA[m]),
+                ]
+                  .filter(Boolean)
+                  .join(', ')}
                 accessibilityState={{ selected: selecionado }}
                 onPress={() => onSelecionarDia(dia.dia)}
                 style={[
@@ -71,6 +92,14 @@ export function GradeMensal({ semanas, diaSelecionado, onSelecionarDia }: GradeM
                   }}>
                   {dia.dia}
                 </Text>
+                <View style={[styles.pontos, { marginTop: 2 }]}>
+                  {dia.marcas.map((marca) => (
+                    <View
+                      key={marca}
+                      style={[styles.ponto, { backgroundColor: corDaMarca(marca, colors) }]}
+                    />
+                  ))}
+                </View>
               </Pressable>
             );
           })}
@@ -92,5 +121,15 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  pontos: {
+    flexDirection: 'row',
+    gap: 2,
+    height: 6,
+  },
+  ponto: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
   },
 });
