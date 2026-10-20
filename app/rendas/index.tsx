@@ -40,6 +40,8 @@ export default function RendasScreen() {
 
   const mesRef = useMesStore((s) => s.mesRef);
   const carregarMes = useMesStore((s) => s.carregarMes);
+  const rendasDoMes = useMesStore((s) => s.rendas);
+  const rendaTotalDoMes = useMesStore((s) => s.resumo.rendaTotal);
 
   const [rendas, setRendas] = useState<Renda[]>([]);
   const [recebidas, setRecebidas] = useState<RendaRecebida[]>([]);
@@ -51,7 +53,12 @@ export default function RendasScreen() {
   const [valorCentavos, setValorCentavos] = useState(0);
   const [diaRecebimento, setDiaRecebimento] = useState('5');
   const [tipo, setTipo] = useState<TipoRenda>('fixa');
+  const [mesPontual, setMesPontual] = useState(mesRef);
   const [salvando, setSalvando] = useState(false);
+
+  // Recebimento de renda variável: pergunta quanto caiu de verdade
+  const [rendaRecebendo, setRendaRecebendo] = useState<Renda | null>(null);
+  const [valorRecebidoCentavos, setValorRecebidoCentavos] = useState(0);
 
   const carregarRendas = useCallback(async () => {
     const [todas, rec] = await Promise.all([
@@ -85,6 +92,7 @@ export default function RendasScreen() {
     setValorCentavos(0);
     setDiaRecebimento('5');
     setTipo('fixa');
+    setMesPontual(mesRef);
     setModalVisivel(true);
   };
 
@@ -94,6 +102,7 @@ export default function RendasScreen() {
     setValorCentavos(renda.valor_centavos);
     setDiaRecebimento(String(renda.dia_recebimento));
     setTipo(renda.tipo || 'fixa');
+    setMesPontual(renda.mes_ref ?? mesRef);
     setModalVisivel(true);
   };
 
@@ -112,6 +121,7 @@ export default function RendasScreen() {
           valor_centavos: valorCentavos,
           dia_recebimento: diaNum,
           tipo,
+          mes_ref: tipo === 'pontual' ? mesPontual : null,
         });
       } else {
         await rendasRepo.criar(db, {
@@ -119,7 +129,7 @@ export default function RendasScreen() {
           valor_centavos: valorCentavos,
           dia_recebimento: diaNum,
           tipo,
-          mes_ref: null,
+          mes_ref: tipo === 'pontual' ? mesPontual : null,
           ativa: 1,
         });
       }
@@ -144,10 +154,23 @@ export default function RendasScreen() {
     const jaRecebida = recebidas.some((r) => r.renda_id === renda.id);
     if (jaRecebida) {
       await rendasRepo.desmarcarRecebida(db, renda.id, mesRef);
+    } else if (renda.tipo === 'variavel') {
+      setValorRecebidoCentavos(renda.valor_centavos);
+      setRendaRecebendo(renda);
+      return;
     } else {
       await rendasRepo.marcarRecebida(db, renda.id, mesRef, renda.valor_centavos);
     }
     await recarregar();
+    await carregarMes(db);
+  };
+
+  const handleConfirmarRecebimento = async () => {
+    if (!rendaRecebendo || valorRecebidoCentavos <= 0) return;
+    await rendasRepo.marcarRecebida(db, rendaRecebendo.id, mesRef, valorRecebidoCentavos);
+    setRendaRecebendo(null);
+    await recarregar();
+    await carregarMes(db);
   };
 
   const handleExcluir = async (renda: Renda) => {
@@ -169,9 +192,7 @@ export default function RendasScreen() {
     );
   };
 
-  const totalRendasAtivas = rendas
-    .filter((r) => r.ativa === 1)
-    .reduce((acc, r) => acc + r.valor_centavos, 0);
+  const idsDoMes = new Set(rendasDoMes.map((r) => r.id));
 
   return (
     <SafeAreaView
@@ -221,14 +242,14 @@ export default function RendasScreen() {
               styles.totalLabel,
               { color: colors.textSecondary, fontFamily: typography.fontFamily.medium },
             ]}>
-            Total de Rendas Ativas ({formatarMesAno(mesRef)})
+            Entradas de {formatarMesAno(mesRef)}
           </Text>
           <Text
             style={[
               styles.totalValor,
               { color: colors.success, fontFamily: typography.fontFamily.bold },
             ]}>
-            {formatarMoeda(totalRendasAtivas)}
+            {formatarMoeda(rendaTotalDoMes)}
           </Text>
         </Cartao>
 
@@ -242,7 +263,13 @@ export default function RendasScreen() {
           />
         ) : (
           rendas.map((r) => {
-            const jaRecebida = recebidas.some((rec) => rec.renda_id === r.id);
+            const recebida = recebidas.find((rec) => rec.renda_id === r.id);
+            const jaRecebida = !!recebida;
+            const valeNoMes = idsDoMes.has(r.id);
+            const quando =
+              r.tipo === 'pontual'
+                ? `Só em ${formatarMesAno(r.mes_ref ?? r.criado_em.slice(0, 7))}, dia ${r.dia_recebimento}`
+                : `Todo dia ${r.dia_recebimento}`;
 
             return (
               <Cartao
@@ -259,14 +286,17 @@ export default function RendasScreen() {
                   <Pressable
                     accessibilityRole="checkbox"
                     accessibilityLabel={jaRecebida ? 'Recebida neste mês' : 'Marcar como recebida'}
-                    accessibilityState={{ checked: jaRecebida }}
+                    accessibilityState={{ checked: jaRecebida, disabled: !valeNoMes }}
+                    disabled={!valeNoMes}
                     onPress={() => handleToggleRecebida(r)}
+                    hitSlop={12}
                     style={[
                       styles.checkbox,
                       {
                         backgroundColor: jaRecebida ? colors.success : 'transparent',
                         borderColor: jaRecebida ? colors.success : colors.border,
                         marginRight: spacing.md,
+                        opacity: valeNoMes ? 1 : 0.4,
                       },
                     ]}>
                     {jaRecebida ? (
@@ -300,7 +330,8 @@ export default function RendasScreen() {
                           marginTop: 2,
                         },
                       ]}>
-                      Recebimento: todo dia {r.dia_recebimento} {jaRecebida ? '• Recebida!' : ''}
+                      {quando}
+                      {recebida ? ` • Recebida: ${formatarMoeda(recebida.valor_centavos)}` : ''}
                     </Text>
                   </View>
 
@@ -386,7 +417,7 @@ export default function RendasScreen() {
             />
 
             <CampoMoeda
-              rotulo="Valor mensal estimado *"
+              rotulo={tipo === 'variavel' ? 'Valor previsto por mês *' : 'Valor *'}
               valorCentavos={valorCentavos}
               onChangeCentavos={setValorCentavos}
               containerStyle={{ marginTop: spacing.base }}
@@ -447,6 +478,20 @@ export default function RendasScreen() {
               })}
             </View>
 
+            {tipo !== 'fixa' ? (
+              <Text
+                style={{
+                  color: colors.textSecondary,
+                  fontFamily: typography.fontFamily.regular,
+                  fontSize: typography.fontSize.caption,
+                  marginTop: spacing.sm,
+                }}>
+                {tipo === 'pontual'
+                  ? `Entra só em ${formatarMesAno(mesPontual)}.`
+                  : 'Ao marcar como recebida, você informa quanto caiu no mês.'}
+              </Text>
+            ) : null}
+
             <View style={{ marginTop: spacing.xl, gap: spacing.sm }}>
               <Botao
                 titulo={salvando ? 'Salvando...' : 'Salvar Renda'}
@@ -456,6 +501,52 @@ export default function RendasScreen() {
               <Botao
                 titulo="Cancelar"
                 onPress={() => setModalVisivel(false)}
+                variante="secundario"
+              />
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Modal de recebimento de renda variável */}
+      <Modal
+        visible={rendaRecebendo !== null}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setRendaRecebendo(null)}>
+        <View style={styles.modalOverlay}>
+          <View
+            style={[
+              styles.modalCard,
+              {
+                backgroundColor: colors.surface,
+                borderRadius: radii.card,
+                padding: spacing.base,
+              },
+            ]}>
+            <Text
+              style={[
+                styles.modalTitulo,
+                { color: colors.text, fontFamily: typography.fontFamily.bold },
+              ]}>
+              Quanto caiu de {rendaRecebendo?.nome}?
+            </Text>
+            <CampoMoeda
+              rotulo={`Valor recebido em ${formatarMesAno(mesRef)}`}
+              valorCentavos={valorRecebidoCentavos}
+              onChangeCentavos={setValorRecebidoCentavos}
+              erro={valorRecebidoCentavos <= 0 ? 'Informe um valor maior que zero' : undefined}
+              containerStyle={{ marginTop: spacing.base }}
+            />
+            <View style={{ marginTop: spacing.xl, gap: spacing.sm }}>
+              <Botao
+                titulo="Marcar como recebida"
+                onPress={handleConfirmarRecebimento}
+                desativado={valorRecebidoCentavos <= 0}
+              />
+              <Botao
+                titulo="Cancelar"
+                onPress={() => setRendaRecebendo(null)}
                 variante="secundario"
               />
             </View>
