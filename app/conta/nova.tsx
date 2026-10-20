@@ -29,6 +29,7 @@ import { gerarLancamentosParaConta } from '@/src/domain/gerarLancamentos';
 import { useMesStore, obterHojeIso, obterMesAtualIso } from '@/src/store/useMesStore';
 import { formatarMoeda } from '@/src/utils/formatadores';
 import { dividirContaPorIgual } from '@/src/domain/dividirConta';
+import { SeletorCategoria } from '@/src/components/contas/SeletorCategoria';
 
 const TIPOS_CONTA: {
   tipo: TipoConta;
@@ -364,46 +365,11 @@ export default function NovaContaModal() {
             ]}>
             CATEGORIA
           </Text>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.chipsScroll}>
-            {categorias.map((cat) => {
-              const selecionada = categoriaId === cat.id;
-              return (
-                <Pressable
-                  key={cat.id}
-                  onPress={() => setCategoriaId(cat.id)}
-                  style={[
-                    styles.categoriaChip,
-                    {
-                      backgroundColor: selecionada ? cat.cor : colors.surface,
-                      borderColor: selecionada ? cat.cor : colors.border,
-                      borderRadius: radii.full,
-                      paddingHorizontal: spacing.md,
-                      paddingVertical: spacing.sm,
-                    },
-                  ]}>
-                  <Ionicons
-                    name={cat.icone as any}
-                    size={16}
-                    color={selecionada ? '#FFFFFF' : cat.cor}
-                  />
-                  <Text
-                    style={[
-                      styles.chipTexto,
-                      {
-                        color: selecionada ? '#FFFFFF' : colors.text,
-                        fontFamily: typography.fontFamily.medium,
-                        marginLeft: 6,
-                      },
-                    ]}>
-                    {cat.nome}
-                  </Text>
-                </Pressable>
-              );
-            })}
-          </ScrollView>
+          <SeletorCategoria
+            categorias={categorias}
+            categoriaId={categoriaId}
+            onSelecionar={setCategoriaId}
+          />
 
           {/* Conta compartilhada */}
           <Cartao style={{ marginTop: spacing.xl }}>
@@ -557,19 +523,6 @@ const styles = StyleSheet.create({
     fontSize: 15,
   },
   tipoDescricao: {},
-  chipsScroll: {
-    flexDirection: 'row',
-    gap: 8,
-    paddingVertical: 4,
-  },
-  categoriaChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderWidth: 1,
-  },
-  chipTexto: {
-    fontSize: 14,
-  },
   compartilhadaRow: {
     flexDirection: 'row',
     alignItems: 'center',
