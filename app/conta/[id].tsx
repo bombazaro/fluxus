@@ -28,6 +28,7 @@ import { lancamentosRepo } from '@/src/db/repositorios/lancamentosRepo';
 import { useMesStore } from '@/src/store/useMesStore';
 import { formatarData, formatarMesAno, formatarMoeda } from '@/src/utils/formatadores';
 import { calcularMediaLancamentos, SugestaoValor } from '@/src/domain/sugerirValor';
+import { SeletorCategoria } from '@/src/components/contas/SeletorCategoria';
 
 export default function DetalheContaScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -49,6 +50,9 @@ export default function DetalheContaScreen() {
   const [editando, setEditando] = useState(false);
   const [nomeEditado, setNomeEditado] = useState('');
   const [valorEditadoCentavos, setValorEditadoCentavos] = useState(0);
+  const [diaEditado, setDiaEditado] = useState('');
+  const [categoriaEditadaId, setCategoriaEditadaId] = useState<number | null>(null);
+  const [categorias, setCategorias] = useState<Categoria[]>([]);
   const [salvando, setSalvando] = useState(false);
 
   useEffect(() => {
@@ -60,6 +64,9 @@ export default function DetalheContaScreen() {
         setConta(c);
         setNomeEditado(c.nome);
         setValorEditadoCentavos(c.valor_centavos);
+        setDiaEditado(c.dia_vencimento ? String(c.dia_vencimento) : '');
+        setCategoriaEditadaId(c.categoria_id);
+        setCategorias(await categoriasRepo.listarTodas(db));
 
         const cat = await categoriasRepo.buscarPorId(db, c.categoria_id);
         setCategoria(cat);
@@ -92,76 +99,84 @@ export default function DetalheContaScreen() {
     );
   }
 
-  const handleSalvarEdicao = async () => {
+  const diaEditadoNum = parseInt(diaEditado, 10);
+  const valorMudou = valorEditadoCentavos !== conta.valor_centavos;
+  const diaMudou = conta.tipo !== 'unica' && diaEditadoNum !== conta.dia_vencimento;
+
+  /**
+   * Nome, categoria e dia valem para a conta toda (e para os lançamentos pendentes
+   * a partir deste mês). O valor pode valer só para este mês ou também para os próximos.
+   */
+  const aplicarEdicao = async (valorNosProximos: boolean) => {
+    setSalvando(true);
+    try {
+      const dados: Partial<Omit<Conta, 'id' | 'criado_em'>> = {
+        nome: nomeEditado.trim(),
+        categoria_id: categoriaEditadaId ?? conta.categoria_id,
+      };
+      if (diaMudou) dados.dia_vencimento = diaEditadoNum;
+      if (valorMudou && valorNosProximos) dados.valor_centavos = valorEditadoCentavos;
+
+      await contasRepo.atualizar(db, conta.id, dados);
+
+      if (valorMudou) {
+        if (lancamentoDoMes) {
+          await lancamentosRepo.atualizarValor(db, lancamentoDoMes.id, valorEditadoCentavos);
+        }
+        if (valorNosProximos) {
+          await lancamentosRepo.atualizarValorNaoPagosAPartirDe(
+            db,
+            conta.id,
+            mesRef,
+            valorEditadoCentavos
+          );
+        }
+      }
+      if (diaMudou) {
+        await lancamentosRepo.atualizarDiaNaoPagosAPartirDe(db, conta.id, mesRef, diaEditadoNum);
+      }
+
+      setConta({ ...conta, ...dados });
+      setCategoria(categorias.find((c) => c.id === dados.categoria_id) ?? categoria);
+      setLancamentoDoMes(await lancamentosRepo.buscarPorContaEMes(db, conta.id, mesRef));
+      setHistorico(await lancamentosRepo.listarPorConta(db, conta.id));
+      await carregarMes(db);
+      setEditando(false);
+    } catch (err) {
+      console.error('Erro ao editar conta:', err);
+      Alert.alert('Erro', 'Não foi possível salvar as alterações. Tente de novo.');
+    } finally {
+      setSalvando(false);
+    }
+  };
+
+  const handleSalvarEdicao = () => {
     if (!nomeEditado.trim() || valorEditadoCentavos <= 0) {
       Alert.alert('Atenção', 'Informe um nome e valor válidos.');
       return;
     }
-
-    setSalvando(true);
-    try {
-      if (conta.tipo === 'fixa' || conta.tipo === 'variavel') {
-        // Pergunta o escopo da alteração de valor
-        Alert.alert(
-          'Escopo da alteração',
-          'Deseja aplicar o novo valor apenas ao mês atual ou também aos próximos?',
-          [
-            {
-              text: 'Apenas neste mês',
-              onPress: async () => {
-                if (lancamentoDoMes) {
-                  await lancamentosRepo.atualizarValor(db, lancamentoDoMes.id, valorEditadoCentavos);
-                }
-                await contasRepo.atualizar(db, conta.id, { nome: nomeEditado.trim() });
-                await carregarMes(db);
-                setEditando(false);
-                setSalvando(false);
-              },
-            },
-            {
-              text: 'Neste e nos próximos',
-              onPress: async () => {
-                if (lancamentoDoMes) {
-                  await lancamentosRepo.atualizarValor(db, lancamentoDoMes.id, valorEditadoCentavos);
-                }
-                await lancamentosRepo.atualizarValorNaoPagosAPartirDe(
-                  db,
-                  conta.id,
-                  mesRef,
-                  valorEditadoCentavos
-                );
-                await contasRepo.atualizar(db, conta.id, {
-                  nome: nomeEditado.trim(),
-                  valor_centavos: valorEditadoCentavos,
-                });
-                await carregarMes(db);
-                setEditando(false);
-                setSalvando(false);
-              },
-            },
-            {
-              text: 'Cancelar',
-              style: 'cancel',
-              onPress: () => setSalvando(false),
-            },
-          ]
-        );
-      } else {
-        await contasRepo.atualizar(db, conta.id, {
-          nome: nomeEditado.trim(),
-          valor_centavos: valorEditadoCentavos,
-        });
-        if (lancamentoDoMes) {
-          await lancamentosRepo.atualizarValor(db, lancamentoDoMes.id, valorEditadoCentavos);
-        }
-        await carregarMes(db);
-        setEditando(false);
-        setSalvando(false);
-      }
-    } catch (err) {
-      console.error('Erro ao editar conta:', err);
-      setSalvando(false);
+    if (
+      conta.tipo !== 'unica' &&
+      (isNaN(diaEditadoNum) || diaEditadoNum < 1 || diaEditadoNum > 31)
+    ) {
+      Alert.alert('Atenção', 'Informe um dia de vencimento entre 1 e 31.');
+      return;
     }
+
+    if (valorMudou && conta.tipo !== 'unica') {
+      Alert.alert(
+        'Escopo da alteração',
+        'O novo valor vale só para este mês ou também para os próximos?',
+        [
+          { text: 'Apenas neste mês', onPress: () => aplicarEdicao(false) },
+          { text: 'Neste e nos próximos', onPress: () => aplicarEdicao(true) },
+          { text: 'Cancelar', style: 'cancel' },
+        ]
+      );
+      return;
+    }
+
+    aplicarEdicao(true);
   };
 
   const handleAplicarSugestao = async () => {
@@ -343,6 +358,32 @@ export default function DetalheContaScreen() {
                   onChangeCentavos={setValorEditadoCentavos}
                   containerStyle={{ marginBottom: spacing.md }}
                 />
+                {conta.tipo !== 'unica' ? (
+                  <CampoTexto
+                    rotulo="Dia do vencimento (1 a 31)"
+                    keyboardType="numeric"
+                    value={diaEditado}
+                    onChangeText={setDiaEditado}
+                    ajuda="Muda os vencimentos ainda não pagos a partir deste mês"
+                    containerStyle={{ marginBottom: spacing.md }}
+                  />
+                ) : null}
+                <Text
+                  style={{
+                    color: colors.textSecondary,
+                    fontFamily: typography.fontFamily.medium,
+                    fontSize: typography.fontSize.caption,
+                    marginBottom: spacing.xs,
+                  }}>
+                  Categoria
+                </Text>
+                <View style={{ marginBottom: spacing.md }}>
+                  <SeletorCategoria
+                    categorias={categorias}
+                    categoriaId={categoriaEditadaId}
+                    onSelecionar={setCategoriaEditadaId}
+                  />
+                </View>
                 <Botao
                   titulo={salvando ? 'Salvando...' : 'Salvar Alterações'}
                   onPress={handleSalvarEdicao}

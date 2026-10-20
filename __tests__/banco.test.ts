@@ -228,6 +228,23 @@ describe('lancamentosRepo.atualizarValorNaoPagosAPartirDe', () => {
   });
 });
 
+describe('lancamentosRepo.atualizarDiaNaoPagosAPartirDe', () => {
+  it('muda o vencimento dos não pagos a partir do mês, ajustando o dia 31', async () => {
+    const db = await criarBanco();
+    const contaId = await criarConta(db);
+    await criarLancamento(db, contaId, '2026-01');
+    await criarLancamento(db, contaId, '2026-02');
+    await criarLancamento(db, contaId, '2026-03', 1);
+
+    await lancamentosRepo.atualizarDiaNaoPagosAPartirDe(db, contaId, '2026-02', 31);
+
+    const vencimentos = (await lancamentosRepo.listarPorConta(db, contaId)).map(
+      (l) => l.vencimento
+    );
+    expect(vencimentos).toEqual(['2026-01-10', '2026-02-28', '2026-03-10']);
+  });
+});
+
 describe('backupRepo', () => {
   async function popular(db: SQLiteDatabase) {
     const contaId = await criarConta(db, { compartilhada: 1 });

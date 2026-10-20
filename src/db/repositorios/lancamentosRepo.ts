@@ -123,6 +123,26 @@ export const lancamentosRepo = {
     await db.runAsync('DELETE FROM lancamentos WHERE id = ?;', [id]);
   },
 
+  /** Muda o dia de vencimento dos lançamentos não pagos a partir do mês (dia 31 vira o último dia). */
+  async atualizarDiaNaoPagosAPartirDe(
+    db: SQLiteDatabase,
+    contaId: number,
+    mesRefApartirDe: string,
+    diaVencimento: number
+  ): Promise<void> {
+    const pendentes = await db.getAllAsync<{ id: number; mes_ref: string }>(
+      'SELECT id, mes_ref FROM lancamentos WHERE conta_id = ? AND mes_ref >= ? AND pago = 0;',
+      [contaId, mesRefApartirDe]
+    );
+    for (const l of pendentes) {
+      const [ano, mes] = l.mes_ref.split('-').map(Number);
+      await db.runAsync('UPDATE lancamentos SET vencimento = ? WHERE id = ?;', [
+        ajustarDiaDoMes(ano, mes, diaVencimento),
+        l.id,
+      ]);
+    }
+  },
+
   async atualizarValorNaoPagosAPartirDe(
     db: SQLiteDatabase,
     contaId: number,
