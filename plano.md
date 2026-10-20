@@ -16,7 +16,7 @@ O usuário cadastra contas e rendas. O app calcula sozinho: total do mês, o que
 - **Offline de verdade:** nada de servidor, login ou internet.
 - **Dinheiro em centavos:** valores guardados como número inteiro (R$ 10,50 vira 1050). Isso evita erros de arredondamento.
 - **Cálculo em um lugar só:** todas as contas de somar, comparar e prever ficam em `src/domain/`, longe das telas. Assim dá para testar.
-- **Sem backup:** se o app for desinstalado, os dados somem. Isso será avisado dentro do app (ver Etapa 11).
+- **Sem nuvem, com backup manual:** não há sincronização. Para não perder dados ao desinstalar ou trocar de celular, o usuário exporta um arquivo de backup (Mais > Backup dos dados) e importa quando precisar. O aviso de que os dados ficam só no celular aparece nessa tela.
 
 ### Ordem de construção
 | Etapa | Entrega |
@@ -623,8 +623,8 @@ Passos:
 ### 14.2 Qualidade de uso
 - Tela de **primeira abertura** (onboarding) com 3 passos: boas-vindas, cadastrar renda, cadastrar primeira conta.
 - Tela de **Configurações:** tema, notificações, limites de aviso, sugestão pela média (3 ou 6 meses).
-- Aviso permanente e honesto: "Seus dados ficam só neste celular. Se desinstalar o app, eles serão perdidos."
-- Tratar erros do banco com mensagem amigável (nunca tela vermelha).
+- Aviso permanente e honesto: "Seus dados ficam só neste celular. Se desinstalar o app, eles serão perdidos." (já está na tela de backup).
+- Erros do banco já mostram mensagem amigável (`ErrorBoundary` em `app/_layout.tsx` e faixa no Início).
 - Testar com muitos dados (200 contas) para ver se a lista continua fluida; usar `FlatList` ou `FlashList`.
 - Revisar acessibilidade com o leitor de tela (TalkBack).
 - Ícone do app e tela de abertura (splash) próprios, configurados no `app.json`.
@@ -640,8 +640,7 @@ Passos:
 | Testes dos casos de borda passando | `test(domain): cobrir casos de borda de datas e valores` |
 | Onboarding de 3 passos | `feat(onboarding): criar tela de boas-vindas` |
 | Tela de configurações completa | `feat(config): adicionar tema, limites de aviso e média de meses` |
-| Aviso de que os dados ficam só no celular | `feat(config): avisar que os dados ficam só neste celular` |
-| Tratamento de erros do banco | `fix(db): exibir mensagem amigável quando o banco falha` |
+| Aviso de que os dados ficam só no celular (já existe na tela de backup; repetir no onboarding) | `feat(config): avisar que os dados ficam só neste celular` |
 | Teste com 200 contas e ajuste de lista | `perf(contas): otimizar lista com muitos itens` |
 | Ajustes de TalkBack | `fix(a11y): adicionar rótulos de acessibilidade nos botões` |
 | Ícone e splash próprios | `chore: adicionar ícone e splash do app` |
@@ -653,7 +652,7 @@ Passos:
 ## 15. Etapa 12 - Gerar o APK e instalar nos celulares
 
 ### Opção A: build local, direto por USB (recomendada para este projeto)
-1. Conferir no `app.json`: `name`, `slug`, `android.package` (ex.: `com.seunome.fluxus`), `version`, ícone.
+1. Conferir no `app.json`: `name`, `slug`, `android.package` (já definido como `com.bernardo.fluxus`; **nunca mudar**, senão vira outro app e os dados não passam), `version`, ícone.
 2. Conectar o celular por USB com depuração ativa. Conferir com `adb devices`.
 3. Instalar a versão de produção:
    ```bash
@@ -705,12 +704,14 @@ fluxus/
 │   ├── rendas/
 │   │   └── index.tsx             # lista e cadastro de rendas
 │   ├── reserva/
+│   ├── backup.tsx                # exportar e importar dados
 │   ├── simulador.tsx
 │   └── configuracoes.tsx
 ├── src/
 │   ├── components/
 │   │   ├── ui/                   # Cartao, Botao, Campo, Etiqueta...
-│   │   ├── contas/               # ItemConta
+│   │   ├── contas/               # ItemConta, SeletorCategoria
+│   │   ├── home/                 # seções da tela Início
 │   │   ├── calendario/
 │   │   └── graficos/
 │   ├── db/
@@ -732,11 +733,13 @@ fluxus/
 │   │   └── dividirConta.ts
 │   ├── store/                    # Zustand
 │   ├── services/
+│   │   ├── backup.ts             # arquivo, compartilhar e escolher arquivo
 │   │   └── notificacoes.ts
 │   ├── theme/
 │   ├── utils/                    # formatadores.ts (formatarMoeda, formatarData...)
 │   └── types/
 └── __tests__/
+    └── helpers/bancoEmMemoria.ts # SQLite em memória para testar repositórios
 ```
 
 **Regra de ouro das camadas:**
@@ -751,7 +754,7 @@ fluxus/
 - [ ] Prints em modo claro e escuro.
 - [ ] Seção "Desafios e aprendizados" (ex.: contas recorrentes, dia 31, notificações no Android).
 - [ ] Diagrama simples do banco de dados.
-- [ ] Testes rodando (`npm test`) e mencionados no README.
+- [x] Testes rodando (`npm test`) e mencionados no README, com GitHub Actions.
 - [ ] APK publicado na seção Releases do GitHub.
 - [ ] Histórico de commits seguindo Conventional Commits (tipo, escopo, descrição), com tags de versão (`v0.1.0` até `v1.0.0`).
 
