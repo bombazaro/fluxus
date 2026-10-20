@@ -21,4 +21,17 @@ describe('classificarSituacao', () => {
     expect(classificarSituacao('2026-05-18', 0, '2026-05-10')).toBe('mais_adiante');
     expect(classificarSituacao('2026-05-31', 0, '2026-05-10')).toBe('mais_adiante');
   });
+
+  it('classifica conta sem vencimento como sem_vencimento enquanto o mês não acaba', () => {
+    expect(classificarSituacao('2026-05-31', 0, '2026-05-10', true)).toBe('sem_vencimento');
+    expect(classificarSituacao('2026-05-31', 0, '2026-05-31', true)).toBe('sem_vencimento');
+  });
+
+  it('conta sem vencimento não paga vira atrasada depois que o mês acaba', () => {
+    expect(classificarSituacao('2026-05-31', 0, '2026-06-01', true)).toBe('atrasada');
+  });
+
+  it('conta sem vencimento paga continua paga', () => {
+    expect(classificarSituacao('2026-05-31', 1, '2026-05-10', true)).toBe('paga');
+  });
 });

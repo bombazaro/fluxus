@@ -92,4 +92,13 @@ describe('montarCalendario', () => {
     expect(hoje).toHaveLength(1);
     expect(hoje[0]?.dia).toBe(20);
   });
+
+  it('não marca no calendário as contas sem vencimento', () => {
+    const semVencimento = { ...criarLancamento(1, '2026-10-31', 0), sem_vencimento: 1 };
+    const semanas = montarCalendario('2026-10', [semVencimento], [], '2026-10-20');
+    const dia31 = semanas.flat().find((d) => d?.dia === 31);
+
+    expect(dia31?.marcas).toEqual([]);
+    expect(dia31?.totalContasCentavos).toBe(0);
+  });
 });

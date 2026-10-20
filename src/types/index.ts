@@ -106,4 +106,4 @@ export interface Divisao {
   pessoa_nome?: string;
 }
 
-export type SituacaoConta = 'atrasada' | 'esta_semana' | 'mais_adiante' | 'paga';
+export type SituacaoConta = 'atrasada' | 'esta_semana' | 'mais_adiante' | 'sem_vencimento' | 'paga';

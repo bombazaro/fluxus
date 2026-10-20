@@ -6,14 +6,18 @@ import { SituacaoConta } from '../types';
  * - 'atrasada': se não pago e vencimento < hoje
  * - 'esta_semana': se não pago e vence em até 7 dias
  * - 'mais_adiante': se não pago e vence após 7 dias
+ * - 'sem_vencimento': conta sem data, não paga, enquanto o mês não acabou
+ *   (o vencimento guardado é o último dia do mês; depois dele, vira 'atrasada')
  */
 export function classificarSituacao(
   vencimentoIso: string,
   pago: number,
-  hojeIso: string
+  hojeIso: string,
+  semVencimento = false
 ): SituacaoConta {
   if (pago === 1) return 'paga';
   if (vencimentoIso < hojeIso) return 'atrasada';
+  if (semVencimento) return 'sem_vencimento';
 
   const [anoV, mesV, diaV] = vencimentoIso.split('-').map(Number);
   const [anoH, mesH, diaH] = hojeIso.split('-').map(Number);

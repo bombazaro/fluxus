@@ -40,6 +40,9 @@ export function montarCalendario(
   };
 
   for (const l of lancamentos) {
+    // Sem data de vencimento: não marca nenhum dia (a tela lista essas contas à parte)
+    if (l.sem_vencimento === 1) continue;
+
     const dia = Math.min(parseInt(l.vencimento.slice(8, 10), 10), totalDias);
     const situacao = classificarSituacao(l.vencimento, l.pago, hojeIso);
     marcar(

@@ -120,5 +120,65 @@ describe('gerarLancamentos e regras de datas', () => {
       expect(lancamentos[2].vencimento).toBe('2026-03-31');
       expect(lancamentos[2].parcela_numero).toBe(3);
     });
+
+    it('conta fixa sem vencimento vence no último dia do mês', () => {
+      const [lancamento] = gerarLancamentosParaConta({
+        id: 30,
+        nome: 'Mercado',
+        categoria_id: 2,
+        tipo: 'fixa',
+        valor_centavos: 80000,
+        dia_vencimento: null,
+        data_unica: null,
+        parcelas_total: null,
+        data_inicio: '2026-02-01',
+        data_fim: null,
+        ativa: 1,
+        compartilhada: 0,
+        sem_vencimento: 1,
+      });
+
+      expect(lancamento.vencimento).toBe('2026-02-28');
+    });
+
+    it('conta única sem vencimento fica no último dia do mês de início', () => {
+      const [lancamento] = gerarLancamentosParaConta({
+        id: 31,
+        nome: 'Presente',
+        categoria_id: 5,
+        tipo: 'unica',
+        valor_centavos: 15000,
+        dia_vencimento: null,
+        data_unica: null,
+        parcelas_total: null,
+        data_inicio: '2026-04-01',
+        data_fim: null,
+        ativa: 1,
+        compartilhada: 0,
+        sem_vencimento: 1,
+      });
+
+      expect(lancamento).toMatchObject({ mes_ref: '2026-04', vencimento: '2026-04-30' });
+    });
+
+    it('parcelada sem vencimento vence no último dia de cada mês', () => {
+      const lancamentos = gerarLancamentosParaConta({
+        id: 32,
+        nome: 'Curso 2x',
+        categoria_id: 6,
+        tipo: 'parcelada',
+        valor_centavos: 20000,
+        dia_vencimento: null,
+        data_unica: null,
+        parcelas_total: 2,
+        data_inicio: '2026-01-01',
+        data_fim: null,
+        ativa: 1,
+        compartilhada: 0,
+        sem_vencimento: 1,
+      });
+
+      expect(lancamentos.map((l) => l.vencimento)).toEqual(['2026-01-31', '2026-02-28']);
+    });
   });
 });

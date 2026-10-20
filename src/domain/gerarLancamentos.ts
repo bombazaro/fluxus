@@ -43,8 +43,20 @@ export function adicionarMeses(mesRef: string, quantidade: number): string {
   return `${novoAno}-${novoMes}`;
 }
 
+/** Dia usado para conta sem data de vencimento: o último dia do mês (31 é ajustado). */
+export const DIA_SEM_VENCIMENTO = 31;
+
+/** Dia de vencimento efetivo de uma conta recorrente (sem vencimento = último dia do mês). */
+export function diaDeVencimento(
+  conta: Pick<Conta, 'dia_vencimento' | 'sem_vencimento'>
+): number {
+  if (conta.sem_vencimento === 1) return DIA_SEM_VENCIMENTO;
+  return conta.dia_vencimento || 1;
+}
+
 /**
  * Gera os lançamentos previstos para uma conta recém-cadastrada.
+ * Conta sem data de vencimento vence no último dia de cada mês.
  * - 'unica': gera 1 lançamento
  * - 'parcelada': gera todas as parcelas (1 até N)
  * - 'fixa' ou 'variavel': gera o primeiro lançamento do mês inicial
@@ -56,7 +68,11 @@ export function gerarLancamentosParaConta(
   const contaId = conta.id ?? 0;
 
   if (conta.tipo === 'unica') {
-    const dataVenc = conta.data_unica || conta.data_inicio;
+    const [anoInicio, mesInicio] = conta.data_inicio.split('-').map(Number);
+    const dataVenc =
+      conta.sem_vencimento === 1
+        ? ajustarDiaDoMes(anoInicio, mesInicio, DIA_SEM_VENCIMENTO)
+        : conta.data_unica || conta.data_inicio;
     const mesRef = dataVenc.slice(0, 7);
     lancamentos.push({
       conta_id: contaId,
@@ -73,7 +89,10 @@ export function gerarLancamentosParaConta(
   if (conta.tipo === 'parcelada') {
     const totalParcelas = conta.parcelas_total || 1;
     const mesInicioRef = conta.data_inicio.slice(0, 7);
-    const diaVenc = conta.dia_vencimento || parseInt(conta.data_inicio.slice(8, 10), 10) || 1;
+    const diaVenc =
+      conta.sem_vencimento === 1
+        ? DIA_SEM_VENCIMENTO
+        : conta.dia_vencimento || parseInt(conta.data_inicio.slice(8, 10), 10) || 1;
 
     for (let i = 1; i <= totalParcelas; i++) {
       const mesRef = adicionarMeses(mesInicioRef, i - 1);
@@ -100,7 +119,7 @@ export function gerarLancamentosParaConta(
   // 'fixa' ou 'variavel'
   const mesRef = conta.data_inicio.slice(0, 7);
   const [anoStr, mesStr] = mesRef.split('-');
-  const diaVenc = conta.dia_vencimento || 1;
+  const diaVenc = diaDeVencimento(conta);
   const vencimento = ajustarDiaDoMes(
     parseInt(anoStr, 10),
     parseInt(mesStr, 10),
