@@ -35,10 +35,20 @@ function aplicarAssinatura(gradle) {
   if (gradle.includes(MARCADOR)) return gradle;
 
   const comSigning = gradle.replace(/signingConfigs \{/, (trecho) => trecho + SIGNING_RELEASE);
-  const comRelease = comSigning.replace(
-    /(release \{[\s\S]*?)signingConfig signingConfigs\.debug/,
-    (_, antes) => antes + ASSINATURA_RELEASE
-  );
+
+  // Só o "release" de dentro de buildTypes: o signingConfigs agora também tem
+  // um bloco "release {" (o que acabamos de inserir) e não pode ser o escolhido.
+  const inicioBuildTypes = comSigning.indexOf('buildTypes {');
+  const comRelease =
+    inicioBuildTypes === -1
+      ? comSigning
+      : comSigning.slice(0, inicioBuildTypes) +
+        comSigning
+          .slice(inicioBuildTypes)
+          .replace(
+            /(release \{[^}]*?)signingConfig signingConfigs\.debug/,
+            (_, antes) => antes + ASSINATURA_RELEASE
+          );
 
   if (comSigning === gradle || comRelease === comSigning) {
     throw new Error(
