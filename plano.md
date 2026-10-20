@@ -252,7 +252,7 @@ contas
   id, nome, categoria_id, tipo, valor_centavos,
   dia_vencimento (1-31), data_unica (só para tipo 'unica'),
   parcelas_total, data_inicio, data_fim (opcional), ativa,
-  compartilhada, criado_em
+  compartilhada, sem_vencimento (0/1), criado_em
 
 lancamentos            (uma linha por conta em cada mês)
   id, conta_id, mes_ref ('2026-05'), vencimento ('2026-05-10'),
@@ -279,7 +279,7 @@ divisoes
 
 `tipo` da conta: `unica`, `fixa`, `parcelada`, `variavel`.
 
-> **Versões do banco:** a versão 1 (`user_version = 1`) já cria todas as tabelas acima, inclusive as de reserva, pessoas e divisões, para as etapas 8 e 10 não precisarem de migração. A versão 2 adiciona `rendas.mes_ref`, a restrição única em `rendas_recebidas` e a tabela `lancamentos_ignorados`. Daqui em diante, **toda** mudança no banco é uma nova versão em `migrations.ts` (nunca editar o `SCHEMA_V1`, porque quem já instalou o app não roda ele de novo).
+> **Versões do banco:** a versão 1 (`user_version = 1`) já cria todas as tabelas acima, inclusive as de reserva, pessoas e divisões, para as etapas 8 e 10 não precisarem de migração. A versão 2 adiciona `rendas.mes_ref`, a restrição única em `rendas_recebidas` e a tabela `lancamentos_ignorados`. A versão 3 adiciona `contas.sem_vencimento`. Daqui em diante, **toda** mudança no banco é uma nova versão em `migrations.ts` (nunca editar o `SCHEMA_V1`, porque quem já instalou o app não roda ele de novo).
 
 ### 5.2 Por que existe a tabela `lancamentos`
 A **conta** é o cadastro ("Internet, R$ 100, todo dia 10"). O **lançamento** é a cobrança de um mês específico ("Internet de maio, R$ 100, não paga"). Assim cada mês tem seu valor e seu "pago", e a conta variável pode ter valor diferente a cada mês.
@@ -325,6 +325,7 @@ A **conta** é o cadastro ("Internet, R$ 100, todo dia 10"). O **lançamento** �
 - Para fixas e variáveis, gerar o lançamento do mês **quando o mês é aberto** (função `garantirMes('2026-05')` em `lancamentosRepo`, porque ela usa o banco; chamada ao abrir o app e ao trocar de mês). Ela só cria o que ainda não existe, então pode rodar quantas vezes quiser sem duplicar.
 - `garantirMes` **não recria** meses excluídos com "só este mês" (tabela `lancamentos_ignorados`) e, em conta compartilhada, copia a divisão do último lançamento da conta.
 - Dia 31 em mês com 30 dias (ou fevereiro): usar o último dia do mês.
+- **Conta sem data de vencimento** (`sem_vencimento = 1`): o lançamento fica no último dia do mês, aparece na seção "Sem vencimento" e só vira atrasada se o mês acabar sem pagar. Não gera lembrete (Etapa 6) nem pontinho no calendário.
 
 ### 6.3 Conta variável com sugestão
 - Criar `src/domain/sugerirValor.ts`: média (pura) dos últimos 3 meses (ou 6, configurável) dos lançamentos **pagos** daquela conta. A busca no banco fica no repositório (`lancamentosRepo.listarPagosDaConta`).
@@ -650,6 +651,12 @@ Passos:
 ---
 
 ## 15. Etapa 12 - Gerar o APK e instalar nos celulares
+
+### Assinatura (já configurada)
+- A chave própria do app fica em `~/fluxus-chave/` (fora do repositório) e as senhas em `~/.gradle/gradle.properties`.
+- O plugin `plugins/withAssinaturaRelease.js` aplica a assinatura a cada `expo prebuild`.
+- **Fazer backup da pasta `~/fluxus-chave/`** fora do computador. Sem ela, não dá para atualizar o app sem desinstalar.
+- A cada versão nova, aumentar `android.versionCode` no `app.json`.
 
 ### Opção A: build local, direto por USB (recomendada para este projeto)
 1. Conferir no `app.json`: `name`, `slug`, `android.package` (já definido como `com.bernardo.fluxus`; **nunca mudar**, senão vira outro app e os dados não passam), `version`, ícone.

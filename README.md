@@ -11,6 +11,7 @@ App Android de controle de contas a pagar. Você cadastra contas e rendas e o ap
 - **Contas de 4 tipos:** única (IPVA), fixa mensal (aluguel), parcelada (celular 10x) e variável (luz, água), com sugestão de valor pela média dos últimos meses.
 - **Resumo do mês:** sobra estimada, quanto tem em mãos, renda comprometida, total, pago e a pagar.
 - **Lista de contas** agrupada em atrasadas, esta semana, mais adiante e pagas, com filtros e busca. Marca como paga com um toque e permite desfazer.
+- **Conta sem data de vencimento** (ex.: mercado do mês): só fica atrasada se o mês acabar sem pagar.
 - **Editar e excluir com escopo:** "só este mês" ou "este e os próximos", sem mexer no histórico já pago.
 - **Rendas** fixas, variáveis (informa quanto caiu de verdade) e pontuais (13º, bônus).
 - **Saldo ao longo do mês:** mostra o dia em que o saldo fica mais baixo (ex.: o aluguel vence dia 5 e o salário só cai dia 10).
@@ -59,6 +60,18 @@ Nas próximas vezes, basta `npx expo start` com o app aberto no celular. O app d
 > org.gradle.parallel=false
 > org.gradle.workers.max=2
 > ```
+
+## Versão de produção (APK)
+
+O app de desenvolvimento precisa do computador ligado. Para usar no dia a dia, gere a versão release, que roda sozinha:
+
+```bash
+npx expo prebuild -p android        # aplica o pacote e o plugin de assinatura
+cd android && ./gradlew assembleRelease
+adb install -r app/build/outputs/apk/release/app-release.apk
+```
+
+A assinatura usa uma chave própria lida de `~/.gradle/gradle.properties` (`FLUXUS_UPLOAD_*`; veja `plugins/withAssinaturaRelease.js`). A chave nunca vai para o repositório. Use sempre a mesma chave e aumente `android.versionCode` no `app.json` a cada versão: assim o `adb install -r` atualiza o app sem apagar os dados.
 
 ## Testes
 
