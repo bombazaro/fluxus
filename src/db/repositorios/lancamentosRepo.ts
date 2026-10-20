@@ -123,6 +123,18 @@ export const lancamentosRepo = {
     await db.runAsync('DELETE FROM lancamentos WHERE id = ?;', [id]);
   },
 
+  async atualizarValorNaoPagosAPartirDe(
+    db: SQLiteDatabase,
+    contaId: number,
+    mesRefApartirDe: string,
+    valorCentavos: number
+  ): Promise<void> {
+    await db.runAsync(
+      'UPDATE lancamentos SET valor_centavos = ? WHERE conta_id = ? AND mes_ref >= ? AND pago = 0;',
+      [valorCentavos, contaId, mesRefApartirDe]
+    );
+  },
+
   async excluirFuturosDaConta(
     db: SQLiteDatabase,
     contaId: number,

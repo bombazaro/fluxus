@@ -1,5 +1,6 @@
 import { SQLiteDatabase } from 'expo-sqlite';
 import { Conta } from '@/src/types';
+import { adicionarMeses, ajustarDiaDoMes } from '@/src/domain/gerarLancamentos';
 
 export const contasRepo = {
   async criar(
@@ -74,5 +75,39 @@ export const contasRepo = {
 
   async excluir(db: SQLiteDatabase, id: number): Promise<void> {
     await db.runAsync('DELETE FROM contas WHERE id = ?;', [id]);
+  },
+
+  /**
+   * Exclui a conta "deste mês em diante": apaga os lançamentos não pagos a partir
+   * do mês e encerra a conta no mês anterior. O histórico pago é mantido para os
+   * meses passados não mudarem. Se não sobrar nenhum lançamento, apaga a conta.
+   */
+  async encerrarAPartirDe(
+    db: SQLiteDatabase,
+    id: number,
+    mesRef: string
+  ): Promise<void> {
+    await db.withTransactionAsync(async () => {
+      await db.runAsync(
+        'DELETE FROM lancamentos WHERE conta_id = ? AND mes_ref >= ? AND pago = 0;',
+        [id, mesRef]
+      );
+
+      const restantes = await db.getFirstAsync<{ total: number }>(
+        'SELECT COUNT(*) AS total FROM lancamentos WHERE conta_id = ?;',
+        [id]
+      );
+
+      if (!restantes || restantes.total === 0) {
+        await db.runAsync('DELETE FROM contas WHERE id = ?;', [id]);
+        return;
+      }
+
+      const [ano, mes] = adicionarMeses(mesRef, -1).split('-').map(Number);
+      await db.runAsync('UPDATE contas SET data_fim = ? WHERE id = ?;', [
+        ajustarDiaDoMes(ano, mes, 31),
+        id,
+      ]);
+    });
   },
 };

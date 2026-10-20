@@ -124,6 +124,12 @@ export default function DetalheContaScreen() {
                 if (lancamentoDoMes) {
                   await lancamentosRepo.atualizarValor(db, lancamentoDoMes.id, valorEditadoCentavos);
                 }
+                await lancamentosRepo.atualizarValorNaoPagosAPartirDe(
+                  db,
+                  conta.id,
+                  mesRef,
+                  valorEditadoCentavos
+                );
                 await contasRepo.atualizar(db, conta.id, {
                   nome: nomeEditado.trim(),
                   valor_centavos: valorEditadoCentavos,
@@ -219,10 +225,10 @@ export default function DetalheContaScreen() {
           },
         },
         {
-          text: 'Excluir conta inteira',
+          text: 'Este e os próximos',
           style: 'destructive',
           onPress: async () => {
-            await contasRepo.excluir(db, conta.id);
+            await contasRepo.encerrarAPartirDe(db, conta.id, mesRef);
             await carregarMes(db);
             router.back();
           },
