@@ -193,8 +193,9 @@ export const useMesStore = create<MesState>((set, get) => ({
     const desfazer = get().ultimoDesfeito;
     if (!desfazer) return;
 
-    set({ ultimoDesfeito: null });
     await get().marcarPago(db, desfazer.id, desfazer.pagoAnterior === 1);
+    // marcarPago registra a ação como desfazível; desfazer o desfazer não faz sentido
+    set({ ultimoDesfeito: null });
   },
 
   limparDesfazer: () => set({ ultimoDesfeito: null }),
