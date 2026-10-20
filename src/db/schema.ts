@@ -86,6 +86,26 @@ export const SCHEMA_V1 = `
   CREATE INDEX IF NOT EXISTS idx_divisoes_lancamento ON divisoes(lancamento_id);
 `;
 
+// Versão 2: renda pontual com mês próprio, uma baixa por renda/mês e
+// meses de contas recorrentes excluídos com "só este mês".
+export const SCHEMA_V2 = `
+  ALTER TABLE rendas ADD COLUMN mes_ref TEXT;
+
+  DELETE FROM rendas_recebidas
+  WHERE id NOT IN (
+    SELECT MIN(id) FROM rendas_recebidas GROUP BY renda_id, mes_ref
+  );
+
+  CREATE UNIQUE INDEX IF NOT EXISTS idx_rendas_recebidas_renda_mes
+    ON rendas_recebidas(renda_id, mes_ref);
+
+  CREATE TABLE IF NOT EXISTS lancamentos_ignorados (
+    conta_id INTEGER NOT NULL REFERENCES contas(id) ON DELETE CASCADE,
+    mes_ref TEXT NOT NULL,
+    PRIMARY KEY (conta_id, mes_ref)
+  );
+`;
+
 export const CATEGORIAS_PADRAO = [
   { nome: 'Moradia', cor: '#0F766E', icone: 'home' },
   { nome: 'Alimentação', cor: '#EA580C', icone: 'fast-food' },
