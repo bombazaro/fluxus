@@ -53,3 +53,23 @@ export function dividirContaPorPorcentagem(
 
   return resultado;
 }
+
+/**
+ * Repete uma divisão já existente para um novo valor total, mantendo a proporção
+ * de cada pessoa. A última pessoa recebe a diferença para a soma fechar o total.
+ * Ex: [6000, 4000] (60/40) com novo total 15000 -> [9000, 6000].
+ */
+export function redistribuirDivisao(
+  valoresAnteriores: number[],
+  novoTotalCentavos: number
+): number[] {
+  if (valoresAnteriores.length === 0) return [];
+
+  const totalAnterior = valoresAnteriores.reduce((acc, v) => acc + v, 0);
+  if (totalAnterior <= 0) {
+    return dividirContaPorIgual(novoTotalCentavos, valoresAnteriores.length);
+  }
+
+  const porcentagens = valoresAnteriores.map((v) => (v * 100) / totalAnterior);
+  return dividirContaPorPorcentagem(novoTotalCentavos, porcentagens);
+}

@@ -1,6 +1,7 @@
 import {
   dividirContaPorIgual,
   dividirContaPorPorcentagem,
+  redistribuirDivisao,
 } from '../src/domain/dividirConta';
 
 describe('dividirConta', () => {
@@ -21,5 +22,18 @@ describe('dividirConta', () => {
     // R$ 100,00 (10000 centavos): 33.33%, 33.33%, 33.34%
     const divisao = dividirContaPorPorcentagem(10000, [33.33, 33.33, 33.34]);
     expect(divisao.reduce((a, b) => a + b, 0)).toBe(10000);
+  });
+
+  it('repete a proporção da divisão anterior para um novo valor', () => {
+    expect(redistribuirDivisao([6000, 4000], 15000)).toEqual([9000, 6000]);
+  });
+
+  it('redistribui com centavos quebrados fechando a soma exata', () => {
+    const divisao = redistribuirDivisao([334, 333, 333], 1001);
+    expect(divisao.reduce((a, b) => a + b, 0)).toBe(1001);
+  });
+
+  it('divide por igual quando a divisão anterior somava zero', () => {
+    expect(redistribuirDivisao([0, 0], 1000)).toEqual([500, 500]);
   });
 });

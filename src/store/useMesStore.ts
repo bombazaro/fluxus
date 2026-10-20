@@ -113,16 +113,17 @@ export const useMesStore = create<MesState>((set, get) => ({
 
       // 3. Busca divisões para associar a parte do usuário se for compartilhada
       const divisoes = await divisoesRepo.listarPorMes(db, mes);
-      const divisoesPorLancamento = new Map<number, number>();
+      // Lançamento dividido sem "Eu" entre as pessoas: minha parte é zero
+      const minhaPartePorLancamento = new Map<number, number>();
       for (const d of divisoes) {
-        if (d.pessoa_nome === 'Eu') {
-          divisoesPorLancamento.set(d.lancamento_id, d.valor_centavos);
-        }
+        const atual = minhaPartePorLancamento.get(d.lancamento_id) ?? 0;
+        const minhaParte = d.pessoa_nome === 'Eu' ? d.valor_centavos : 0;
+        minhaPartePorLancamento.set(d.lancamento_id, atual + minhaParte);
       }
 
       for (const l of lancamentos) {
-        if (l.compartilhada === 1 && divisoesPorLancamento.has(l.id)) {
-          l.minha_parte_centavos = divisoesPorLancamento.get(l.id);
+        if (l.compartilhada === 1 && minhaPartePorLancamento.has(l.id)) {
+          l.minha_parte_centavos = minhaPartePorLancamento.get(l.id);
         }
       }
 

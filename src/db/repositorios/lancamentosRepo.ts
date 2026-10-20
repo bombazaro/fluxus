@@ -1,6 +1,7 @@
 import { SQLiteDatabase } from 'expo-sqlite';
 import { Conta, Lancamento, LancamentoComDetalhes } from '@/src/types';
 import { ajustarDiaDoMes } from '@/src/domain/gerarLancamentos';
+import { redistribuirDivisao } from '@/src/domain/dividirConta';
 
 export const lancamentosRepo = {
   async criar(
@@ -137,6 +138,7 @@ export const lancamentosRepo = {
    * Garante que todas as contas fixas e variáveis ativas possuam lançamento no mês informado.
    * É idempotente: só insere se o lançamento daquele mês ainda não existir
    * e se o mês não foi excluído com "só este mês" (lancamentos_ignorados).
+   * Em conta compartilhada, repete a divisão do último lançamento dividido.
    */
   async garantirMes(db: SQLiteDatabase, mesRef: string): Promise<void> {
     const [anoStr, mesStr] = mesRef.split('-');
@@ -160,12 +162,41 @@ export const lancamentosRepo = {
 
     for (const c of contas) {
       const vencimento = ajustarDiaDoMes(ano, mes, c.dia_vencimento || 1);
-      await db.runAsync(
+      const result = await db.runAsync(
         `INSERT INTO lancamentos (
           conta_id, mes_ref, vencimento, valor_centavos, pago, pago_em, parcela_numero
         ) VALUES (?, ?, ?, ?, 0, NULL, NULL);`,
         [c.id, mesRef, vencimento, c.valor_centavos]
       );
+
+      if (c.compartilhada === 1) {
+        const divisoesAnteriores = await db.getAllAsync<{
+          pessoa_id: number;
+          valor_centavos: number;
+        }>(
+          `SELECT d.pessoa_id, d.valor_centavos FROM divisoes d
+           WHERE d.lancamento_id = (
+             SELECT l.id FROM lancamentos l
+             WHERE l.conta_id = ?
+               AND EXISTS (SELECT 1 FROM divisoes x WHERE x.lancamento_id = l.id)
+             ORDER BY l.mes_ref DESC
+             LIMIT 1
+           )
+           ORDER BY d.id ASC;`,
+          [c.id]
+        );
+
+        const novosValores = redistribuirDivisao(
+          divisoesAnteriores.map((d) => d.valor_centavos),
+          c.valor_centavos
+        );
+        for (let i = 0; i < divisoesAnteriores.length; i++) {
+          await db.runAsync(
+            'INSERT INTO divisoes (lancamento_id, pessoa_id, valor_centavos, pago) VALUES (?, ?, ?, 0);',
+            [result.lastInsertRowId, divisoesAnteriores[i].pessoa_id, novosValores[i]]
+          );
+        }
+      }
     }
   },
 
