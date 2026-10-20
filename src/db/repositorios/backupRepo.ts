@@ -5,16 +5,19 @@ import { BackupFluxus, LinhaBackup, ValorColuna } from '@/src/domain/backup';
  * Tabelas do backup, dos "pais" para os "filhos" (ordem das chaves estrangeiras),
  * com as colunas permitidas. Só essas colunas são lidas do arquivo importado,
  * para nenhum nome vindo do arquivo ir parar no SQL.
+ * `padroes` preenche colunas NOT NULL que não existiam em versões antigas do banco.
  */
-const TABELAS: { nome: string; colunas: string[] }[] = [
+const TABELAS: { nome: string; colunas: string[]; padroes?: Record<string, ValorColuna> }[] = [
   { nome: 'categorias', colunas: ['id', 'nome', 'cor', 'icone'] },
   { nome: 'pessoas', colunas: ['id', 'nome'] },
   {
     nome: 'contas',
     colunas: [
       'id', 'nome', 'categoria_id', 'tipo', 'valor_centavos', 'dia_vencimento', 'data_unica',
-      'parcelas_total', 'data_inicio', 'data_fim', 'ativa', 'compartilhada', 'criado_em',
+      'parcelas_total', 'data_inicio', 'data_fim', 'ativa', 'compartilhada', 'sem_vencimento',
+      'criado_em',
     ],
+    padroes: { sem_vencimento: 0 },
   },
   {
     nome: 'lancamentos',
@@ -69,11 +72,11 @@ export const backupRepo = {
         await db.runAsync(`DELETE FROM ${nome};`);
       }
 
-      for (const { nome, colunas } of TABELAS) {
+      for (const { nome, colunas, padroes } of TABELAS) {
         const marcadores = colunas.map(() => '?').join(', ');
         const sql = `INSERT INTO ${nome} (${colunas.join(', ')}) VALUES (${marcadores});`;
         for (const linha of backup.tabelas[nome] ?? []) {
-          const valores: ValorColuna[] = colunas.map((c) => linha[c] ?? null);
+          const valores: ValorColuna[] = colunas.map((c) => linha[c] ?? padroes?.[c] ?? null);
           await db.runAsync(sql, valores);
         }
       }

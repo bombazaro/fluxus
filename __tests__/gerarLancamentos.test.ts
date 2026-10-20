@@ -76,6 +76,7 @@ describe('gerarLancamentos e regras de datas', () => {
         data_fim: null,
         ativa: 1,
         compartilhada: 0,
+        sem_vencimento: 0,
       });
 
       expect(lancamentos).toHaveLength(1);
@@ -99,6 +100,7 @@ describe('gerarLancamentos e regras de datas', () => {
         data_fim: null,
         ativa: 1,
         compartilhada: 0,
+        sem_vencimento: 0,
       });
 
       expect(lancamentos).toHaveLength(3);

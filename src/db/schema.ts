@@ -106,6 +106,11 @@ export const SCHEMA_V2 = `
   );
 `;
 
+// Versão 3: conta sem data de vencimento (o lançamento fica no último dia do mês).
+export const SCHEMA_V3 = `
+  ALTER TABLE contas ADD COLUMN sem_vencimento INTEGER NOT NULL DEFAULT 0;
+`;
+
 export const CATEGORIAS_PADRAO = [
   { nome: 'Moradia', cor: '#0F766E', icone: 'home' },
   { nome: 'Alimentação', cor: '#EA580C', icone: 'fast-food' },

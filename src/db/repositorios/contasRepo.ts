@@ -12,8 +12,8 @@ export const contasRepo = {
       `INSERT INTO contas (
         nome, categoria_id, tipo, valor_centavos, dia_vencimento,
         data_unica, parcelas_total, data_inicio, data_fim, ativa,
-        compartilhada, criado_em
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`,
+        compartilhada, sem_vencimento, criado_em
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`,
       [
         conta.nome,
         conta.categoria_id,
@@ -26,6 +26,7 @@ export const contasRepo = {
         conta.data_fim,
         conta.ativa,
         conta.compartilhada,
+        conta.sem_vencimento,
         criadoEm,
       ]
     );

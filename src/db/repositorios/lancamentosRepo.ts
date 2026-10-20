@@ -52,7 +52,8 @@ export const lancamentosRepo = {
     const rows = await db.getAllAsync<LancamentoComDetalhes>(
       `SELECT
         l.id, l.conta_id, l.mes_ref, l.vencimento, l.valor_centavos, l.pago, l.pago_em, l.parcela_numero,
-        c.nome AS conta_nome, c.tipo AS conta_tipo, c.categoria_id, c.compartilhada, c.parcelas_total,
+        c.nome AS conta_nome, c.tipo AS conta_tipo, c.categoria_id, c.compartilhada, c.sem_vencimento,
+        c.parcelas_total,
         cat.nome AS categoria_nome, cat.cor AS categoria_cor, cat.icone AS categoria_icone
       FROM lancamentos l
       INNER JOIN contas c ON c.id = l.conta_id

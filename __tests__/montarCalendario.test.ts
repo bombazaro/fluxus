@@ -23,6 +23,7 @@ describe('montarCalendario', () => {
     categoria_cor: '#0F766E',
     categoria_icone: 'home',
     compartilhada: 0,
+    sem_vencimento: 0,
     parcelas_total: null,
   });
 

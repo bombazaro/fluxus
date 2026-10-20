@@ -148,6 +148,7 @@ export default function NovaContaModal() {
           data_fim: null,
           ativa: 1,
           compartilhada: compartilhada ? 1 : 0,
+          sem_vencimento: 0,
         });
 
         // Gera os lançamentos correspondentes
@@ -164,6 +165,7 @@ export default function NovaContaModal() {
           data_fim: null,
           ativa: 1,
           compartilhada: compartilhada ? 1 : 0,
+          sem_vencimento: 0,
         });
 
         for (const lp of lancamentosPrevistos) {

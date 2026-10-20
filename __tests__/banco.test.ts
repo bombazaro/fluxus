@@ -26,6 +26,7 @@ async function criarConta(
     data_fim: null,
     ativa: 1,
     compartilhada: 0,
+    sem_vencimento: 0,
     ...extra,
   });
 }
@@ -83,6 +84,27 @@ describe('migrações', () => {
 
     expect((await rendasRepo.listarTodas(db))[0]).toMatchObject({ nome: 'Salário', mes_ref: null });
     expect(await rendasRepo.listarRecebidasDoMes(db, '2026-05')).toHaveLength(1);
+  });
+});
+
+describe('migração v3', () => {
+  it('contas antigas ficam com vencimento (sem_vencimento = 0)', async () => {
+    const db = criarBancoVazio();
+    await db.execAsync(SCHEMA_V1);
+    await db.execAsync('PRAGMA user_version = 1;');
+    await db.runAsync(
+      "INSERT INTO categorias (nome, cor, icone) VALUES ('Moradia', '#000', 'home');"
+    );
+    await db.runAsync(
+      "INSERT INTO contas (nome, categoria_id, tipo, valor_centavos, dia_vencimento, data_inicio, criado_em) VALUES ('Aluguel', 1, 'fixa', 150000, 5, '2026-01-05', '2026-01-01');"
+    );
+
+    await executarMigracoes(db);
+
+    expect((await contasRepo.listarTodas(db))[0]).toMatchObject({
+      nome: 'Aluguel',
+      sem_vencimento: 0,
+    });
   });
 });
 
@@ -298,6 +320,21 @@ describe('backupRepo', () => {
 
     await expect(backupRepo.importarTudo(db, quebrado)).rejects.toThrow();
     expect((await backupRepo.exportarTudo(db, VERSAO_BANCO)).tabelas).toEqual(antes.tabelas);
+  });
+
+  it('importa backup da v2, de antes da opção sem vencimento', async () => {
+    const origem = await criarBanco();
+    await popular(origem);
+    const backup = await backupRepo.exportarTudo(origem, VERSAO_BANCO);
+    backup.versaoBanco = 2;
+    backup.tabelas.contas = backup.tabelas.contas.map(
+      ({ sem_vencimento: _semVencimento, ...c }) => c
+    );
+
+    const destino = await criarBanco();
+    await backupRepo.importarTudo(destino, backup);
+
+    expect((await contasRepo.listarTodas(destino))[0].sem_vencimento).toBe(0);
   });
 
   it('ignora colunas desconhecidas e importa backup da v1 sem mes_ref', async () => {

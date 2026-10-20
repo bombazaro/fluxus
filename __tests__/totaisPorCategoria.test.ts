@@ -23,6 +23,7 @@ describe('totaisPorCategoria', () => {
     categoria_cor: '#000000',
     categoria_icone: 'home',
     compartilhada: 0,
+    sem_vencimento: 0,
     parcelas_total: null,
     ...extra,
   });

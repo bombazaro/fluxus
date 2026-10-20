@@ -20,6 +20,7 @@ export interface Conta {
   data_fim: string | null;
   ativa: number; // 0 ou 1
   compartilhada: number; // 0 ou 1
+  sem_vencimento: number; // 0 ou 1: sem data, o lançamento fica no último dia do mês
   criado_em: string;
 }
 
@@ -42,6 +43,7 @@ export interface LancamentoComDetalhes extends Lancamento {
   categoria_cor: string;
   categoria_icone: string;
   compartilhada: number;
+  sem_vencimento: number;
   parcelas_total: number | null;
   minha_parte_centavos?: number;
 }
