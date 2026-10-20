@@ -80,27 +80,6 @@ export default function RootLayout() {
             headerShown: false,
           }}
         />
-        <Stack.Screen
-          name="reserva/index"
-          options={{
-            title: 'Reserva de Emergência',
-            headerShown: false,
-          }}
-        />
-        <Stack.Screen
-          name="simulador"
-          options={{
-            title: 'Simulador de Parcelas',
-            headerShown: false,
-          }}
-        />
-        <Stack.Screen
-          name="configuracoes"
-          options={{
-            title: 'Configurações',
-            headerShown: false,
-          }}
-        />
       </Stack>
     </SQLiteProvider>
   );
