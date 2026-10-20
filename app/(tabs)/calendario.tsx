@@ -1,20 +1,33 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { Ionicons } from '@expo/vector-icons';
 import { useTema } from '@/src/theme';
 import { obterHojeIso, useMesStore } from '@/src/store/useMesStore';
 import { MarcaDia, montarCalendario } from '@/src/domain/montarCalendario';
 import { corDaMarca, GradeMensal, ROTULO_MARCA } from '@/src/components/calendario/GradeMensal';
+import { ListaDoDia } from '@/src/components/calendario/ListaDoDia';
 import { Cartao } from '@/src/components/ui';
 import { formatarMesAno } from '@/src/utils/formatadores';
 
 export default function CalendarioScreen() {
+  const router = useRouter();
   const db = useSQLiteContext();
   const { colors, typography, spacing } = useTema();
 
-  const { mesRef, lancamentos, rendas, trocarMes, carregarMes } = useMesStore();
+  const {
+    mesRef,
+    lancamentos,
+    rendas,
+    ultimoDesfeito,
+    trocarMes,
+    carregarMes,
+    marcarPago,
+    desfazerUltimoPago,
+    limparDesfazer,
+  } = useMesStore();
 
   const [diaSelecionado, setDiaSelecionado] = useState<number | null>(null);
 
@@ -22,12 +35,38 @@ export default function CalendarioScreen() {
     carregarMes(db);
   }, [db, carregarMes]);
 
+  // Esconde o aviso de desfazer após 5 segundos
+  useEffect(() => {
+    if (!ultimoDesfeito) return;
+    const timer = setTimeout(limparDesfazer, 5000);
+    return () => clearTimeout(timer);
+  }, [ultimoDesfeito, limparDesfazer]);
+
   const hojeIso = obterHojeIso();
 
   const semanas = useMemo(
     () => montarCalendario(mesRef, lancamentos, rendas, hojeIso),
     [mesRef, lancamentos, rendas, hojeIso]
   );
+
+  const diaAberto = useMemo(
+    () => semanas.flat().find((d) => d?.dia === diaSelecionado) ?? null,
+    [semanas, diaSelecionado]
+  );
+
+  const lancamentosDoDia = useMemo(
+    () =>
+      diaAberto
+        ? lancamentos.filter((l) => l.vencimento === diaAberto.dataIso)
+        : [],
+    [lancamentos, diaAberto]
+  );
+
+  const rendasDoDia = useMemo(() => {
+    if (!diaAberto) return [];
+    const ultimoDia = semanas.flat().reduce((max, d) => Math.max(max, d?.dia ?? 0), 0);
+    return rendas.filter((r) => Math.min(r.dia_recebimento, ultimoDia) === diaAberto.dia);
+  }, [rendas, semanas, diaAberto]);
 
   const mudarMes = (delta: number) => {
     setDiaSelecionado(null);
@@ -101,6 +140,21 @@ export default function CalendarioScreen() {
           </View>
         </Cartao>
       </ScrollView>
+
+      <ListaDoDia
+        dataIso={diaAberto?.dataIso ?? null}
+        lancamentos={lancamentosDoDia}
+        rendas={rendasDoDia}
+        totalContasCentavos={diaAberto?.totalContasCentavos ?? 0}
+        podeDesfazer={!!ultimoDesfeito}
+        onFechar={() => setDiaSelecionado(null)}
+        onAbrirConta={(contaId) => {
+          setDiaSelecionado(null);
+          router.push(`/conta/${contaId}`);
+        }}
+        onTogglePago={(l) => marcarPago(db, l.id, l.pago === 0)}
+        onDesfazer={() => desfazerUltimoPago(db)}
+      />
     </SafeAreaView>
   );
 }
