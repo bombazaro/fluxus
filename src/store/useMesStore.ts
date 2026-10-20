@@ -1,7 +1,8 @@
 import { create } from 'zustand';
 import { SQLiteDatabase } from 'expo-sqlite';
-import { LancamentoComDetalhes, Renda } from '@/src/types';
+import { LancamentoComDetalhes, RendaDoMes } from '@/src/types';
 import { ResumoMes, resumoDoMes } from '@/src/domain/resumoDoMes';
+import { rendasDoMes } from '@/src/domain/rendasDoMes';
 import { adicionarMeses } from '@/src/domain/gerarLancamentos';
 import { lancamentosRepo } from '@/src/db/repositorios/lancamentosRepo';
 import { rendasRepo } from '@/src/db/repositorios/rendasRepo';
@@ -33,7 +34,7 @@ interface ItemDesfazer {
 export interface MesState {
   mesRef: string;
   lancamentos: LancamentoComDetalhes[];
-  rendas: Renda[];
+  rendas: RendaDoMes[];
   resumo: ResumoMes;
   carregando: boolean;
   erro: string | null;
@@ -127,8 +128,10 @@ export const useMesStore = create<MesState>((set, get) => ({
         }
       }
 
-      // 4. Busca rendas ativas
-      const rendas = await rendasRepo.listarAtivas(db);
+      // 4. Busca as rendas que valem neste mês (com o valor recebido, se houver)
+      const todasRendas = await rendasRepo.listarTodas(db);
+      const recebidas = await rendasRepo.listarRecebidasDoMes(db, mes);
+      const rendas = rendasDoMes(todasRendas, recebidas, mes);
 
       // 5. Calcula resumo
       const resumo = resumoDoMes(lancamentos, rendas);

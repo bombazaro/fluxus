@@ -10,6 +10,7 @@ describe('marcar conta como paga', () => {
         valor_centavos: 300000,
         dia_recebimento: 5,
         tipo: 'fixa',
+        mes_ref: null,
         ativa: 1,
         criado_em: '2026-01-01',
       },

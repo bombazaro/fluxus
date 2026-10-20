@@ -37,6 +37,7 @@ describe('resumoDoMes', () => {
     valor_centavos: valorCentavos,
     dia_recebimento: 5,
     tipo: 'fixa',
+    mes_ref: null,
     ativa,
     criado_em: '2026-01-01',
   });

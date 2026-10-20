@@ -54,8 +54,18 @@ export interface Renda {
   valor_centavos: number;
   dia_recebimento: number; // 1-31
   tipo: TipoRenda;
+  mes_ref: string | null; // só para 'pontual': '2026-12'
   ativa: number; // 0 ou 1
   criado_em: string;
+}
+
+/**
+ * Renda como vale em um mês específico: valor_centavos já é o valor do mês
+ * (o recebido, se marcada como recebida; senão o previsto).
+ */
+export interface RendaDoMes extends Renda {
+  valor_previsto_centavos: number;
+  recebida: boolean;
 }
 
 export interface RendaRecebida {

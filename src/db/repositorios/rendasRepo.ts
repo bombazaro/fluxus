@@ -9,13 +9,14 @@ export const rendasRepo = {
     const criadoEm = new Date().toISOString();
     const result = await db.runAsync(
       `INSERT INTO rendas (
-        nome, valor_centavos, dia_recebimento, tipo, ativa, criado_em
-      ) VALUES (?, ?, ?, ?, ?, ?);`,
+        nome, valor_centavos, dia_recebimento, tipo, mes_ref, ativa, criado_em
+      ) VALUES (?, ?, ?, ?, ?, ?, ?);`,
       [
         renda.nome,
         renda.valor_centavos,
         renda.dia_recebimento,
         renda.tipo || 'fixa',
+        renda.tipo === 'pontual' ? renda.mes_ref : null,
         renda.ativa ? 1 : 0,
         criadoEm,
       ]
@@ -78,7 +79,7 @@ export const rendasRepo = {
     await db.runAsync(
       `INSERT INTO rendas_recebidas (renda_id, mes_ref, valor_centavos, recebida_em)
        VALUES (?, ?, ?, ?)
-       ON CONFLICT DO NOTHING;`,
+       ON CONFLICT (renda_id, mes_ref) DO UPDATE SET valor_centavos = excluded.valor_centavos;`,
       [rendaId, mesRef, valorCentavos, recebidaEm]
     );
   },
