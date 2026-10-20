@@ -34,6 +34,7 @@ export default function HomeScreen() {
     rendas,
     resumo,
     carregando,
+    erro,
     trocarMes,
     irParaHoje,
     carregarMes,
@@ -151,6 +152,34 @@ export default function HomeScreen() {
             colors={[colors.primary]}
           />
         }>
+        {/* Falha ao carregar o mês do banco */}
+        {erro ? (
+          <Cartao
+            style={{
+              backgroundColor: colors.dangerLight,
+              borderColor: colors.danger,
+              marginBottom: spacing.base,
+            }}>
+            <Text
+              style={{
+                color: colors.text,
+                fontFamily: typography.fontFamily.semiBold,
+                fontSize: typography.fontSize.body,
+              }}>
+              Não foi possível carregar os dados deste mês.
+            </Text>
+            <Text
+              style={{
+                color: colors.textSecondary,
+                fontFamily: typography.fontFamily.regular,
+                fontSize: typography.fontSize.caption,
+                marginTop: spacing.xs,
+              }}>
+              Seus dados continuam salvos. Puxe a tela para baixo para tentar de novo.
+            </Text>
+          </Cartao>
+        ) : null}
+
         {/* Aviso de aperto se existir */}
         {aperto.nivel !== 'normal' ? (
           <Pressable
