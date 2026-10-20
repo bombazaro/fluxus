@@ -135,7 +135,8 @@ export const lancamentosRepo = {
 
   /**
    * Garante que todas as contas fixas e variáveis ativas possuam lançamento no mês informado.
-   * É idempotente: só insere se o lançamento daquele mês ainda não existir.
+   * É idempotente: só insere se o lançamento daquele mês ainda não existir
+   * e se o mês não foi excluído com "só este mês" (lancamentos_ignorados).
    */
   async garantirMes(db: SQLiteDatabase, mesRef: string): Promise<void> {
     const [anoStr, mesStr] = mesRef.split('-');
@@ -143,29 +144,42 @@ export const lancamentosRepo = {
     const mes = parseInt(mesStr, 10);
 
     const contas = await db.getAllAsync<Conta>(
-      `SELECT * FROM contas
-       WHERE ativa = 1
-         AND tipo IN ('fixa', 'variavel')
-         AND data_inicio <= ?
-         AND (data_fim IS NULL OR data_fim >= ?);`,
-      [`${mesRef}-31`, `${mesRef}-01`]
+      `SELECT c.* FROM contas c
+       WHERE c.ativa = 1
+         AND c.tipo IN ('fixa', 'variavel')
+         AND c.data_inicio <= ?
+         AND (c.data_fim IS NULL OR c.data_fim >= ?)
+         AND NOT EXISTS (
+           SELECT 1 FROM lancamentos l WHERE l.conta_id = c.id AND l.mes_ref = ?
+         )
+         AND NOT EXISTS (
+           SELECT 1 FROM lancamentos_ignorados i WHERE i.conta_id = c.id AND i.mes_ref = ?
+         );`,
+      [`${mesRef}-31`, `${mesRef}-01`, mesRef, mesRef]
     );
 
     for (const c of contas) {
-      const existente = await db.getFirstAsync<{ id: number }>(
-        'SELECT id FROM lancamentos WHERE conta_id = ? AND mes_ref = ?;',
-        [c.id, mesRef]
+      const vencimento = ajustarDiaDoMes(ano, mes, c.dia_vencimento || 1);
+      await db.runAsync(
+        `INSERT INTO lancamentos (
+          conta_id, mes_ref, vencimento, valor_centavos, pago, pago_em, parcela_numero
+        ) VALUES (?, ?, ?, ?, 0, NULL, NULL);`,
+        [c.id, mesRef, vencimento, c.valor_centavos]
       );
-
-      if (!existente) {
-        const vencimento = ajustarDiaDoMes(ano, mes, c.dia_vencimento || 1);
-        await db.runAsync(
-          `INSERT INTO lancamentos (
-            conta_id, mes_ref, vencimento, valor_centavos, pago, pago_em, parcela_numero
-          ) VALUES (?, ?, ?, ?, 0, NULL, NULL);`,
-          [c.id, mesRef, vencimento, c.valor_centavos]
-        );
-      }
     }
+  },
+
+  /**
+   * Exclui só o lançamento deste mês e registra o mês como ignorado,
+   * para o garantirMes não recriar a cobrança de contas fixas e variáveis.
+   */
+  async excluirSoDesteMes(db: SQLiteDatabase, lancamento: Lancamento): Promise<void> {
+    await db.withTransactionAsync(async () => {
+      await db.runAsync('DELETE FROM lancamentos WHERE id = ?;', [lancamento.id]);
+      await db.runAsync(
+        'INSERT OR IGNORE INTO lancamentos_ignorados (conta_id, mes_ref) VALUES (?, ?);',
+        [lancamento.conta_id, lancamento.mes_ref]
+      );
+    });
   },
 };

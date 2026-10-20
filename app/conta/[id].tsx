@@ -212,7 +212,7 @@ export default function DetalheContaScreen() {
           text: 'Apenas deste mês',
           onPress: async () => {
             if (lancamentoDoMes) {
-              await lancamentosRepo.excluir(db, lancamentoDoMes.id);
+              await lancamentosRepo.excluirSoDesteMes(db, lancamentoDoMes);
               await carregarMes(db);
               router.back();
             }
