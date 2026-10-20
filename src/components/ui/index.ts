@@ -6,3 +6,4 @@ export * from './Etiqueta';
 export * from './EstadoVazio';
 export * from './BarraProgresso';
 export * from './Fab';
+export * from './SeletorMes';

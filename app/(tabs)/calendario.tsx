@@ -1,16 +1,14 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { PanResponder, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { PanResponder, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
-import { Ionicons } from '@expo/vector-icons';
 import { useTema } from '@/src/theme';
 import { obterHojeIso, obterMesAtualIso, useMesStore } from '@/src/store/useMesStore';
 import { MarcaDia, montarCalendario } from '@/src/domain/montarCalendario';
 import { corDaMarca, GradeMensal, ROTULO_MARCA } from '@/src/components/calendario/GradeMensal';
 import { ListaDoDia } from '@/src/components/calendario/ListaDoDia';
-import { Cartao } from '@/src/components/ui';
-import { formatarMesAno } from '@/src/utils/formatadores';
+import { Cartao, SeletorMes } from '@/src/components/ui';
 
 export default function CalendarioScreen() {
   const router = useRouter();
@@ -102,67 +100,12 @@ export default function CalendarioScreen() {
     <SafeAreaView
       edges={['top', 'left', 'right']}
       style={[styles.container, { backgroundColor: colors.background }]}>
-      {/* Barra de mês com setas */}
-      <View
-        style={[
-          styles.mesBarra,
-          {
-            backgroundColor: colors.surface,
-            borderBottomColor: colors.border,
-            borderBottomWidth: 1,
-            paddingHorizontal: spacing.base,
-            paddingVertical: spacing.sm,
-          },
-        ]}>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="Mês anterior"
-          onPress={() => mudarMes(-1)}
-          hitSlop={12}
-          style={styles.navBtn}>
-          <Ionicons name="chevron-back" size={24} color={colors.text} />
-        </Pressable>
-
-        <View style={styles.mesCentro}>
-          <Text
-            style={[styles.mesTexto, { color: colors.text, fontFamily: typography.fontFamily.bold }]}>
-            {formatarMesAno(mesRef)}
-          </Text>
-          {!estaNoMesAtual ? (
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="Voltar para o mês atual"
-              onPress={voltarParaHoje}
-              hitSlop={12}
-              style={[
-                styles.botaoHoje,
-                {
-                  marginLeft: spacing.sm,
-                  borderColor: colors.primary,
-                  paddingHorizontal: spacing.sm,
-                },
-              ]}>
-              <Text
-                style={{
-                  color: colors.primary,
-                  fontFamily: typography.fontFamily.semiBold,
-                  fontSize: typography.fontSize.caption,
-                }}>
-                Hoje
-              </Text>
-            </Pressable>
-          ) : null}
-        </View>
-
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="Próximo mês"
-          onPress={() => mudarMes(1)}
-          hitSlop={12}
-          style={styles.navBtn}>
-          <Ionicons name="chevron-forward" size={24} color={colors.text} />
-        </Pressable>
-      </View>
+      <SeletorMes
+        mesRef={mesRef}
+        onTrocarMes={mudarMes}
+        onIrParaHoje={voltarParaHoje}
+        mostrarBotaoHoje={!estaNoMesAtual}
+      />
 
       <ScrollView contentContainerStyle={{ padding: spacing.base }}>
         <Cartao {...gestoTrocaMes.panHandlers}>
@@ -213,26 +156,6 @@ export default function CalendarioScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-  },
-  mesBarra: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  navBtn: {
-    padding: 8,
-  },
-  mesCentro: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  mesTexto: {
-    fontSize: 18,
-  },
-  botaoHoje: {
-    borderWidth: 1,
-    borderRadius: 9999,
-    paddingVertical: 2,
   },
   legenda: {
     flexDirection: 'row',

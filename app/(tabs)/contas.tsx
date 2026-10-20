@@ -11,12 +11,10 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
-import { Ionicons } from '@expo/vector-icons';
 import { useTema } from '@/src/theme';
 import { useMesStore, FiltroSituacao, obterHojeIso } from '@/src/store/useMesStore';
 import { ItemConta } from '@/src/components/contas/ItemConta';
-import { CampoTexto, EstadoVazio, Fab } from '@/src/components/ui';
-import { formatarMesAno } from '@/src/utils/formatadores';
+import { CampoTexto, EstadoVazio, Fab, SeletorMes } from '@/src/components/ui';
 import { classificarSituacao } from '@/src/domain/classificarSituacao';
 import { Categoria, LancamentoComDetalhes, SituacaoConta } from '@/src/types';
 import { categoriasRepo } from '@/src/db/repositorios/categoriasRepo';
@@ -124,46 +122,11 @@ export default function ContasScreen() {
     <SafeAreaView
       edges={['top', 'left', 'right']}
       style={[styles.container, { backgroundColor: colors.background }]}>
-      {/* Barra de mês superior com setas e botão hoje */}
-      <View
-        style={[
-          styles.mesBarra,
-          {
-            backgroundColor: colors.surface,
-            borderBottomColor: colors.border,
-            borderBottomWidth: 1,
-            paddingHorizontal: spacing.base,
-            paddingVertical: spacing.sm,
-          },
-        ]}>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="Mês anterior"
-          onPress={() => trocarMes(-1, db)}
-          hitSlop={12}
-          style={styles.navBtn}>
-          <Ionicons name="chevron-back" size={24} color={colors.text} />
-        </Pressable>
-
-        <Pressable onPress={() => irParaHoje(db)} style={styles.mesCentro}>
-          <Text
-            style={[
-              styles.mesTexto,
-              { color: colors.text, fontFamily: typography.fontFamily.bold },
-            ]}>
-            {formatarMesAno(mesRef)}
-          </Text>
-        </Pressable>
-
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="Próximo mês"
-          onPress={() => trocarMes(1, db)}
-          hitSlop={12}
-          style={styles.navBtn}>
-          <Ionicons name="chevron-forward" size={24} color={colors.text} />
-        </Pressable>
-      </View>
+      <SeletorMes
+        mesRef={mesRef}
+        onTrocarMes={(delta) => trocarMes(delta, db)}
+        onIrParaHoje={() => irParaHoje(db)}
+      />
 
       {/* Barra de busca e filtros */}
       <View style={{ paddingHorizontal: spacing.base, paddingTop: spacing.sm }}>
@@ -378,20 +341,6 @@ export default function ContasScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-  },
-  mesBarra: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  navBtn: {
-    padding: 8,
-  },
-  mesCentro: {
-    paddingVertical: 4,
-  },
-  mesTexto: {
-    fontSize: 18,
   },
   filtrosRow: {
     flexDirection: 'row',
