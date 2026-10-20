@@ -50,7 +50,7 @@ export default function ContasScreen() {
   useEffect(() => {
     carregarMes(db);
     categoriasRepo.listarTodas(db).then(setCategorias);
-  }, [db]);
+  }, [db, carregarMes]);
 
   // Temporizador para esconder o aviso de desfazer após 5 segundos
   useEffect(() => {
@@ -60,7 +60,7 @@ export default function ContasScreen() {
       }, 5000);
       return () => clearTimeout(timer);
     }
-  }, [ultimoDesfeito]);
+  }, [ultimoDesfeito, limparDesfazer]);
 
   const hojeIso = obterHojeIso();
 
