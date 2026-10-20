@@ -18,7 +18,8 @@
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": false,
-      "package": "com.bernardo.fluxus"
+      "package": "com.bernardo.fluxus",
+      "versionCode": 1
     },
     "web": {
       "bundler": "metro",
@@ -37,7 +38,8 @@
       ],
       "expo-sqlite",
       "expo-font",
-      "@react-native-community/datetimepicker"
+      "@react-native-community/datetimepicker",
+      "./plugins/withAssinaturaRelease"
     ],
     "experiments": {
       "typedRoutes": true
