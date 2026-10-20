@@ -12,17 +12,16 @@ import { useRouter } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { Ionicons } from '@expo/vector-icons';
 import { useTema } from '@/src/theme';
-import { useMesStore, obterHojeIso } from '@/src/store/useMesStore';
+import { useMesStore } from '@/src/store/useMesStore';
 import {
   BarraProgresso,
   Cartao,
-  EstadoVazio,
-  Etiqueta,
   Fab,
 } from '@/src/components/ui';
 import { formatarMesAno, formatarMoeda } from '@/src/utils/formatadores';
 import { ItemConta } from '@/src/components/contas/ItemConta';
 import { avaliarAperto } from '@/src/domain/avaliarAperto';
+import { calcularSaldoPorDia } from '@/src/domain/saldoPorDia';
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -43,9 +42,7 @@ export default function HomeScreen() {
 
   useEffect(() => {
     carregarMes(db);
-  }, [db]);
-
-  const hojeIso = obterHojeIso();
+  }, [db, carregarMes]);
 
   // Próximos vencimentos (até 4 contas não pagas, ordenadas por vencimento)
   const proximosVencimentos = useMemo(() => {
@@ -90,6 +87,10 @@ export default function HomeScreen() {
   const aperto = useMemo(() => {
     return avaliarAperto(resumo.totalContas, resumo.rendaTotal);
   }, [resumo.totalContas, resumo.rendaTotal]);
+
+  const saldoPorDia = useMemo(() => {
+    return calcularSaldoPorDia(mesRef, lancamentos, rendas);
+  }, [mesRef, lancamentos, rendas]);
 
   const percentualUsadoFormatado = Math.round(resumo.percentualUsado * 100);
 
@@ -338,6 +339,123 @@ export default function HomeScreen() {
             </Text>
           </Cartao>
         </View>
+
+        {/* 4. Linha do tempo / Menor saldo do mês */}
+        {rendas.length > 0 ? (
+          <Cartao style={{ marginTop: spacing.md, marginBottom: spacing.xs }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <View
+                style={{
+                  width: 36,
+                  height: 36,
+                  borderRadius: 18,
+                  backgroundColor:
+                    saldoPorDia.menorSaldoCentavos < 0
+                      ? colors.dangerLight
+                      : colors.primaryLight,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  marginRight: spacing.sm,
+                }}>
+                <Ionicons
+                  name="calendar-outline"
+                  size={20}
+                  color={
+                    saldoPorDia.menorSaldoCentavos < 0
+                      ? colors.danger
+                      : colors.primary
+                  }
+                />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text
+                  style={{
+                    color: colors.text,
+                    fontFamily: typography.fontFamily.semiBold,
+                    fontSize: 14,
+                  }}>
+                  Dia mais apertado: Dia {String(saldoPorDia.diaMenorSaldo).padStart(2, '0')}
+                </Text>
+                <Text
+                  style={{
+                    color: colors.textSecondary,
+                    fontFamily: typography.fontFamily.regular,
+                    fontSize: 12,
+                    marginTop: 2,
+                  }}>
+                  {saldoPorDia.mensagemAperto}
+                </Text>
+              </View>
+            </View>
+          </Cartao>
+        ) : null}
+
+        {/* Entradas do mês */}
+        <Cartao style={{ marginTop: spacing.sm, marginBottom: spacing.xs }}>
+          <View
+            style={{
+              flexDirection: 'row',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginBottom: rendas.length > 0 ? spacing.sm : 0,
+            }}>
+            <Text
+              style={{
+                color: colors.text,
+                fontFamily: typography.fontFamily.semiBold,
+                fontSize: 14,
+              }}>
+              Entradas do Mês ({formatarMoeda(resumo.rendaTotal)})
+            </Text>
+            <Pressable onPress={() => router.push('/rendas')}>
+              <Text
+                style={{
+                  color: colors.primary,
+                  fontFamily: typography.fontFamily.medium,
+                  fontSize: 12,
+                }}>
+                Gerenciar
+              </Text>
+            </Pressable>
+          </View>
+          {rendas.length === 0 ? (
+            <Text
+              style={{
+                color: colors.textSecondary,
+                fontFamily: typography.fontFamily.regular,
+                fontSize: 13,
+              }}>
+              Nenhuma renda cadastrada. Toque em gerenciar para cadastrar seu salário ou rendas.
+            </Text>
+          ) : (
+            rendas.map((r) => (
+              <View
+                key={r.id}
+                style={{
+                  flexDirection: 'row',
+                  justifyContent: 'space-between',
+                  paddingVertical: 4,
+                }}>
+                <Text
+                  style={{
+                    color: colors.textSecondary,
+                    fontFamily: typography.fontFamily.regular,
+                    fontSize: 13,
+                  }}>
+                  {r.nome} (Dia {r.dia_recebimento}){r.recebida ? ' • Recebida' : ''}
+                </Text>
+                <Text
+                  style={{
+                    color: colors.success,
+                    fontFamily: typography.fontFamily.semiBold,
+                    fontSize: 13,
+                  }}>
+                  {formatarMoeda(r.valor_centavos)}
+                </Text>
+              </View>
+            ))
+          )}
+        </Cartao>
 
         {/* 5. Próximos vencimentos */}
         <View style={[styles.secaoHeader, { marginTop: spacing.xl, marginBottom: spacing.sm }]}>
