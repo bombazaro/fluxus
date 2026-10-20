@@ -14,6 +14,12 @@ const ITENS: { titulo: string; descricao: string; icone: IconeIonicons; rota: Hr
     icone: 'wallet-outline',
     rota: '/rendas',
   },
+  {
+    titulo: 'Backup dos dados',
+    descricao: 'Exportar e importar, ou passar para outro celular',
+    icone: 'cloud-upload-outline',
+    rota: '/backup',
+  },
 ];
 
 export default function MaisScreen() {

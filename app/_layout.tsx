@@ -80,6 +80,13 @@ export default function RootLayout() {
             headerShown: false,
           }}
         />
+        <Stack.Screen
+          name="backup"
+          options={{
+            title: 'Backup dos dados',
+            headerShown: false,
+          }}
+        />
       </Stack>
     </SQLiteProvider>
   );
