@@ -1,11 +1,11 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { PanResponder, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { Ionicons } from '@expo/vector-icons';
 import { useTema } from '@/src/theme';
-import { obterHojeIso, useMesStore } from '@/src/store/useMesStore';
+import { obterHojeIso, obterMesAtualIso, useMesStore } from '@/src/store/useMesStore';
 import { MarcaDia, montarCalendario } from '@/src/domain/montarCalendario';
 import { corDaMarca, GradeMensal, ROTULO_MARCA } from '@/src/components/calendario/GradeMensal';
 import { ListaDoDia } from '@/src/components/calendario/ListaDoDia';
@@ -23,6 +23,7 @@ export default function CalendarioScreen() {
     rendas,
     ultimoDesfeito,
     trocarMes,
+    irParaHoje,
     carregarMes,
     marcarPago,
     desfazerUltimoPago,
@@ -68,10 +69,34 @@ export default function CalendarioScreen() {
     return rendas.filter((r) => Math.min(r.dia_recebimento, ultimoDia) === diaAberto.dia);
   }, [rendas, semanas, diaAberto]);
 
-  const mudarMes = (delta: number) => {
+  const mudarMes = useCallback(
+    (delta: number) => {
+      setDiaSelecionado(null);
+      trocarMes(delta, db);
+    },
+    [trocarMes, db]
+  );
+
+  const voltarParaHoje = () => {
     setDiaSelecionado(null);
-    trocarMes(delta, db);
+    irParaHoje(db);
   };
+
+  // Deslizar a grade para o lado troca de mês (direita: anterior, esquerda: próximo)
+  const gestoTrocaMes = useMemo(
+    () =>
+      PanResponder.create({
+        onMoveShouldSetPanResponder: (_, g) =>
+          Math.abs(g.dx) > 20 && Math.abs(g.dx) > Math.abs(g.dy) * 2,
+        onPanResponderRelease: (_, g) => {
+          if (g.dx > 60) mudarMes(-1);
+          else if (g.dx < -60) mudarMes(1);
+        },
+      }),
+    [mudarMes]
+  );
+
+  const estaNoMesAtual = mesRef === obterMesAtualIso();
 
   return (
     <SafeAreaView
@@ -98,10 +123,36 @@ export default function CalendarioScreen() {
           <Ionicons name="chevron-back" size={24} color={colors.text} />
         </Pressable>
 
-        <Text
-          style={[styles.mesTexto, { color: colors.text, fontFamily: typography.fontFamily.bold }]}>
-          {formatarMesAno(mesRef)}
-        </Text>
+        <View style={styles.mesCentro}>
+          <Text
+            style={[styles.mesTexto, { color: colors.text, fontFamily: typography.fontFamily.bold }]}>
+            {formatarMesAno(mesRef)}
+          </Text>
+          {!estaNoMesAtual ? (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Voltar para o mês atual"
+              onPress={voltarParaHoje}
+              hitSlop={12}
+              style={[
+                styles.botaoHoje,
+                {
+                  marginLeft: spacing.sm,
+                  borderColor: colors.primary,
+                  paddingHorizontal: spacing.sm,
+                },
+              ]}>
+              <Text
+                style={{
+                  color: colors.primary,
+                  fontFamily: typography.fontFamily.semiBold,
+                  fontSize: typography.fontSize.caption,
+                }}>
+                Hoje
+              </Text>
+            </Pressable>
+          ) : null}
+        </View>
 
         <Pressable
           accessibilityRole="button"
@@ -114,7 +165,7 @@ export default function CalendarioScreen() {
       </View>
 
       <ScrollView contentContainerStyle={{ padding: spacing.base }}>
-        <Cartao>
+        <Cartao {...gestoTrocaMes.panHandlers}>
           <GradeMensal
             semanas={semanas}
             diaSelecionado={diaSelecionado}
@@ -171,8 +222,17 @@ const styles = StyleSheet.create({
   navBtn: {
     padding: 8,
   },
+  mesCentro: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
   mesTexto: {
     fontSize: 18,
+  },
+  botaoHoje: {
+    borderWidth: 1,
+    borderRadius: 9999,
+    paddingVertical: 2,
   },
   legenda: {
     flexDirection: 'row',
