@@ -17,6 +17,3 @@ export function useTema() {
     layout,
   };
 }
-
-export { darkColors, lightColors, radii, spacing, typography, layout };
-export type { ThemeColors };
