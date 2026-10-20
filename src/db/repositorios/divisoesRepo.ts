@@ -2,22 +2,24 @@ import { SQLiteDatabase } from 'expo-sqlite';
 import { Divisao } from '@/src/types';
 
 export const divisoesRepo = {
+  /**
+   * Troca as divisões de um lançamento. Não abre transação própria:
+   * quem chama deve envolver em withTransactionAsync (não dá para aninhar).
+   */
   async salvarDivisoes(
     db: SQLiteDatabase,
     lancamentoId: number,
     divisoes: { pessoa_id: number; valor_centavos: number }[]
   ): Promise<void> {
-    await db.withTransactionAsync(async () => {
-      await db.runAsync('DELETE FROM divisoes WHERE lancamento_id = ?;', [
-        lancamentoId,
-      ]);
-      for (const d of divisoes) {
-        await db.runAsync(
-          'INSERT INTO divisoes (lancamento_id, pessoa_id, valor_centavos, pago) VALUES (?, ?, ?, 0);',
-          [lancamentoId, d.pessoa_id, d.valor_centavos]
-        );
-      }
-    });
+    await db.runAsync('DELETE FROM divisoes WHERE lancamento_id = ?;', [
+      lancamentoId,
+    ]);
+    for (const d of divisoes) {
+      await db.runAsync(
+        'INSERT INTO divisoes (lancamento_id, pessoa_id, valor_centavos, pago) VALUES (?, ?, ?, 0);',
+        [lancamentoId, d.pessoa_id, d.valor_centavos]
+      );
+    }
   },
 
   async listarPorLancamento(

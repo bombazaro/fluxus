@@ -86,8 +86,8 @@ export default function NovaContaModal() {
     async function carregarDados() {
       const listaCat = await categoriasRepo.listarTodas(db);
       setCategorias(listaCat);
-      if (listaCat.length > 0 && !categoriaId) {
-        setCategoriaId(listaCat[0].id);
+      if (listaCat.length > 0) {
+        setCategoriaId((atual) => atual ?? listaCat[0].id);
       }
 
       const listaPessoas = await pessoasRepo.listarTodas(db);
@@ -129,56 +129,58 @@ export default function NovaContaModal() {
     setSalvando(true);
 
     try {
-      const hoje = obterHojeIso();
       const mesAtual = obterMesAtualIso();
       const dataInicio =
         tipo === 'unica' ? dataUnica : `${mesAtual}-${String(diaNum).padStart(2, '0')}`;
 
-      const idConta = await contasRepo.criar(db, {
-        nome: nome.trim(),
-        categoria_id: categoriaId,
-        tipo,
-        valor_centavos: valorCentavos,
-        dia_vencimento: tipo === 'unica' ? null : diaNum,
-        data_unica: tipo === 'unica' ? dataUnica : null,
-        parcelas_total: tipo === 'parcelada' ? parcelasNum : null,
-        data_inicio: dataInicio,
-        data_fim: null,
-        ativa: 1,
-        compartilhada: compartilhada ? 1 : 0,
-      });
+      // Conta, lançamentos e divisões juntos: ou salva tudo, ou nada
+      await db.withTransactionAsync(async () => {
+        const idConta = await contasRepo.criar(db, {
+          nome: nome.trim(),
+          categoria_id: categoriaId,
+          tipo,
+          valor_centavos: valorCentavos,
+          dia_vencimento: tipo === 'unica' ? null : diaNum,
+          data_unica: tipo === 'unica' ? dataUnica : null,
+          parcelas_total: tipo === 'parcelada' ? parcelasNum : null,
+          data_inicio: dataInicio,
+          data_fim: null,
+          ativa: 1,
+          compartilhada: compartilhada ? 1 : 0,
+        });
 
-      // Gera os lançamentos correspondentes
-      const lancamentosPrevistos = gerarLancamentosParaConta({
-        id: idConta,
-        nome: nome.trim(),
-        categoria_id: categoriaId,
-        tipo,
-        valor_centavos: valorCentavos,
-        dia_vencimento: tipo === 'unica' ? null : diaNum,
-        data_unica: tipo === 'unica' ? dataUnica : null,
-        parcelas_total: tipo === 'parcelada' ? parcelasNum : null,
-        data_inicio: dataInicio,
-        data_fim: null,
-        ativa: 1,
-        compartilhada: compartilhada ? 1 : 0,
-      });
+        // Gera os lançamentos correspondentes
+        const lancamentosPrevistos = gerarLancamentosParaConta({
+          id: idConta,
+          nome: nome.trim(),
+          categoria_id: categoriaId,
+          tipo,
+          valor_centavos: valorCentavos,
+          dia_vencimento: tipo === 'unica' ? null : diaNum,
+          data_unica: tipo === 'unica' ? dataUnica : null,
+          parcelas_total: tipo === 'parcelada' ? parcelasNum : null,
+          data_inicio: dataInicio,
+          data_fim: null,
+          ativa: 1,
+          compartilhada: compartilhada ? 1 : 0,
+        });
 
-      for (const lp of lancamentosPrevistos) {
-        const idLancamento = await lancamentosRepo.criar(db, lp);
+        for (const lp of lancamentosPrevistos) {
+          const idLancamento = await lancamentosRepo.criar(db, lp);
 
-        if (compartilhada && pessoasSelecionadas.length > 0) {
-          const divisaoPorcentagem = dividirContaPorIgual(
-            lp.valor_centavos,
-            pessoasSelecionadas.length
-          );
-          const divisoesObj = pessoasSelecionadas.map((pessoaId, index) => ({
-            pessoa_id: pessoaId,
-            valor_centavos: divisaoPorcentagem[index] || 0,
-          }));
-          await divisoesRepo.salvarDivisoes(db, idLancamento, divisoesObj);
+          if (compartilhada && pessoasSelecionadas.length > 0) {
+            const divisaoPorcentagem = dividirContaPorIgual(
+              lp.valor_centavos,
+              pessoasSelecionadas.length
+            );
+            const divisoesObj = pessoasSelecionadas.map((pessoaId, index) => ({
+              pessoa_id: pessoaId,
+              valor_centavos: divisaoPorcentagem[index] || 0,
+            }));
+            await divisoesRepo.salvarDivisoes(db, idLancamento, divisoesObj);
+          }
         }
-      }
+      });
 
       await carregarMes(db);
       router.back();
