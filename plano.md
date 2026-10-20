@@ -16,7 +16,7 @@ O usuário cadastra contas e rendas. O app calcula sozinho: total do mês, o que
 - **Offline de verdade:** nada de servidor, login ou internet.
 - **Dinheiro em centavos:** valores guardados como número inteiro (R$ 10,50 vira 1050). Isso evita erros de arredondamento.
 - **Cálculo em um lugar só:** todas as contas de somar, comparar e prever ficam em `src/domain/`, longe das telas. Assim dá para testar.
-- **Sem backup:** se o app for desinstalado, os dados somem. Isso será avisado dentro do app (ver Etapa 10).
+- **Sem backup:** se o app for desinstalado, os dados somem. Isso será avisado dentro do app (ver Etapa 11).
 
 ### Ordem de construção
 | Etapa | Entrega |
@@ -32,7 +32,8 @@ O usuário cadastra contas e rendas. O app calcula sozinho: total do mês, o que
 | 8 | Reserva de emergência |
 | 9 | Simulador de parcelas |
 | 10 | Contas compartilhadas |
-| 11 | Acabamento, APK e portfólio |
+| 11 | Acabamento e qualidade |
+| 12 | APK nos celulares e portfólio |
 
 ### Padrão de commits (Conventional Commits)
 
@@ -43,7 +44,7 @@ tipo(escopo): descrição curta no imperativo
 
 Regras simples:
 - O **tipo** fica em inglês (é o padrão mundial). A **descrição** fica em português, em letra minúscula, sem ponto final, com até 72 caracteres.
-- O **escopo** é opcional e diz a área mexida: `db`, `ui`, `nav`, `domain`, `contas`, `rendas`, `calendario`, `notificacoes`, `reserva`, `simulador`, `build`.
+- O **escopo** é opcional e diz a área mexida: `db`, `ui`, `nav`, `tema`, `store`, `domain`, `home`, `contas`, `rendas`, `calendario`, `notificacoes`, `config`, `graficos`, `planejar`, `reserva`, `simulador`, `pessoas`, `acertos`, `onboarding`, `a11y`, `release`, `build`.
 - Escrever no imperativo: "adicionar", "corrigir", "criar" (e não "adicionei" ou "adicionando").
 - **Um commit = uma ideia.** Se a frase precisa de "e" para explicar, provavelmente são dois commits.
 
@@ -66,7 +67,7 @@ Regras simples:
 
 Faça commit **sempre que uma pequena parte funcionar**, e nunca com o app quebrado. Na prática:
 
-1. **Antes de commitar:** o app abre, `npx tsc --noEmit` não dá erro, e (a partir da Etapa 3) `npm test` passa.
+1. **Antes de commitar:** o app abre, `npx tsc --noEmit` não dá erro, `npm run lint` não dá erro e (a partir da Etapa 3) `npm test` passa.
 2. **Depois de cada passo concluído** do plano (cada tópico de "Passos" costuma ser um commit).
 3. **Antes de começar algo arriscado** (migração do banco, mudar o cálculo do resumo): commite o que está funcionando, para poder voltar.
 4. **Fim do dia:** commite e dê `git push`, mesmo que a etapa não tenha terminado (use o último commit que funciona; trabalho pela metade fica em uma branch).
@@ -199,7 +200,7 @@ Passos:
 **Objetivo:** esqueleto bonito, sem dados ainda.
 
 Passos:
-1. Criar a estrutura de pastas (seção 11 deste documento).
+1. Criar a estrutura de pastas (seção 16 deste documento).
 2. Criar `src/theme/` com `colors.ts` (claro e escuro), `spacing.ts`, `typography.ts`.
 3. Criar o hook `useTema()` que devolve as cores do tema atual.
 4. Carregar a fonte Inter em `app/_layout.tsx` e segurar a tela de abertura (`SplashScreen`) até carregar.
@@ -239,7 +240,13 @@ Passos:
 
 ```
 rendas
-  id, nome, valor_centavos, dia_recebimento (1-31), ativa, criado_em
+  id, nome, valor_centavos, dia_recebimento (1-31),
+  tipo ('fixa' | 'variavel' | 'pontual'), mes_ref (só para 'pontual'),
+  ativa, criado_em
+
+rendas_recebidas       (uma linha por renda em cada mês em que caiu)
+  id, renda_id, mes_ref, valor_centavos, recebida_em
+  UNIQUE (renda_id, mes_ref)
 
 contas
   id, nome, categoria_id, tipo, valor_centavos,
@@ -251,11 +258,14 @@ lancamentos            (uma linha por conta em cada mês)
   id, conta_id, mes_ref ('2026-05'), vencimento ('2026-05-10'),
   valor_centavos, pago (0/1), pago_em, parcela_numero
 
+lancamentos_ignorados  (meses excluídos com "só este mês" em contas fixas/variáveis)
+  conta_id, mes_ref     PRIMARY KEY (conta_id, mes_ref)
+
 categorias
   id, nome, cor, icone
 
 reserva_meta
-  id, valor_meta_centavos
+  id, valor_meta_centavos, tipo_meta ('fixo' | 'meses_gastos'), meses_gastos
 
 reserva_aportes
   id, valor_centavos, data, observacao
@@ -269,6 +279,8 @@ divisoes
 
 `tipo` da conta: `unica`, `fixa`, `parcelada`, `variavel`.
 
+> **Versões do banco:** a versão 1 (`user_version = 1`) já cria todas as tabelas acima, inclusive as de reserva, pessoas e divisões, para as etapas 8 e 10 não precisarem de migração. A versão 2 adiciona `rendas.mes_ref`, a restrição única em `rendas_recebidas` e a tabela `lancamentos_ignorados`. Daqui em diante, **toda** mudança no banco é uma nova versão em `migrations.ts` (nunca editar o `SCHEMA_V1`, porque quem já instalou o app não roda ele de novo).
+
 ### 5.2 Por que existe a tabela `lancamentos`
 A **conta** é o cadastro ("Internet, R$ 100, todo dia 10"). O **lançamento** é a cobrança de um mês específico ("Internet de maio, R$ 100, não paga"). Assim cada mês tem seu valor e seu "pago", e a conta variável pode ter valor diferente a cada mês.
 
@@ -277,7 +289,7 @@ A **conta** é o cadastro ("Internet, R$ 100, todo dia 10"). O **lançamento** �
 2. Criar `src/db/migrations.ts` usando `PRAGMA user_version` para controlar a versão do banco. Cada mudança futura vira uma nova migração (importante: sem backup, **nunca** apagar e recriar o banco numa atualização do app).
 3. Abrir o banco com `SQLiteProvider` no `app/_layout.tsx` e rodar as migrações na inicialização.
 4. Ativar chaves estrangeiras: `PRAGMA foreign_keys = ON`.
-5. Criar **repositórios** em `src/db/repositorios/`: `contasRepo.ts`, `lancamentosRepo.ts`, `rendasRepo.ts`, `reservaRepo.ts`. Só eles falam com o SQL. As telas nunca escrevem SQL.
+5. Criar **repositórios** em `src/db/repositorios/`: `contasRepo.ts`, `lancamentosRepo.ts`, `rendasRepo.ts`, `categoriasRepo.ts`, `reservaRepo.ts`, `pessoasRepo.ts`, `divisoesRepo.ts`. Só eles falam com o SQL. As telas e o `src/domain/` nunca escrevem SQL.
 6. Inserir as categorias padrão (Moradia, Alimentação, Transporte, Saúde, Lazer, Educação, Assinaturas, Outros) na primeira abertura.
 7. Testar: criar uma conta de teste, fechar o app, abrir de novo e ver se continua lá.
 
@@ -308,13 +320,14 @@ A **conta** é o cadastro ("Internet, R$ 100, todo dia 10"). O **lançamento** �
 | Variável | Luz, água | Gera 1 por mês; valor sugerido pela média dos últimos meses |
 
 ### 6.2 Geração dos lançamentos
-- Criar `src/domain/gerarLancamentos.ts`.
-- Ao cadastrar uma conta parcelada, já gerar todas as parcelas.
-- Para fixas e variáveis, gerar o lançamento do mês **quando o mês é aberto** (função `garantirMes('2026-05')`, chamada ao abrir o app e ao trocar de mês). Ela só cria o que ainda não existe, então pode rodar quantas vezes quiser sem duplicar.
+- Criar `src/domain/gerarLancamentos.ts` (funções puras: datas, dia 31, lista de lançamentos de uma conta nova).
+- Ao cadastrar uma conta parcelada, já gerar todas as parcelas. Salvar a conta e os lançamentos numa **transação** (ou tudo, ou nada).
+- Para fixas e variáveis, gerar o lançamento do mês **quando o mês é aberto** (função `garantirMes('2026-05')` em `lancamentosRepo`, porque ela usa o banco; chamada ao abrir o app e ao trocar de mês). Ela só cria o que ainda não existe, então pode rodar quantas vezes quiser sem duplicar.
+- `garantirMes` **não recria** meses excluídos com "só este mês" (tabela `lancamentos_ignorados`) e, em conta compartilhada, copia a divisão do último lançamento da conta.
 - Dia 31 em mês com 30 dias (ou fevereiro): usar o último dia do mês.
 
 ### 6.3 Conta variável com sugestão
-- Criar `src/domain/sugerirValor.ts`: média dos últimos 3 meses (ou 6, configurável) dos lançamentos **pagos** daquela conta.
+- Criar `src/domain/sugerirValor.ts`: média (pura) dos últimos 3 meses (ou 6, configurável) dos lançamentos **pagos** daquela conta. A busca no banco fica no repositório (`lancamentosRepo.listarPagosDaConta`).
 - Ao abrir o lançamento do mês, mostrar "Sugestão: R$ 187,40 (média dos últimos 3 meses)" com um botão "Usar".
 - Se não houver histórico, pedir o valor manualmente.
 
@@ -329,11 +342,11 @@ resumoDoMes(lancamentos, rendas) => {
   rendaTotal,       // soma das rendas ativas
   sobra,            // rendaTotal - totalContas
   sobraAtual,       // rendaTotal - totalPago (quanto ainda tem em mãos)
-  percentualUsado   // totalContas / rendaTotal
+  percentualUsado   // totalContas / rendaTotal (0 se não houver renda nem contas)
 }
 ```
 
-Escrever **testes** para essa função (ver Etapa 11). Todo o resto do app depende dela.
+Escrever **testes** para essa função. Todo o resto do app depende dela. Instalar `jest` e `jest-expo` **nesta etapa** (é a primeira que tem testes); a Etapa 11 só completa os casos de borda.
 
 ### 6.5 Telas e passos
 1. **Estado (Zustand):** `src/store/useMesStore.ts` guarda o mês selecionado, os lançamentos e o resumo. Ações: `trocarMes`, `carregar`, `marcarPago`, `desmarcarPago`.
@@ -350,6 +363,9 @@ Escrever **testes** para essa função (ver Etapa 11). Todo o resto do app depen
 4. **Detalhe da conta** (`app/conta/[id].tsx`): editar, desativar, excluir; histórico de valores (para as variáveis).
 5. **Tela Início** com os cartões do resumo (seção 2.4).
 6. **Editar/excluir:** perguntar o escopo - "só este mês" ou "este e os próximos".
+   - Excluir "só este mês": apaga o lançamento e registra em `lancamentos_ignorados` (senão o `garantirMes` recria).
+   - Excluir "este e os próximos": encerra a conta (`data_fim` no fim do mês anterior) e apaga os lançamentos **não pagos** a partir deste mês. O histórico pago fica, para os meses passados não mudarem. Se não sobrar nenhum lançamento, apaga a conta.
+   - Editar valor "este e os próximos": atualiza a conta e também os lançamentos não pagos já gerados dos meses seguintes.
 7. **Conta atrasada:** vencimento anterior a hoje e não paga. Marcar com etiqueta vermelha.
 
 **Pronto quando:** cadastra os 4 tipos, marca como pago, e os números do Início atualizam na hora e batem com uma conta feita na mão.
@@ -383,13 +399,14 @@ Ao terminar: `git tag -a v0.1.0 -m "Etapa 3: cadastro de contas e resumo do mês
 **Objetivo:** mais de uma fonte de renda, com a data em que cai.
 
 Passos:
-1. Tela "Rendas" dentro da aba Mais: lista + botão adicionar.
-2. Campos: nome (Salário, Freela...), valor, dia do recebimento, ativa/inativa.
-3. Opção de renda **variável** (valor pode mudar mês a mês) e **pontual** (13º, bônus).
-4. Atualizar `resumoDoMes` para somar as rendas ativas do mês.
-5. Mostrar no Início "Entradas do mês" com a lista e datas.
-6. Marcar como "recebida" quando cair (para calcular o saldo real do dia).
-7. **Saldo ao longo do mês:** com as datas de renda e de vencimento, mostrar a linha do tempo do saldo (útil para ver que o dia 5 aperta porque o salário cai dia 10). Função `saldoPorDia.ts` em `src/domain/`.
+1. Migração v2 (commit separado): `rendas.mes_ref`, `UNIQUE (renda_id, mes_ref)` em `rendas_recebidas` e a tabela `lancamentos_ignorados`.
+2. Tela "Rendas" (`app/rendas/index.tsx`), aberta pela aba Mais: lista + botão adicionar.
+3. Campos: nome (Salário, Freela...), valor, dia do recebimento, ativa/inativa.
+4. Opção de renda **variável** (valor pode mudar mês a mês: ao marcar como recebida, informar o valor real) e **pontual** (13º, bônus: vale só no mês escolhido, guardado em `mes_ref`).
+5. Criar `src/domain/rendasDoMes.ts` (função pura, com teste): quais rendas valem no mês e com que valor. Fixa e variável valem a partir do mês em que foram criadas; pontual só no seu mês; se a renda foi marcada como recebida, vale o valor recebido. O `resumoDoMes` e o `saldoPorDia` recebem essa lista.
+6. Mostrar no Início "Entradas do mês" com a lista e datas.
+7. Marcar como "recebida" quando cair (para calcular o saldo real do dia).
+8. **Saldo ao longo do mês:** com as datas de renda e de vencimento, mostrar a linha do tempo do saldo (útil para ver que o dia 5 aperta porque o salário cai dia 10). Função `saldoPorDia.ts` em `src/domain/`.
 
 **Pronto quando:** o app mostra em qual dia do mês o saldo fica mais baixo.
 
@@ -397,9 +414,10 @@ Passos:
 
 | Quando | Mensagem |
 |---|---|
+| Migração v2 (commit separado, antes das telas) | `feat(db): criar migração v2 de rendas e lançamentos ignorados` |
 | Tela de lista e formulário de rendas | `feat(rendas): cadastrar e listar rendas` |
 | Renda variável e pontual | `feat(rendas): suportar renda variável e pontual` |
-| Resumo do mês passa a somar as rendas (com teste) | `feat(domain): somar rendas ativas no resumo do mês` |
+| `rendasDoMes` e resumo do mês somando só as rendas do mês (com teste) | `feat(domain): somar rendas ativas no resumo do mês` |
 | Marcar renda como recebida | `feat(rendas): marcar renda como recebida` |
 | `saldoPorDia` pronto, com teste | `feat(domain): calcular saldo por dia do mês` |
 | Linha do tempo na tela Início | `feat(home): mostrar dia de menor saldo` |
@@ -411,8 +429,8 @@ Passos:
 **Objetivo:** ver o mês de relance.
 
 Passos:
-1. Criar o calendário em `src/components/calendario/` (grade própria, é simples e dá controle total do visual; ou usar `react-native-calendars`).
-2. Cada dia mostra pontinhos coloridos: vermelho (atrasada), amarelo (pendente), verde (paga), azul (renda).
+1. Criar o calendário em `src/components/calendario/` (grade própria, é simples e dá controle total do visual; ou usar `react-native-calendars`). O bottom sheet pode ser um `Modal` com `animationType="slide"`, sem biblioteca extra.
+2. Cada dia mostra pontinhos coloridos: vermelho (atrasada), amarelo (pendente), verde (paga), azul (renda). A montagem dos dias fica numa função pura `src/domain/montarCalendario.ts`, com teste (semana começando no domingo, dias do mês anterior em branco).
 3. Tocar em um dia abre uma lista embaixo (bottom sheet) com as contas do dia e o total.
 4. Destacar o dia de hoje.
 5. Setas para trocar de mês; deslizar para o lado também troca.
@@ -439,7 +457,8 @@ Passos:
 - Função `avaliarAperto.ts` com 3 níveis:
   - **Atenção (amarelo):** contas passam de 80% da renda.
   - **Aperto (vermelho):** contas passam da renda.
-  - **Crítico:** saldo do mês negativo antes de a próxima renda cair.
+  - **Crítico:** saldo do mês negativo antes de a próxima renda cair (usar o `menorSaldoCentavos` do `saldoPorDia`).
+- Já existe uma primeira versão de `avaliarAperto` (feita junto com a tela Início, na Etapa 3). Nesta etapa, trocar o "crítico" de "sem renda cadastrada" para a regra acima e cobrir com teste.
 - Faixa no topo do Início, com texto claro: "Faltam R$ 320 para fechar o mês". Tocar leva à lista de contas, ordenada pelas maiores.
 - Percentuais configuráveis na tela de configurações.
 
@@ -527,7 +546,6 @@ Passos:
 
 | Quando | Mensagem |
 |---|---|
-| Migração das tabelas de reserva (commit separado, antes das telas) | `feat(db): criar tabelas de meta e aportes da reserva` |
 | Definir meta (valor fixo ou meses de gastos) | `feat(reserva): definir meta da reserva` |
 | Registrar aportes e retiradas | `feat(reserva): registrar aportes e retiradas` |
 | Anel de progresso e estimativa de conclusão | `feat(reserva): mostrar progresso e estimativa de conclusão` |
@@ -570,10 +588,10 @@ Ao terminar: `git tag -a v0.3.0 -m "Etapa 9: previsão, reserva e simulador"`
 O app é offline e cada celular tem seu próprio banco. Então **não há sincronização**: a divisão é um **registro feito dentro do app**, em cada celular, não uma troca de dados entre os dois. Deixar isso claro na tela, para ninguém esperar que o outro celular atualize sozinho.
 
 Passos:
-1. Cadastro de **pessoas** (nome) em Mais > Pessoas. Incluir "Eu" automaticamente.
+1. Cadastro de **pessoas** (nome) em Mais > Pessoas. "Eu" já é criado pela migração v1 (não deixar excluir nem renomear).
 2. No formulário da conta, ligar "Conta compartilhada".
 3. Escolher a divisão: **igual**, **por porcentagem** ou **por valor**. Validar que a soma fecha 100% do valor.
-4. Guardar em `divisoes` quanto cabe a cada pessoa em cada lançamento.
+4. Guardar em `divisoes` quanto cabe a cada pessoa em cada lançamento (o `garantirMes` já copia a divisão para os meses novos das contas fixas e variáveis).
 5. Na lista de contas, mostrar "Sua parte: R$ 60 de R$ 120".
 6. **Importante para o cálculo:** em `resumoDoMes`, contar só a **parte do usuário** nas contas compartilhadas (opção "contar valor inteiro" ou "só minha parte" nas configurações).
 7. Tela "Acertos": quanto cada pessoa deve ou tem a receber, com botão "Marcar como acertado".
@@ -585,7 +603,6 @@ Passos:
 
 | Quando | Mensagem |
 |---|---|
-| Migração das tabelas `pessoas` e `divisoes` (commit separado) | `feat(db): criar tabelas de pessoas e divisões` |
 | Cadastro de pessoas | `feat(pessoas): cadastrar pessoas` |
 | `dividirConta` pronto, com teste (soma fecha o valor) | `feat(domain): dividir conta por igual, porcentagem ou valor` |
 | Chave "Conta compartilhada" no formulário | `feat(contas): marcar conta como compartilhada` |
@@ -599,7 +616,7 @@ Passos:
 ## 14. Etapa 11 - Acabamento e qualidade
 
 ### 14.1 Testes
-- Instalar `jest` e `jest-expo`.
+- `jest` e `jest-expo` já foram instalados na Etapa 3.
 - Testar todas as funções de `src/domain/` (resumo, geração de lançamentos, média, previsão, divisão, aperto).
 - Casos de borda: mês com 28 dias, conta no dia 31, renda zero (evitar divisão por zero), parcela única, valores com centavos.
 
@@ -686,12 +703,14 @@ fluxus/
 │   │   ├── nova.tsx              # modal de cadastro
 │   │   └── [id].tsx              # detalhe
 │   ├── rendas/
+│   │   └── index.tsx             # lista e cadastro de rendas
 │   ├── reserva/
 │   ├── simulador.tsx
 │   └── configuracoes.tsx
 ├── src/
 │   ├── components/
 │   │   ├── ui/                   # Cartao, Botao, Campo, Etiqueta...
+│   │   ├── contas/               # ItemConta
 │   │   ├── calendario/
 │   │   └── graficos/
 │   ├── db/
@@ -700,6 +719,10 @@ fluxus/
 │   │   └── repositorios/
 │   ├── domain/                   # todos os cálculos (puros e testados)
 │   │   ├── resumoDoMes.ts
+│   │   ├── rendasDoMes.ts
+│   │   ├── saldoPorDia.ts
+│   │   ├── classificarSituacao.ts
+│   │   ├── montarCalendario.ts
 │   │   ├── gerarLancamentos.ts
 │   │   ├── sugerirValor.ts
 │   │   ├── avaliarAperto.ts
@@ -711,7 +734,7 @@ fluxus/
 │   ├── services/
 │   │   └── notificacoes.ts
 │   ├── theme/
-│   ├── utils/                    # formatarMoeda, formatarData, datas
+│   ├── utils/                    # formatadores.ts (formatarMoeda, formatarData...)
 │   └── types/
 └── __tests__/
 ```
@@ -742,6 +765,8 @@ fluxus/
 | Erro de arredondamento em dinheiro | Tudo em centavos inteiros |
 | Notificações não chegando | Development build, canal Android, reagendar ao abrir, orientar sobre bateria |
 | Contas duplicadas em fixas | `garantirMes` só cria o que não existe |
+| Mês excluído de conta fixa voltar sozinho | `garantirMes` respeita `lancamentos_ignorados` |
+| Renda pontual contando todo mês | `rendasDoMes` filtra pelo `mes_ref` da renda |
 | Dia 29, 30, 31 em meses curtos | Usar o último dia do mês |
 | Telas lentas com muitos dados | `FlatList`, consultas com índice em `mes_ref` e `conta_id` |
 | Querer fazer tudo de uma vez | Seguir as etapas; cada uma termina com algo usável |
