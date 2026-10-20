@@ -6,6 +6,7 @@ import {
   Pressable,
   ScrollView,
   StyleSheet,
+  Switch,
   Text,
   View,
 } from 'react-native';
@@ -29,6 +30,7 @@ import { useMesStore } from '@/src/store/useMesStore';
 import { formatarData, formatarMesAno, formatarMoeda } from '@/src/utils/formatadores';
 import { calcularMediaLancamentos, SugestaoValor } from '@/src/domain/sugerirValor';
 import { SeletorCategoria } from '@/src/components/contas/SeletorCategoria';
+import { DIA_SEM_VENCIMENTO } from '@/src/domain/gerarLancamentos';
 
 export default function DetalheContaScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -51,6 +53,7 @@ export default function DetalheContaScreen() {
   const [nomeEditado, setNomeEditado] = useState('');
   const [valorEditadoCentavos, setValorEditadoCentavos] = useState(0);
   const [diaEditado, setDiaEditado] = useState('');
+  const [temVencimentoEditado, setTemVencimentoEditado] = useState(true);
   const [categoriaEditadaId, setCategoriaEditadaId] = useState<number | null>(null);
   const [categorias, setCategorias] = useState<Categoria[]>([]);
   const [salvando, setSalvando] = useState(false);
@@ -65,6 +68,7 @@ export default function DetalheContaScreen() {
         setNomeEditado(c.nome);
         setValorEditadoCentavos(c.valor_centavos);
         setDiaEditado(c.dia_vencimento ? String(c.dia_vencimento) : '');
+        setTemVencimentoEditado(c.sem_vencimento !== 1);
         setCategoriaEditadaId(c.categoria_id);
         setCategorias(await categoriasRepo.listarTodas(db));
 
@@ -101,7 +105,12 @@ export default function DetalheContaScreen() {
 
   const diaEditadoNum = parseInt(diaEditado, 10);
   const valorMudou = valorEditadoCentavos !== conta.valor_centavos;
-  const diaMudou = conta.tipo !== 'unica' && diaEditadoNum !== conta.dia_vencimento;
+  const recorrente = conta.tipo !== 'unica';
+  const semVencimentoEditado = !temVencimentoEditado;
+  const vencimentoMudou =
+    recorrente &&
+    (semVencimentoEditado !== (conta.sem_vencimento === 1) ||
+      (!semVencimentoEditado && diaEditadoNum !== conta.dia_vencimento));
 
   /**
    * Nome, categoria e dia valem para a conta toda (e para os lançamentos pendentes
@@ -114,7 +123,10 @@ export default function DetalheContaScreen() {
         nome: nomeEditado.trim(),
         categoria_id: categoriaEditadaId ?? conta.categoria_id,
       };
-      if (diaMudou) dados.dia_vencimento = diaEditadoNum;
+      if (vencimentoMudou) {
+        dados.sem_vencimento = semVencimentoEditado ? 1 : 0;
+        dados.dia_vencimento = semVencimentoEditado ? null : diaEditadoNum;
+      }
       if (valorMudou && valorNosProximos) dados.valor_centavos = valorEditadoCentavos;
 
       await contasRepo.atualizar(db, conta.id, dados);
@@ -132,8 +144,13 @@ export default function DetalheContaScreen() {
           );
         }
       }
-      if (diaMudou) {
-        await lancamentosRepo.atualizarDiaNaoPagosAPartirDe(db, conta.id, mesRef, diaEditadoNum);
+      if (vencimentoMudou) {
+        await lancamentosRepo.atualizarDiaNaoPagosAPartirDe(
+          db,
+          conta.id,
+          mesRef,
+          semVencimentoEditado ? DIA_SEM_VENCIMENTO : diaEditadoNum
+        );
       }
 
       setConta({ ...conta, ...dados });
@@ -156,7 +173,8 @@ export default function DetalheContaScreen() {
       return;
     }
     if (
-      conta.tipo !== 'unica' &&
+      recorrente &&
+      temVencimentoEditado &&
       (isNaN(diaEditadoNum) || diaEditadoNum < 1 || diaEditadoNum > 31)
     ) {
       Alert.alert('Atenção', 'Informe um dia de vencimento entre 1 e 31.');
@@ -358,7 +376,27 @@ export default function DetalheContaScreen() {
                   onChangeCentavos={setValorEditadoCentavos}
                   containerStyle={{ marginBottom: spacing.md }}
                 />
-                {conta.tipo !== 'unica' ? (
+                {recorrente ? (
+                  <View style={[styles.linhaSwitch, { marginBottom: spacing.md }]}>
+                    <Text
+                      style={{
+                        flex: 1,
+                        color: colors.text,
+                        fontFamily: typography.fontFamily.medium,
+                        fontSize: typography.fontSize.body,
+                      }}>
+                      Tem data de vencimento
+                    </Text>
+                    <Switch
+                      accessibilityLabel="Tem data de vencimento"
+                      value={temVencimentoEditado}
+                      onValueChange={setTemVencimentoEditado}
+                      trackColor={{ false: colors.surfaceVariant, true: colors.primaryLight }}
+                      thumbColor={temVencimentoEditado ? colors.primary : colors.textMuted}
+                    />
+                  </View>
+                ) : null}
+                {recorrente && temVencimentoEditado ? (
                   <CampoTexto
                     rotulo="Dia do vencimento (1 a 31)"
                     keyboardType="numeric"
@@ -408,7 +446,24 @@ export default function DetalheContaScreen() {
                     {formatarMoeda(conta.valor_centavos)}
                   </Text>
                 </View>
-                {conta.dia_vencimento ? (
+                {conta.sem_vencimento === 1 ? (
+                  <View style={{ alignItems: 'flex-end' }}>
+                    <Text
+                      style={[
+                        styles.rotuloInfo,
+                        { color: colors.textSecondary, fontFamily: typography.fontFamily.regular },
+                      ]}>
+                      Vencimento:
+                    </Text>
+                    <Text
+                      style={[
+                        styles.valorDestaque,
+                        { color: colors.text, fontFamily: typography.fontFamily.bold },
+                      ]}>
+                      Sem data
+                    </Text>
+                  </View>
+                ) : conta.dia_vencimento ? (
                   <View style={{ alignItems: 'flex-end' }}>
                     <Text
                       style={[
@@ -523,7 +578,9 @@ export default function DetalheContaScreen() {
                       fontSize: typography.fontSize.tiny,
                     },
                   ]}>
-                  Vencimento: {formatarData(item.vencimento)}
+                  {conta.sem_vencimento === 1
+                    ? 'Sem data de vencimento'
+                    : `Vencimento: ${formatarData(item.vencimento)}`}
                 </Text>
               </View>
               <View style={{ alignItems: 'flex-end' }}>
@@ -565,6 +622,10 @@ export default function DetalheContaScreen() {
 }
 
 const styles = StyleSheet.create({
+  linhaSwitch: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
   container: {
     flex: 1,
   },

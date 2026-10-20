@@ -151,6 +151,15 @@ describe('lancamentosRepo.garantirMes', () => {
     expect((await lancamentosRepo.listarPorConta(db, contaId))[0].vencimento).toBe('2026-02-28');
   });
 
+  it('conta sem vencimento fica no último dia do mês', async () => {
+    const db = await criarBanco();
+    const contaId = await criarConta(db, { dia_vencimento: null, sem_vencimento: 1 });
+
+    await lancamentosRepo.garantirMes(db, '2026-04');
+
+    expect((await lancamentosRepo.listarPorConta(db, contaId))[0].vencimento).toBe('2026-04-30');
+  });
+
   it('não cria antes do início nem depois do fim da conta', async () => {
     const db = await criarBanco();
     const contaId = await criarConta(db, { data_fim: '2026-03-31' });

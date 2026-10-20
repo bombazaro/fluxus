@@ -1,6 +1,6 @@
 import { SQLiteDatabase } from 'expo-sqlite';
 import { Conta, Lancamento, LancamentoComDetalhes } from '@/src/types';
-import { ajustarDiaDoMes } from '@/src/domain/gerarLancamentos';
+import { ajustarDiaDoMes, diaDeVencimento } from '@/src/domain/gerarLancamentos';
 import { redistribuirDivisao } from '@/src/domain/dividirConta';
 
 export const lancamentosRepo = {
@@ -194,7 +194,7 @@ export const lancamentosRepo = {
     );
 
     for (const c of contas) {
-      const vencimento = ajustarDiaDoMes(ano, mes, c.dia_vencimento || 1);
+      const vencimento = ajustarDiaDoMes(ano, mes, diaDeVencimento(c));
       const result = await db.runAsync(
         `INSERT INTO lancamentos (
           conta_id, mes_ref, vencimento, valor_centavos, pago, pago_em, parcela_numero

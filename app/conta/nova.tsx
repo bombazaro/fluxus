@@ -5,6 +5,7 @@ import {
   Pressable,
   ScrollView,
   StyleSheet,
+  Switch,
   Text,
   View,
 } from 'react-native';
@@ -27,7 +28,7 @@ import { pessoasRepo } from '@/src/db/repositorios/pessoasRepo';
 import { divisoesRepo } from '@/src/db/repositorios/divisoesRepo';
 import { gerarLancamentosParaConta } from '@/src/domain/gerarLancamentos';
 import { useMesStore, obterHojeIso, obterMesAtualIso } from '@/src/store/useMesStore';
-import { formatarMoeda } from '@/src/utils/formatadores';
+import { formatarMoeda, ehDataIsoValida } from '@/src/utils/formatadores';
 import { dividirContaPorIgual } from '@/src/domain/dividirConta';
 import { SeletorCategoria } from '@/src/components/contas/SeletorCategoria';
 
@@ -74,6 +75,7 @@ export default function NovaContaModal() {
   const [valorCentavos, setValorCentavos] = useState(0);
   const [diaVencimento, setDiaVencimento] = useState('10');
   const [dataUnica, setDataUnica] = useState(obterHojeIso());
+  const [temVencimento, setTemVencimento] = useState(true);
   const [parcelasTotal, setParcelasTotal] = useState('2');
   const [categoriaId, setCategoriaId] = useState<number | null>(null);
   const [compartilhada, setCompartilhada] = useState(false);
@@ -115,7 +117,8 @@ export default function NovaContaModal() {
   const parcelasNum = parseInt(parcelasTotal, 10);
 
   const diaValido =
-    tipo === 'unica' || (!isNaN(diaNum) && diaNum >= 1 && diaNum <= 31);
+    !temVencimento || tipo === 'unica' || (!isNaN(diaNum) && diaNum >= 1 && diaNum <= 31);
+  const dataUnicaValida = !temVencimento || tipo !== 'unica' || ehDataIsoValida(dataUnica);
   const parcelasValidas =
     tipo !== 'parcelada' || (!isNaN(parcelasNum) && parcelasNum >= 2);
   const nomeValido = nome.trim().length > 0;
@@ -123,7 +126,12 @@ export default function NovaContaModal() {
   const categoriaValida = !!categoriaId;
 
   const formularioValido =
-    nomeValido && valorValido && diaValido && parcelasValidas && categoriaValida;
+    nomeValido &&
+    valorValido &&
+    diaValido &&
+    dataUnicaValida &&
+    parcelasValidas &&
+    categoriaValida;
 
   const handleSalvar = async () => {
     if (!formularioValido || !categoriaId || salvando) return;
@@ -131,8 +139,14 @@ export default function NovaContaModal() {
 
     try {
       const mesAtual = obterMesAtualIso();
-      const dataInicio =
-        tipo === 'unica' ? dataUnica : `${mesAtual}-${String(diaNum).padStart(2, '0')}`;
+      // Sem vencimento: a conta começa no mês atual, sem dia certo
+      const dataInicio = !temVencimento
+        ? `${mesAtual}-01`
+        : tipo === 'unica'
+          ? dataUnica
+          : `${mesAtual}-${String(diaNum).padStart(2, '0')}`;
+      const diaVencimentoConta = tipo === 'unica' || !temVencimento ? null : diaNum;
+      const dataUnicaConta = tipo === 'unica' && temVencimento ? dataUnica : null;
 
       // Conta, lançamentos e divisões juntos: ou salva tudo, ou nada
       await db.withTransactionAsync(async () => {
@@ -141,14 +155,14 @@ export default function NovaContaModal() {
           categoria_id: categoriaId,
           tipo,
           valor_centavos: valorCentavos,
-          dia_vencimento: tipo === 'unica' ? null : diaNum,
-          data_unica: tipo === 'unica' ? dataUnica : null,
+          dia_vencimento: diaVencimentoConta,
+          data_unica: dataUnicaConta,
           parcelas_total: tipo === 'parcelada' ? parcelasNum : null,
           data_inicio: dataInicio,
           data_fim: null,
           ativa: 1,
           compartilhada: compartilhada ? 1 : 0,
-          sem_vencimento: 0,
+          sem_vencimento: temVencimento ? 0 : 1,
         });
 
         // Gera os lançamentos correspondentes
@@ -158,14 +172,14 @@ export default function NovaContaModal() {
           categoria_id: categoriaId,
           tipo,
           valor_centavos: valorCentavos,
-          dia_vencimento: tipo === 'unica' ? null : diaNum,
-          data_unica: tipo === 'unica' ? dataUnica : null,
+          dia_vencimento: diaVencimentoConta,
+          data_unica: dataUnicaConta,
           parcelas_total: tipo === 'parcelada' ? parcelasNum : null,
           data_inicio: dataInicio,
           data_fim: null,
           ativa: 1,
           compartilhada: compartilhada ? 1 : 0,
-          sem_vencimento: 0,
+          sem_vencimento: temVencimento ? 0 : 1,
         });
 
         for (const lp of lancamentosPrevistos) {
@@ -311,6 +325,40 @@ export default function NovaContaModal() {
             containerStyle={{ marginTop: spacing.base }}
           />
 
+          {/* Conta com ou sem data de vencimento */}
+          <View style={[styles.linhaSwitch, { marginTop: spacing.base }]}>
+            <View style={{ flex: 1, marginRight: spacing.sm }}>
+              <Text
+                style={{
+                  color: colors.text,
+                  fontFamily: typography.fontFamily.medium,
+                  fontSize: typography.fontSize.body,
+                }}>
+                Tem data de vencimento
+              </Text>
+              {!temVencimento ? (
+                <Text
+                  style={{
+                    color: colors.textSecondary,
+                    fontFamily: typography.fontFamily.regular,
+                    fontSize: typography.fontSize.caption,
+                    marginTop: 2,
+                  }}>
+                  {tipo === 'unica'
+                    ? 'Entra no mês atual, sem dia certo.'
+                    : 'Entra em cada mês, sem dia certo. Só fica atrasada se o mês acabar sem pagar.'}
+                </Text>
+              ) : null}
+            </View>
+            <Switch
+              accessibilityLabel="Tem data de vencimento"
+              value={temVencimento}
+              onValueChange={setTemVencimento}
+              trackColor={{ false: colors.surfaceVariant, true: colors.primaryLight }}
+              thumbColor={temVencimento ? colors.primary : colors.textMuted}
+            />
+          </View>
+
           {/* Campos dinâmicos por tipo */}
           {tipo === 'parcelada' ? (
             <View style={{ flexDirection: 'row', gap: spacing.base, marginTop: spacing.base }}>
@@ -323,22 +371,27 @@ export default function NovaContaModal() {
                   erro={!parcelasValidas ? 'Mínimo 2 parcelas' : undefined}
                 />
               </View>
-              <View style={{ flex: 1 }}>
-                <CampoTexto
-                  rotulo="Dia do vencimento *"
-                  keyboardType="numeric"
-                  value={diaVencimento}
-                  onChangeText={setDiaVencimento}
-                  erro={!diaValido ? 'Dia entre 1 e 31' : undefined}
-                />
-              </View>
+              {temVencimento ? (
+                <View style={{ flex: 1 }}>
+                  <CampoTexto
+                    rotulo="Dia do vencimento *"
+                    keyboardType="numeric"
+                    value={diaVencimento}
+                    onChangeText={setDiaVencimento}
+                    erro={!diaValido ? 'Dia entre 1 e 31' : undefined}
+                  />
+                </View>
+              ) : (
+                <View style={{ flex: 1 }} />
+              )}
             </View>
-          ) : tipo === 'unica' ? (
+          ) : !temVencimento ? null : tipo === 'unica' ? (
             <CampoTexto
               rotulo="Data de vencimento (AAAA-MM-DD) *"
               placeholder="Ex: 2026-05-15"
               value={dataUnica}
               onChangeText={setDataUnica}
+              erro={!dataUnicaValida ? 'Informe uma data válida, ex: 2026-05-15' : undefined}
               containerStyle={{ marginTop: spacing.base }}
               ajuda="Data no formato AAAA-MM-DD"
             />
@@ -525,6 +578,10 @@ const styles = StyleSheet.create({
     fontSize: 15,
   },
   tipoDescricao: {},
+  linhaSwitch: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
   compartilhadaRow: {
     flexDirection: 'row',
     alignItems: 'center',

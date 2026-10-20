@@ -5,7 +5,7 @@ import * as Haptics from 'expo-haptics';
 import { useTema } from '@/src/theme';
 import { LancamentoComDetalhes } from '@/src/types';
 import { Etiqueta } from '@/src/components/ui/Etiqueta';
-import { formatarData, formatarMoeda } from '@/src/utils/formatadores';
+import { formatarData, formatarMesAno, formatarMoeda } from '@/src/utils/formatadores';
 import { classificarSituacao } from '@/src/domain/classificarSituacao';
 import { obterHojeIso } from '@/src/store/useMesStore';
 
@@ -25,7 +25,8 @@ export function ItemConta({
   const situacao = classificarSituacao(
     lancamento.vencimento,
     lancamento.pago,
-    hojeIso
+    hojeIso,
+    lancamento.sem_vencimento === 1
   );
 
   const handleToggle = () => {
@@ -47,6 +48,8 @@ export function ItemConta({
   } else if (situacao === 'esta_semana') {
     etiquetaTexto = 'Esta semana';
     etiquetaTipo = 'alerta';
+  } else if (situacao === 'sem_vencimento') {
+    etiquetaTexto = 'Sem vencimento';
   }
 
   const valorExibido =
@@ -148,7 +151,11 @@ export function ItemConta({
               marginTop: 2,
             },
           ]}>
-          Venc. {formatarData(lancamento.vencimento)}
+          {lancamento.sem_vencimento === 1
+            ? situacao === 'atrasada'
+              ? `Não paga em ${formatarMesAno(lancamento.mes_ref)}`
+              : 'Sem data de vencimento'
+            : `Venc. ${formatarData(lancamento.vencimento)}`}
         </Text>
       </View>
 

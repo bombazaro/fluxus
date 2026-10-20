@@ -91,13 +91,15 @@ export default function ContasScreen() {
     const atrasadas: LancamentoComDetalhes[] = [];
     const estaSemana: LancamentoComDetalhes[] = [];
     const maisAdiante: LancamentoComDetalhes[] = [];
+    const semVencimento: LancamentoComDetalhes[] = [];
     const pagas: LancamentoComDetalhes[] = [];
 
     for (const l of lancamentosFiltrados) {
-      const sit = classificarSituacao(l.vencimento, l.pago, hojeIso);
+      const sit = classificarSituacao(l.vencimento, l.pago, hojeIso, l.sem_vencimento === 1);
       if (sit === 'paga') pagas.push(l);
       else if (sit === 'atrasada') atrasadas.push(l);
       else if (sit === 'esta_semana') estaSemana.push(l);
+      else if (sit === 'sem_vencimento') semVencimento.push(l);
       else maisAdiante.push(l);
     }
 
@@ -110,6 +112,9 @@ export default function ContasScreen() {
     }
     if (maisAdiante.length > 0) {
       resultado.push({ titulo: 'Mais adiante', situacao: 'mais_adiante', itens: maisAdiante });
+    }
+    if (semVencimento.length > 0) {
+      resultado.push({ titulo: 'Sem vencimento', situacao: 'sem_vencimento', itens: semVencimento });
     }
     if (pagas.length > 0) {
       resultado.push({ titulo: 'Pagas', situacao: 'paga', itens: pagas });

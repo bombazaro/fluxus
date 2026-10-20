@@ -108,3 +108,13 @@ export function formatarMesAnoAbrev(mesRef: string): string {
   const mesNome = MESES_ABREV[mesIndex] || mesStr;
   return `${mesNome}/${anoStr.slice(2)}`;
 }
+
+/**
+ * Confere se o texto é uma data real no formato AAAA-MM-DD (ex: recusa 2026-02-30).
+ */
+export function ehDataIsoValida(texto: string): boolean {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(texto)) return false;
+  const [ano, mes, dia] = texto.split('-').map(Number);
+  const data = new Date(ano, mes - 1, dia);
+  return data.getFullYear() === ano && data.getMonth() === mes - 1 && data.getDate() === dia;
+}

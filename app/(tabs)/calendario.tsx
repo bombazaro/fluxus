@@ -9,6 +9,7 @@ import { MarcaDia, montarCalendario } from '@/src/domain/montarCalendario';
 import { corDaMarca, GradeMensal, ROTULO_MARCA } from '@/src/components/calendario/GradeMensal';
 import { ListaDoDia } from '@/src/components/calendario/ListaDoDia';
 import { Cartao, SeletorMes } from '@/src/components/ui';
+import { ItemConta } from '@/src/components/contas/ItemConta';
 
 export default function CalendarioScreen() {
   const router = useRouter();
@@ -56,9 +57,16 @@ export default function CalendarioScreen() {
   const lancamentosDoDia = useMemo(
     () =>
       diaAberto
-        ? lancamentos.filter((l) => l.vencimento === diaAberto.dataIso)
+        ? lancamentos.filter(
+            (l) => l.sem_vencimento !== 1 && l.vencimento === diaAberto.dataIso
+          )
         : [],
     [lancamentos, diaAberto]
+  );
+
+  const lancamentosSemVencimento = useMemo(
+    () => lancamentos.filter((l) => l.sem_vencimento === 1),
+    [lancamentos]
   );
 
   const rendasDoDia = useMemo(() => {
@@ -133,6 +141,30 @@ export default function CalendarioScreen() {
             ))}
           </View>
         </Cartao>
+
+        {/* Contas sem data de vencimento não têm dia na grade */}
+        {lancamentosSemVencimento.length > 0 ? (
+          <View style={{ marginTop: spacing.xl }}>
+            <Text
+              style={{
+                color: colors.textSecondary,
+                fontFamily: typography.fontFamily.semiBold,
+                fontSize: typography.fontSize.caption,
+                letterSpacing: 1,
+                marginBottom: spacing.sm,
+              }}>
+              SEM DATA DE VENCIMENTO
+            </Text>
+            {lancamentosSemVencimento.map((l) => (
+              <ItemConta
+                key={l.id}
+                lancamento={l}
+                onPress={() => router.push(`/conta/${l.conta_id}`)}
+                onTogglePago={() => marcarPago(db, l.id, l.pago === 0)}
+              />
+            ))}
+          </View>
+        ) : null}
       </ScrollView>
 
       <ListaDoDia
