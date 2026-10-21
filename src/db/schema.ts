@@ -111,6 +111,15 @@ export const SCHEMA_V3 = `
   ALTER TABLE contas ADD COLUMN sem_vencimento INTEGER NOT NULL DEFAULT 0;
 `;
 
+// Versão 4: preferências do app (avisos, notificações, tema...) como chave e valor.
+// O valor é texto; a leitura e os valores padrão ficam em src/domain/configuracoes.ts.
+export const SCHEMA_V4 = `
+  CREATE TABLE IF NOT EXISTS configuracoes (
+    chave TEXT PRIMARY KEY,
+    valor TEXT NOT NULL
+  );
+`;
+
 export const CATEGORIAS_PADRAO = [
   { nome: 'Moradia', cor: '#0F766E', icone: 'home' },
   { nome: 'Alimentação', cor: '#EA580C', icone: 'fast-food' },

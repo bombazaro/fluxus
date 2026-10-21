@@ -6,3 +6,4 @@ export * from './reservaRepo';
 export * from './pessoasRepo';
 export * from './divisoesRepo';
 export * from './backupRepo';
+export * from './configuracoesRepo';

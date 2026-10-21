@@ -43,6 +43,7 @@ const TABELAS: { nome: string; colunas: string[]; padroes?: Record<string, Valor
   },
   { nome: 'reserva_meta', colunas: ['id', 'valor_meta_centavos', 'tipo_meta', 'meses_gastos'] },
   { nome: 'reserva_aportes', colunas: ['id', 'valor_centavos', 'data', 'observacao'] },
+  { nome: 'configuracoes', colunas: ['chave', 'valor'] },
 ];
 
 export const backupRepo = {
