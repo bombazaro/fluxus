@@ -1,5 +1,6 @@
 import { SQLiteDatabase } from 'expo-sqlite';
 import { ReservaAporte, ReservaMeta } from '@/src/types';
+import { adicionarMeses } from '@/src/domain/gerarLancamentos';
 
 export const reservaRepo = {
   async obterMeta(db: SQLiteDatabase): Promise<ReservaMeta | null> {
@@ -50,6 +51,29 @@ export const reservaRepo = {
 
   async excluirAporte(db: SQLiteDatabase, id: number): Promise<void> {
     await db.runAsync('DELETE FROM reserva_aportes WHERE id = ?;', [id]);
+  },
+
+  /**
+   * Gasto mensal médio dos últimos meses com contas (até o mês atual), para a
+   * meta "X meses de gastos". Nas contas divididas, conta só a parte do usuário.
+   */
+  async gastoMensalMedio(db: SQLiteDatabase, mesAtual: string, meses = 3): Promise<number> {
+    const row = await db.getFirstAsync<{ media: number | null }>(
+      `SELECT AVG(total) AS media FROM (
+         SELECT l.mes_ref, SUM(
+           CASE WHEN EXISTS (SELECT 1 FROM divisoes d WHERE d.lancamento_id = l.id)
+             THEN (SELECT COALESCE(SUM(d.valor_centavos), 0) FROM divisoes d
+                   INNER JOIN pessoas p ON p.id = d.pessoa_id
+                   WHERE d.lancamento_id = l.id AND p.nome = 'Eu')
+             ELSE l.valor_centavos END
+         ) AS total
+         FROM lancamentos l
+         WHERE l.mes_ref BETWEEN ? AND ?
+         GROUP BY l.mes_ref
+       );`,
+      [adicionarMeses(mesAtual, -(meses - 1)), mesAtual]
+    );
+    return Math.round(row?.media ?? 0);
   },
 
   async obterTotalGuardado(db: SQLiteDatabase): Promise<number> {

@@ -9,6 +9,7 @@ import { divisoesRepo } from '../src/db/repositorios/divisoesRepo';
 import { pessoasRepo } from '../src/db/repositorios/pessoasRepo';
 import { backupRepo } from '../src/db/repositorios/backupRepo';
 import { previsaoRepo } from '../src/db/repositorios/previsaoRepo';
+import { reservaRepo } from '../src/db/repositorios/reservaRepo';
 import { Conta } from '../src/types';
 
 async function criarConta(
@@ -401,5 +402,40 @@ describe('previsaoRepo', () => {
     expect(await previsaoRepo.ultimasParcelas(db)).toEqual([
       { conta_id: celular, nome: 'Celular', ultimo_mes: '2026-12', valor_parcela_centavos: 10000, parcelas_restantes: 2 },
     ]);
+  });
+});
+
+describe('reservaRepo', () => {
+  it('gasto mensal médio dos meses com contas, só a minha parte nas divididas', async () => {
+    const db = await criarBanco();
+    const internet = await criarConta(db);
+    await criarLancamento(db, internet, '2026-09', 1, 100000);
+    await criarLancamento(db, internet, '2026-10', 0, 200000);
+    // Fora da janela de 3 meses
+    await criarLancamento(db, internet, '2026-06', 1, 900000);
+
+    const aluguel = await criarConta(db, { compartilhada: 1 });
+    const l = await criarLancamento(db, aluguel, '2026-10', 0, 100000);
+    const anaId = await pessoasRepo.criar(db, 'Ana');
+    await divisoesRepo.salvarDivisoes(db, l, [
+      { pessoa_id: 1, valor_centavos: 40000 },
+      { pessoa_id: anaId, valor_centavos: 60000 },
+    ]);
+
+    // Setembro 1000; outubro 2000 + 400 (minha parte) = 2400; média 1700
+    expect(await reservaRepo.gastoMensalMedio(db, '2026-10')).toBe(170000);
+  });
+
+  it('meta e aportes', async () => {
+    const db = await criarBanco();
+    expect(await reservaRepo.obterMeta(db)).toBeNull();
+    await reservaRepo.definirMeta(db, 0, 'meses_gastos', 6);
+    await reservaRepo.definirMeta(db, 500000, 'fixo', 6);
+    expect(await reservaRepo.obterMeta(db)).toMatchObject({ valor_meta_centavos: 500000, tipo_meta: 'fixo' });
+
+    await reservaRepo.adicionarAporte(db, 10000, '2026-10-01', 'Primeiro');
+    await reservaRepo.adicionarAporte(db, -3000, '2026-10-02');
+    expect(await reservaRepo.obterTotalGuardado(db)).toBe(7000);
+    expect((await reservaRepo.listarAportes(db)).map((a) => a.valor_centavos)).toEqual([-3000, 10000]);
   });
 });
