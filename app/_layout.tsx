@@ -103,6 +103,7 @@ export default function RootLayout() {
           }}
         />
         <Stack.Screen name="configuracoes" options={{ headerShown: false }} />
+        <Stack.Screen name="comparacao" options={{ headerShown: false }} />
         <Stack.Screen
           name="boas-vindas"
           options={{ headerShown: false, gestureEnabled: false }}
