@@ -17,6 +17,11 @@ export const useConfigStore = create<ConfigState>((set, get) => ({
 
   carregar: async (db) => {
     const config = await configuracoesRepo.obter(db);
+    // Quem já usava o app antes das boas-vindas existirem não precisa vê-las
+    if (!config.onboardingConcluido && (await configuracoesRepo.temDados(db))) {
+      config.onboardingConcluido = true;
+      await configuracoesRepo.salvar(db, { onboardingConcluido: true });
+    }
     set({ config, carregada: true });
   },
 

@@ -13,6 +13,14 @@ export const configuracoesRepo = {
     return lerConfiguracoes(linhas);
   },
 
+  /** Se já há alguma conta ou renda cadastrada. */
+  async temDados(db: SQLiteDatabase): Promise<boolean> {
+    const row = await db.getFirstAsync<{ tem: number }>(
+      `SELECT EXISTS (SELECT 1 FROM contas) OR EXISTS (SELECT 1 FROM rendas) AS tem;`
+    );
+    return row?.tem === 1;
+  },
+
   async salvar(db: SQLiteDatabase, parcial: Partial<Configuracoes>): Promise<void> {
     await db.withTransactionAsync(async () => {
       for (const { chave, valor } of serializarConfiguracoes(parcial)) {

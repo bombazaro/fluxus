@@ -63,6 +63,15 @@ describe('configuracoesRepo', () => {
     });
   });
 
+  it('sabe se já há contas ou rendas cadastradas', async () => {
+    const db = await criarBanco();
+    expect(await configuracoesRepo.temDados(db)).toBe(false);
+    await db.runAsync(
+      "INSERT INTO rendas (nome, valor_centavos, dia_recebimento, tipo, ativa, criado_em) VALUES ('Salário', 300000, 30, 'fixa', 1, '2026-10-01');"
+    );
+    expect(await configuracoesRepo.temDados(db)).toBe(true);
+  });
+
   it('as configurações vão junto no backup', async () => {
     const origem = await criarBanco();
     await configuracoesRepo.salvar(origem, { tema: 'escuro' });
