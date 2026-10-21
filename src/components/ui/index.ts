@@ -7,3 +7,7 @@ export * from './EstadoVazio';
 export * from './BarraProgresso';
 export * from './Fab';
 export * from './SeletorMes';
+export * from './CabecalhoTela';
+export * from './GrupoOpcoes';
+export * from './LinhaSwitch';
+export * from './TituloSecao';

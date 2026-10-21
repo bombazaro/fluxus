@@ -27,6 +27,7 @@ import { contasRepo } from '@/src/db/repositorios/contasRepo';
 import { categoriasRepo } from '@/src/db/repositorios/categoriasRepo';
 import { lancamentosRepo } from '@/src/db/repositorios/lancamentosRepo';
 import { useMesStore } from '@/src/store/useMesStore';
+import { useConfigStore } from '@/src/store/useConfigStore';
 import { formatarData, formatarMesAno, formatarMoeda } from '@/src/utils/formatadores';
 import { calcularMediaLancamentos, SugestaoValor } from '@/src/domain/sugerirValor';
 import { SeletorCategoria } from '@/src/components/contas/SeletorCategoria';
@@ -41,6 +42,7 @@ export default function DetalheContaScreen() {
 
   const mesRef = useMesStore((s) => s.mesRef);
   const carregarMes = useMesStore((s) => s.carregarMes);
+  const mesesMedia = useConfigStore((s) => s.config.mesesMedia);
 
   const [conta, setConta] = useState<Conta | null>(null);
   const [categoria, setCategoria] = useState<Categoria | null>(null);
@@ -82,16 +84,16 @@ export default function DetalheContaScreen() {
         setHistorico(hist);
 
         if (c.tipo === 'variavel') {
-          const pagos = await lancamentosRepo.listarPagosDaConta(db, contaId, 3);
+          const pagos = await lancamentosRepo.listarPagosDaConta(db, contaId, mesesMedia);
           setSugestaoMedia({
-            valorSugeridoCentavos: calcularMediaLancamentos(pagos, 3),
+            valorSugeridoCentavos: calcularMediaLancamentos(pagos, mesesMedia),
             mesesConsiderados: pagos.length,
           });
         }
       }
     }
     carregarDetalhes();
-  }, [contaId, mesRef, db]);
+  }, [contaId, mesRef, db, mesesMedia]);
 
   if (!conta) {
     return (

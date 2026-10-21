@@ -15,6 +15,12 @@ const ITENS: { titulo: string; descricao: string; icone: IconeIonicons; rota: Hr
     rota: '/rendas',
   },
   {
+    titulo: 'Configurações',
+    descricao: 'Tema, lembretes, avisos e cálculos',
+    icone: 'settings-outline',
+    rota: '/configuracoes',
+  },
+  {
     titulo: 'Backup dos dados',
     descricao: 'Exportar e importar, ou passar para outro celular',
     icone: 'cloud-upload-outline',
