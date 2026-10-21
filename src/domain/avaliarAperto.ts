@@ -8,61 +8,66 @@ export interface ResultadoAperto {
   percentual: number;
 }
 
-export interface ConfiguracaoAperto {
-  limiteAtencaoPercentual?: number; // padrão 80 (80%)
-  limiteApertoPercentual?: number;   // padrão 100 (100%)
+export interface EntradaAperto {
+  totalContasCentavos: number;
+  rendaTotalCentavos: number;
+  /** O que sobrou do mês anterior (entra como dinheiro disponível). */
+  saldoInicialCentavos?: number;
+  /** Dia do mês com o menor saldo, vindo do saldoPorDia. */
+  menorSaldo?: { valorCentavos: number; dia: number };
+  /** % do dinheiro do mês a partir do qual o aviso fica amarelo (padrão 80). */
+  limiteAtencaoPercentual?: number;
 }
 
 /**
- * Avalia o nível de aperto financeiro do mês baseado no total de contas e na renda total.
- * Retorna o nível de risco e mensagem clara em português.
+ * Avalia o aperto do mês, do mais grave para o mais leve:
+ * - 'aperto' (vermelho): as contas passam do dinheiro do mês (renda + sobra anterior);
+ * - 'critico' (vermelho): o mês fecha, mas em algum dia o saldo fica negativo
+ *   porque as contas vencem antes de a renda cair;
+ * - 'atencao' (amarelo): as contas passam do limite (80%) do dinheiro do mês;
+ * - 'normal'.
  */
-export function avaliarAperto(
-  totalContasCentavos: number,
-  rendaTotalCentavos: number,
-  config?: ConfiguracaoAperto
-): ResultadoAperto {
-  const limiteAtencao = (config?.limiteAtencaoPercentual ?? 80) / 100;
-  const limiteAperto = (config?.limiteApertoPercentual ?? 100) / 100;
+export function avaliarAperto(entrada: EntradaAperto): ResultadoAperto {
+  const {
+    totalContasCentavos: contas,
+    rendaTotalCentavos: renda,
+    saldoInicialCentavos = 0,
+    menorSaldo,
+    limiteAtencaoPercentual = 80,
+  } = entrada;
 
-  if (rendaTotalCentavos === 0) {
-    if (totalContasCentavos === 0) {
-      return {
-        nivel: 'normal',
-        mensagem: 'Sem despesas cadastradas',
-        percentual: 0,
-      };
-    }
-    return {
-      nivel: 'critico',
-      mensagem: `Você possui ${formatarMoeda(totalContasCentavos)} em contas sem renda cadastrada`,
-      percentual: 1,
-    };
+  if (contas === 0) {
+    return { nivel: 'normal', mensagem: 'Sem despesas cadastradas', percentual: 0 };
   }
 
-  const percentual = totalContasCentavos / rendaTotalCentavos;
+  const disponivel = renda + saldoInicialCentavos;
+  const percentual = disponivel > 0 ? contas / disponivel : 1;
 
-  if (percentual > limiteAperto) {
-    const diferenca = totalContasCentavos - rendaTotalCentavos;
+  if (contas > disponivel) {
     return {
       nivel: 'aperto',
-      mensagem: `Faltam ${formatarMoeda(diferenca)} para fechar o mês no positivo`,
+      mensagem: `Faltam ${formatarMoeda(contas - disponivel)} para fechar o mês`,
       percentual,
     };
   }
 
-  if (percentual >= limiteAtencao) {
-    const percentualFormatado = Math.round(percentual * 100);
+  if (menorSaldo && menorSaldo.valorCentavos < 0) {
+    return {
+      nivel: 'critico',
+      mensagem: `No dia ${String(menorSaldo.dia).padStart(2, '0')} faltam ${formatarMoeda(
+        -menorSaldo.valorCentavos
+      )}: as contas vencem antes de a renda cair`,
+      percentual,
+    };
+  }
+
+  if (percentual * 100 >= limiteAtencaoPercentual) {
     return {
       nivel: 'atencao',
-      mensagem: `Atenção: suas contas já consomem ${percentualFormatado}% da sua renda`,
+      mensagem: `Atenção: suas contas já consomem ${Math.round(percentual * 100)}% do dinheiro do mês`,
       percentual,
     };
   }
 
-  return {
-    nivel: 'normal',
-    mensagem: 'Contas sob controle neste mês',
-    percentual,
-  };
+  return { nivel: 'normal', mensagem: 'Contas sob controle neste mês', percentual };
 }
