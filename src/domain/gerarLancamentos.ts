@@ -55,6 +55,25 @@ export function diaDeVencimento(
 }
 
 /**
+ * Sugere o mês da primeira cobrança de uma conta nova (formato YYYY-MM).
+ * Parte do mês que a pessoa está vendo, nunca antes do mês atual, e pula para o
+ * mês seguinte se o vencimento já passou (senão a conta nasceria atrasada).
+ * Conta sem vencimento (dia null) vence no último dia, então não pula.
+ */
+export function sugerirMesInicio(
+  mesVisto: string,
+  dia: number | null,
+  hojeIso: string
+): string {
+  const mesAtual = hojeIso.slice(0, 7);
+  const inicio = mesVisto < mesAtual ? mesAtual : mesVisto;
+  if (dia === null) return inicio;
+
+  const [ano, mes] = inicio.split('-').map(Number);
+  return ajustarDiaDoMes(ano, mes, dia) < hojeIso ? adicionarMeses(inicio, 1) : inicio;
+}
+
+/**
  * Gera os lançamentos previstos para uma conta recém-cadastrada.
  * Conta sem data de vencimento vence no último dia de cada mês.
  * - 'unica': gera 1 lançamento

@@ -26,9 +26,19 @@ import { contasRepo } from '@/src/db/repositorios/contasRepo';
 import { lancamentosRepo } from '@/src/db/repositorios/lancamentosRepo';
 import { pessoasRepo } from '@/src/db/repositorios/pessoasRepo';
 import { divisoesRepo } from '@/src/db/repositorios/divisoesRepo';
-import { gerarLancamentosParaConta } from '@/src/domain/gerarLancamentos';
+import {
+  adicionarMeses,
+  ajustarDiaDoMes,
+  gerarLancamentosParaConta,
+  sugerirMesInicio,
+} from '@/src/domain/gerarLancamentos';
 import { useMesStore, obterHojeIso, obterMesAtualIso } from '@/src/store/useMesStore';
-import { formatarMoeda, ehDataIsoValida } from '@/src/utils/formatadores';
+import {
+  formatarData,
+  formatarMesAno,
+  formatarMoeda,
+  ehDataIsoValida,
+} from '@/src/utils/formatadores';
 import { dividirContaPorIgual } from '@/src/domain/dividirConta';
 import { SeletorCategoria } from '@/src/components/contas/SeletorCategoria';
 
@@ -64,17 +74,27 @@ const TIPOS_CONTA: {
   },
 ];
 
+/** Data inicial da conta única: hoje, ou o mesmo dia no mês que está aberto. */
+function dataPadraoNoMes(mesRef: string): string {
+  const hoje = obterHojeIso();
+  if (mesRef === obterMesAtualIso()) return hoje;
+  const [ano, mes] = mesRef.split('-').map(Number);
+  return ajustarDiaDoMes(ano, mes, parseInt(hoje.slice(8, 10), 10));
+}
+
 export default function NovaContaModal() {
   const router = useRouter();
   const db = useSQLiteContext();
   const { colors, typography, spacing, radii } = useTema();
   const carregarMes = useMesStore((s) => s.carregarMes);
+  // Mês aberto na tela de trás: a conta nova começa nele (ou logo depois)
+  const mesVisto = useMesStore((s) => s.mesRef);
 
   const [tipo, setTipo] = useState<TipoConta>('fixa');
   const [nome, setNome] = useState('');
   const [valorCentavos, setValorCentavos] = useState(0);
   const [diaVencimento, setDiaVencimento] = useState('10');
-  const [dataUnica, setDataUnica] = useState(obterHojeIso());
+  const [dataUnica, setDataUnica] = useState(() => dataPadraoNoMes(mesVisto));
   const [temVencimento, setTemVencimento] = useState(true);
   const [parcelasTotal, setParcelasTotal] = useState('2');
   const [categoriaId, setCategoriaId] = useState<number | null>(null);
@@ -84,6 +104,8 @@ export default function NovaContaModal() {
   const [pessoas, setPessoas] = useState<Pessoa[]>([]);
   const [pessoasSelecionadas, setPessoasSelecionadas] = useState<number[]>([]);
   const [salvando, setSalvando] = useState(false);
+  // null = segue a sugestão; muda quando a pessoa usa as setas
+  const [mesInicioEscolhido, setMesInicioEscolhido] = useState<string | null>(null);
 
   useEffect(() => {
     async function carregarDados() {
@@ -133,18 +155,27 @@ export default function NovaContaModal() {
     parcelasValidas &&
     categoriaValida;
 
+  // Mês da primeira cobrança (fixa, variável, parcelada ou conta sem vencimento)
+  const usaMesInicio = tipo !== 'unica' || !temVencimento;
+  const diaParaSugestao = temVencimento && diaValido ? diaNum : null;
+  const mesInicio =
+    mesInicioEscolhido ?? sugerirMesInicio(mesVisto, diaParaSugestao, obterHojeIso());
+  const [anoInicio, mesInicioNum] = mesInicio.split('-').map(Number);
+  const primeiroVencimento =
+    temVencimento && diaValido ? ajustarDiaDoMes(anoInicio, mesInicioNum, diaNum) : null;
+  const primeiroJaVenceu = primeiroVencimento !== null && primeiroVencimento < obterHojeIso();
+
   const handleSalvar = async () => {
     if (!formularioValido || !categoriaId || salvando) return;
     setSalvando(true);
 
     try {
-      const mesAtual = obterMesAtualIso();
-      // Sem vencimento: a conta começa no mês atual, sem dia certo
+      // Sem vencimento: a conta começa no mês escolhido, sem dia certo
       const dataInicio = !temVencimento
-        ? `${mesAtual}-01`
+        ? `${mesInicio}-01`
         : tipo === 'unica'
           ? dataUnica
-          : `${mesAtual}-${String(diaNum).padStart(2, '0')}`;
+          : `${mesInicio}-${String(diaNum).padStart(2, '0')}`;
       const diaVencimentoConta = tipo === 'unica' || !temVencimento ? null : diaNum;
       const dataUnicaConta = tipo === 'unica' && temVencimento ? dataUnica : null;
 
@@ -345,7 +376,7 @@ export default function NovaContaModal() {
                     marginTop: 2,
                   }}>
                   {tipo === 'unica'
-                    ? 'Entra no mês atual, sem dia certo.'
+                    ? 'Entra no mês escolhido, sem dia certo.'
                     : 'Entra em cada mês, sem dia certo. Só fica atrasada se o mês acabar sem pagar.'}
                 </Text>
               ) : null}
@@ -406,6 +437,68 @@ export default function NovaContaModal() {
               ajuda="Em meses com menos dias, vence no último dia do mês"
             />
           )}
+
+          {/* Mês da primeira cobrança */}
+          {usaMesInicio ? (
+            <View style={{ marginTop: spacing.base }}>
+              <Text
+                style={{
+                  color: colors.text,
+                  fontFamily: typography.fontFamily.medium,
+                  fontSize: typography.fontSize.body,
+                }}>
+                {tipo === 'parcelada' ? 'Primeira parcela em' : 'Primeira cobrança em'}
+              </Text>
+              <View
+                style={[
+                  styles.linhaMesInicio,
+                  {
+                    marginTop: spacing.xs,
+                    backgroundColor: colors.surface,
+                    borderColor: colors.border,
+                    borderRadius: radii.button,
+                  },
+                ]}>
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel="Mês anterior"
+                  onPress={() => setMesInicioEscolhido(adicionarMeses(mesInicio, -1))}
+                  hitSlop={12}
+                  style={styles.setaMes}>
+                  <Ionicons name="chevron-back" size={22} color={colors.text} />
+                </Pressable>
+                <Text
+                  style={{
+                    color: colors.text,
+                    fontFamily: typography.fontFamily.semiBold,
+                    fontSize: typography.fontSize.body,
+                  }}>
+                  {formatarMesAno(mesInicio)}
+                </Text>
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel="Próximo mês"
+                  onPress={() => setMesInicioEscolhido(adicionarMeses(mesInicio, 1))}
+                  hitSlop={12}
+                  style={styles.setaMes}>
+                  <Ionicons name="chevron-forward" size={22} color={colors.text} />
+                </Pressable>
+              </View>
+              <Text
+                style={{
+                  color: primeiroJaVenceu ? colors.danger : colors.textSecondary,
+                  fontFamily: typography.fontFamily.regular,
+                  fontSize: typography.fontSize.caption,
+                  marginTop: spacing.xs,
+                }}>
+                {primeiroVencimento === null
+                  ? 'Vence no fim do mês.'
+                  : primeiroJaVenceu
+                    ? `Vence em ${formatarData(primeiroVencimento)}, que já passou: vai aparecer como atrasada.`
+                    : `Vence em ${formatarData(primeiroVencimento)}.`}
+              </Text>
+            </View>
+          ) : null}
 
           {/* Seletor de Categoria */}
           <Text
@@ -578,6 +671,15 @@ const styles = StyleSheet.create({
     fontSize: 15,
   },
   tipoDescricao: {},
+  linhaMesInicio: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    borderWidth: 1,
+  },
+  setaMes: {
+    padding: 10,
+  },
   linhaSwitch: {
     flexDirection: 'row',
     alignItems: 'center',
