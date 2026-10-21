@@ -12,6 +12,7 @@ import { SQLiteProvider } from 'expo-sqlite';
 import { executarMigracoes } from '@/src/db/migrations';
 import { Pressable, StyleSheet, Text, useColorScheme, View } from 'react-native';
 import { darkColors, lightColors } from '@/src/theme/colors';
+import { Inicializacao } from '@/src/components/Inicializacao';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -76,6 +77,7 @@ export default function RootLayout() {
     <SQLiteProvider
       databaseName="fluxus.db"
       onInit={executarMigracoes}>
+      <Inicializacao />
       <Stack>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen
@@ -99,6 +101,11 @@ export default function RootLayout() {
             title: 'Rendas',
             headerShown: false,
           }}
+        />
+        <Stack.Screen name="configuracoes" options={{ headerShown: false }} />
+        <Stack.Screen
+          name="boas-vindas"
+          options={{ headerShown: false, gestureEnabled: false }}
         />
         <Stack.Screen
           name="backup"
