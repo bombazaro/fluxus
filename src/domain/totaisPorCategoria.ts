@@ -10,14 +10,17 @@ export interface TotalCategoria {
 
 /**
  * Soma os lançamentos do mês por categoria (só a parte do usuário nas
- * compartilhadas), do maior gasto para o menor.
+ * compartilhadas, se contarSoMinhaParte), do maior gasto para o menor.
  */
-export function totaisPorCategoria(lancamentos: LancamentoComDetalhes[]): TotalCategoria[] {
+export function totaisPorCategoria(
+  lancamentos: LancamentoComDetalhes[],
+  contarSoMinhaParte = true
+): TotalCategoria[] {
   const mapa = new Map<number, TotalCategoria>();
 
   for (const l of lancamentos) {
     const valor =
-      l.compartilhada === 1 && typeof l.minha_parte_centavos === 'number'
+      contarSoMinhaParte && l.compartilhada === 1 && typeof l.minha_parte_centavos === 'number'
         ? l.minha_parte_centavos
         : l.valor_centavos;
 
