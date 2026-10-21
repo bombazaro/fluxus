@@ -8,6 +8,7 @@ import { rendasRepo } from '../src/db/repositorios/rendasRepo';
 import { divisoesRepo } from '../src/db/repositorios/divisoesRepo';
 import { pessoasRepo } from '../src/db/repositorios/pessoasRepo';
 import { backupRepo } from '../src/db/repositorios/backupRepo';
+import { previsaoRepo } from '../src/db/repositorios/previsaoRepo';
 import { Conta } from '../src/types';
 
 async function criarConta(
@@ -360,5 +361,45 @@ describe('backupRepo', () => {
     await backupRepo.importarTudo(destino, backup);
 
     expect((await rendasRepo.listarTodas(destino))[0]).toMatchObject({ nome: '13º', mes_ref: null });
+  });
+});
+
+describe('previsaoRepo', () => {
+  it('carrega lançamentos com a minha parte, a média das variáveis e a fração dividida', async () => {
+    const db = await criarBanco();
+    const anaId = await pessoasRepo.criar(db, 'Ana');
+
+    // Conta dividida meio a meio
+    const aluguel = await criarConta(db, { nome: 'Aluguel', compartilhada: 1, valor_centavos: 200000 });
+    const lAluguel = await criarLancamento(db, aluguel, '2026-11', 0, 200000);
+    await divisoesRepo.salvarDivisoes(db, lAluguel, [
+      { pessoa_id: 1, valor_centavos: 100000 },
+      { pessoa_id: anaId, valor_centavos: 100000 },
+    ]);
+
+    // Variável com dois meses pagos (100 e 200)
+    const luz = await criarConta(db, { nome: 'Luz', tipo: 'variavel' });
+    await criarLancamento(db, luz, '2026-09', 1, 10000);
+    await criarLancamento(db, luz, '2026-10', 1, 20000);
+
+    const dados = await previsaoRepo.carregar(db, '2026-11', 6, 3);
+
+    expect(dados.lancamentos).toEqual([
+      { id: lAluguel, conta_id: aluguel, mes_ref: '2026-11', valor_centavos: 200000, minha_parte_centavos: 100000 },
+    ]);
+    expect(dados.mediaVariaveis[luz]).toBe(15000);
+    expect(dados.fracaoMinhaParte[aluguel]).toBe(0.5);
+  });
+
+  it('lista a última parcela de cada parcelamento', async () => {
+    const db = await criarBanco();
+    const celular = await criarConta(db, { nome: 'Celular', tipo: 'parcelada', parcelas_total: 3 });
+    await criarLancamento(db, celular, '2026-10', 1);
+    await criarLancamento(db, celular, '2026-11', 0);
+    await criarLancamento(db, celular, '2026-12', 0);
+
+    expect(await previsaoRepo.ultimasParcelas(db)).toEqual([
+      { conta_id: celular, nome: 'Celular', ultimo_mes: '2026-12', valor_parcela_centavos: 10000, parcelas_restantes: 2 },
+    ]);
   });
 });
