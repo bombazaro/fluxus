@@ -118,3 +118,14 @@ export function ehDataIsoValida(texto: string): boolean {
   const data = new Date(ano, mes - 1, dia);
   return data.getFullYear() === ano && data.getMonth() === mes - 1 && data.getDate() === dia;
 }
+
+/**
+ * Valor curto para rótulos de gráfico: "R$ 450", "R$ 2,9 mil", "−R$ 1,2 mil".
+ */
+export function formatarMoedaCurta(centavos: number): string {
+  const reais = Math.round(Math.abs(centavos) / 100);
+  const sinal = centavos < 0 ? '−' : '';
+  if (reais < 1000) return `${sinal}R$ ${reais}`;
+  const mil = (reais / 1000).toFixed(reais < 10000 ? 1 : 0).replace('.', ',').replace(/,0$/, '');
+  return `${sinal}R$ ${mil} mil`;
+}
