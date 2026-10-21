@@ -4,9 +4,21 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTema } from '@/src/theme';
 import { Cartao } from '@/src/components/ui';
 import { ResultadoSaldoPorDia } from '@/src/domain/saldoPorDia';
+import { formatarMesAno, formatarMoeda } from '@/src/utils/formatadores';
+
+export interface CartaoMenorSaldoProps {
+  saldoPorDia: ResultadoSaldoPorDia;
+  /** Sobra do mês anterior com que o mês começa (0 = não mostra). */
+  saldoInicialCentavos: number;
+  mesAnterior: string;
+}
 
 /** Linha do tempo do saldo resumida: o dia do mês em que o saldo fica mais baixo. */
-export function CartaoMenorSaldo({ saldoPorDia }: { saldoPorDia: ResultadoSaldoPorDia }) {
+export function CartaoMenorSaldo({
+  saldoPorDia,
+  saldoInicialCentavos,
+  mesAnterior,
+}: CartaoMenorSaldoProps) {
   const { colors, typography, spacing } = useTema();
   const negativo = saldoPorDia.menorSaldoCentavos < 0;
 
@@ -47,6 +59,18 @@ export function CartaoMenorSaldo({ saldoPorDia }: { saldoPorDia: ResultadoSaldoP
             }}>
             {saldoPorDia.mensagemAperto}
           </Text>
+          {saldoInicialCentavos > 0 ? (
+            <Text
+              style={{
+                color: colors.textMuted,
+                fontFamily: typography.fontFamily.regular,
+                fontSize: 12,
+                marginTop: 4,
+              }}>
+              O mês começa com {formatarMoeda(saldoInicialCentavos)} que sobraram de{' '}
+              {formatarMesAno(mesAnterior).split(' ')[0].toLowerCase()}.
+            </Text>
+          ) : null}
         </View>
       </View>
     </Cartao>

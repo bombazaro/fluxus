@@ -17,6 +17,8 @@ import { GastosPorCategoria } from '@/src/components/home/GastosPorCategoria';
 import { avaliarAperto } from '@/src/domain/avaliarAperto';
 import { calcularSaldoPorDia } from '@/src/domain/saldoPorDia';
 import { totaisPorCategoria } from '@/src/domain/totaisPorCategoria';
+import { adicionarMeses } from '@/src/domain/gerarLancamentos';
+import { useConfigStore } from '@/src/store/useConfigStore';
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -28,12 +30,14 @@ export default function HomeScreen() {
     lancamentos,
     rendas,
     resumo,
+    saldoInicial,
     carregando,
     erro,
     trocarMes,
     irParaHoje,
     carregarMes,
     marcarPago,
+    setOrdenarPorValor,
   } = useMesStore();
 
   useEffect(() => {
@@ -50,13 +54,24 @@ export default function HomeScreen() {
 
   const categoriasTotais = useMemo(() => totaisPorCategoria(lancamentos), [lancamentos]);
 
-  const aperto = useMemo(() => {
-    return avaliarAperto(resumo.totalContas, resumo.rendaTotal);
-  }, [resumo.totalContas, resumo.rendaTotal]);
+  const limiteAtencaoPercentual = useConfigStore((s) => s.config.limiteAtencaoPercentual);
 
   const saldoPorDia = useMemo(() => {
-    return calcularSaldoPorDia(mesRef, lancamentos, rendas);
-  }, [mesRef, lancamentos, rendas]);
+    return calcularSaldoPorDia(mesRef, lancamentos, rendas, saldoInicial);
+  }, [mesRef, lancamentos, rendas, saldoInicial]);
+
+  const aperto = useMemo(() => {
+    return avaliarAperto({
+      totalContasCentavos: resumo.totalContas,
+      rendaTotalCentavos: resumo.rendaTotal,
+      saldoInicialCentavos: saldoInicial,
+      menorSaldo:
+        rendas.length > 0 || saldoInicial > 0
+          ? { valorCentavos: saldoPorDia.menorSaldoCentavos, dia: saldoPorDia.diaMenorSaldo }
+          : undefined,
+      limiteAtencaoPercentual,
+    });
+  }, [resumo, rendas.length, saldoInicial, saldoPorDia, limiteAtencaoPercentual]);
 
   return (
     <SafeAreaView
@@ -79,13 +94,25 @@ export default function HomeScreen() {
         }>
         {erro ? <AvisoErroCarregar /> : null}
 
-        <AvisoAperto aperto={aperto} onPress={() => router.push('/(tabs)/contas')} />
+        <AvisoAperto
+          aperto={aperto}
+          onPress={() => {
+            setOrdenarPorValor(true);
+            router.push('/(tabs)/contas');
+          }}
+        />
 
         <CartaoSobra resumo={resumo} />
 
         <ResumoTotais resumo={resumo} />
 
-        {rendas.length > 0 ? <CartaoMenorSaldo saldoPorDia={saldoPorDia} /> : null}
+        {rendas.length > 0 || saldoInicial > 0 ? (
+          <CartaoMenorSaldo
+            saldoPorDia={saldoPorDia}
+            saldoInicialCentavos={saldoInicial}
+            mesAnterior={adicionarMeses(mesRef, -1)}
+          />
+        ) : null}
 
         <EntradasDoMes
           rendas={rendas}

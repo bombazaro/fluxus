@@ -7,6 +7,7 @@ import { adicionarMeses } from '@/src/domain/gerarLancamentos';
 import { lancamentosRepo } from '@/src/db/repositorios/lancamentosRepo';
 import { rendasRepo } from '@/src/db/repositorios/rendasRepo';
 import { divisoesRepo } from '@/src/db/repositorios/divisoesRepo';
+import { useConfigStore } from '@/src/store/useConfigStore';
 
 export type FiltroSituacao = 'todas' | 'pendentes' | 'pagas';
 
@@ -25,6 +26,48 @@ export function obterHojeIso(): string {
   return `${ano}-${mes}-${dia}`;
 }
 
+/**
+ * Lançamentos (com a parte do usuário nas contas divididas) e rendas de um mês.
+ * Com gerar = false não cria os lançamentos das contas fixas: usado para ler o
+ * mês anterior sem criar cobranças atrasadas lá.
+ */
+async function lerMes(
+  db: SQLiteDatabase,
+  mes: string,
+  gerar: boolean
+): Promise<{ lancamentos: LancamentoComDetalhes[]; rendas: RendaDoMes[] }> {
+  if (gerar) {
+    await lancamentosRepo.garantirMes(db, mes);
+  }
+
+  const lancamentos = await lancamentosRepo.listarPorMes(db, mes);
+
+  // Lançamento dividido sem "Eu" entre as pessoas: minha parte é zero
+  const divisoes = await divisoesRepo.listarPorMes(db, mes);
+  const minhaPartePorLancamento = new Map<number, number>();
+  for (const d of divisoes) {
+    const atual = minhaPartePorLancamento.get(d.lancamento_id) ?? 0;
+    const minhaParte = d.pessoa_nome === 'Eu' ? d.valor_centavos : 0;
+    minhaPartePorLancamento.set(d.lancamento_id, atual + minhaParte);
+  }
+  for (const l of lancamentos) {
+    if (l.compartilhada === 1 && minhaPartePorLancamento.has(l.id)) {
+      l.minha_parte_centavos = minhaPartePorLancamento.get(l.id);
+    }
+  }
+
+  // Rendas que valem no mês (com o valor recebido, se houver)
+  const todasRendas = await rendasRepo.listarTodas(db);
+  const recebidas = await rendasRepo.listarRecebidasDoMes(db, mes);
+  const rendas = rendasDoMes(todasRendas, recebidas, mes);
+
+  return { lancamentos, rendas };
+}
+
+function opcoesResumo() {
+  return { considerarApenasMinhaParte: useConfigStore.getState().config.contarSoMinhaParte };
+}
+
 interface ItemDesfazer {
   id: number;
   pagoAnterior: number;
@@ -36,6 +79,11 @@ export interface MesState {
   lancamentos: LancamentoComDetalhes[];
   rendas: RendaDoMes[];
   resumo: ResumoMes;
+  /** Mês anterior, para comparar gastos e levar a sobra. */
+  lancamentosAnterior: LancamentoComDetalhes[];
+  resumoAnterior: ResumoMes;
+  /** Sobra do mês anterior que entra no saldo deste mês (0 se desligado ou negativa). */
+  saldoInicial: number;
   carregando: boolean;
   erro: string | null;
 
@@ -43,6 +91,8 @@ export interface MesState {
   filtroSituacao: FiltroSituacao;
   filtroCategoriaId: number | null;
   busca: string;
+  /** Lista de contas com as maiores primeiro (o aviso de aperto liga isso). */
+  ordenarPorValor: boolean;
 
   // Desfazer
   ultimoDesfeito: ItemDesfazer | null;
@@ -63,6 +113,7 @@ export interface MesState {
   setFiltroSituacao: (filtro: FiltroSituacao) => void;
   setFiltroCategoriaId: (catId: number | null) => void;
   setBusca: (busca: string) => void;
+  setOrdenarPorValor: (ordenar: boolean) => void;
 }
 
 const resumoInicial: ResumoMes = {
@@ -80,11 +131,15 @@ export const useMesStore = create<MesState>((set, get) => ({
   lancamentos: [],
   rendas: [],
   resumo: resumoInicial,
+  lancamentosAnterior: [],
+  resumoAnterior: resumoInicial,
+  saldoInicial: 0,
   carregando: false,
   erro: null,
   filtroSituacao: 'todas',
   filtroCategoriaId: null,
   busca: '',
+  ordenarPorValor: false,
   ultimoDesfeito: null,
 
   setMesRef: (mesRef) => set({ mesRef }),
@@ -106,41 +161,23 @@ export const useMesStore = create<MesState>((set, get) => ({
     set({ carregando: true, erro: null });
 
     try {
-      // 1. Garante que lançamentos de contas fixas e variáveis existam
-      await lancamentosRepo.garantirMes(db, mes);
+      const { lancamentos, rendas } = await lerMes(db, mes, true);
+      const anterior = await lerMes(db, adicionarMeses(mes, -1), false);
 
-      // 2. Busca lançamentos com detalhes de categoria e conta
-      const lancamentos = await lancamentosRepo.listarPorMes(db, mes);
-
-      // 3. Busca divisões para associar a parte do usuário se for compartilhada
-      const divisoes = await divisoesRepo.listarPorMes(db, mes);
-      // Lançamento dividido sem "Eu" entre as pessoas: minha parte é zero
-      const minhaPartePorLancamento = new Map<number, number>();
-      for (const d of divisoes) {
-        const atual = minhaPartePorLancamento.get(d.lancamento_id) ?? 0;
-        const minhaParte = d.pessoa_nome === 'Eu' ? d.valor_centavos : 0;
-        minhaPartePorLancamento.set(d.lancamento_id, atual + minhaParte);
-      }
-
-      for (const l of lancamentos) {
-        if (l.compartilhada === 1 && minhaPartePorLancamento.has(l.id)) {
-          l.minha_parte_centavos = minhaPartePorLancamento.get(l.id);
-        }
-      }
-
-      // 4. Busca as rendas que valem neste mês (com o valor recebido, se houver)
-      const todasRendas = await rendasRepo.listarTodas(db);
-      const recebidas = await rendasRepo.listarRecebidasDoMes(db, mes);
-      const rendas = rendasDoMes(todasRendas, recebidas, mes);
-
-      // 5. Calcula resumo
-      const resumo = resumoDoMes(lancamentos, rendas);
+      const resumo = resumoDoMes(lancamentos, rendas, opcoesResumo());
+      const resumoAnterior = resumoDoMes(anterior.lancamentos, anterior.rendas, opcoesResumo());
+      const saldoInicial = useConfigStore.getState().config.usarSobraDoMesAnterior
+        ? Math.max(0, resumoAnterior.sobra)
+        : 0;
 
       set({
         mesRef: mes,
         lancamentos,
         rendas,
         resumo,
+        lancamentosAnterior: anterior.lancamentos,
+        resumoAnterior,
+        saldoInicial,
         carregando: false,
       });
     } catch (err: any) {
@@ -168,7 +205,7 @@ export const useMesStore = create<MesState>((set, get) => ({
           }
         : l
     );
-    const novoResumo = resumoDoMes(novosLancamentos, get().rendas);
+    const novoResumo = resumoDoMes(novosLancamentos, get().rendas, opcoesResumo());
 
     set({
       lancamentos: novosLancamentos,
@@ -212,4 +249,5 @@ export const useMesStore = create<MesState>((set, get) => ({
   setFiltroSituacao: (filtroSituacao) => set({ filtroSituacao }),
   setFiltroCategoriaId: (filtroCategoriaId) => set({ filtroCategoriaId }),
   setBusca: (busca) => set({ busca }),
+  setOrdenarPorValor: (ordenarPorValor) => set({ ordenarPorValor }),
 }));
