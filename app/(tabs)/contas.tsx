@@ -11,6 +11,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
+import { Ionicons } from '@expo/vector-icons';
 import { useTema } from '@/src/theme';
 import { useMesStore, FiltroSituacao, obterHojeIso } from '@/src/store/useMesStore';
 import { ItemConta } from '@/src/components/contas/ItemConta';
@@ -18,6 +19,15 @@ import { CampoTexto, EstadoVazio, Fab, SeletorMes } from '@/src/components/ui';
 import { classificarSituacao } from '@/src/domain/classificarSituacao';
 import { Categoria, LancamentoComDetalhes, SituacaoConta } from '@/src/types';
 import { categoriasRepo } from '@/src/db/repositorios/categoriasRepo';
+
+type Secao = { titulo: string; situacao: SituacaoConta; itens: LancamentoComDetalhes[] };
+type LinhaLista =
+  | { tipo: 'cabecalho'; chave: string; secao: Secao }
+  | { tipo: 'conta'; chave: string; lancamento: LancamentoComDetalhes };
+
+function valorParaMim(l: LancamentoComDetalhes): number {
+  return l.minha_parte_centavos ?? l.valor_centavos;
+}
 
 export default function ContasScreen() {
   const router = useRouter();
@@ -41,6 +51,8 @@ export default function ContasScreen() {
     setFiltroSituacao,
     setFiltroCategoriaId,
     setBusca,
+    ordenarPorValor,
+    setOrdenarPorValor,
   } = useMesStore();
 
   const [categorias, setCategorias] = useState<Categoria[]>([]);
@@ -103,7 +115,7 @@ export default function ContasScreen() {
       else maisAdiante.push(l);
     }
 
-    const resultado: { titulo: string; situacao: SituacaoConta; itens: LancamentoComDetalhes[] }[] = [];
+    const resultado: Secao[] = [];
     if (atrasadas.length > 0) {
       resultado.push({ titulo: 'Atrasadas', situacao: 'atrasada', itens: atrasadas });
     }
@@ -120,8 +132,26 @@ export default function ContasScreen() {
       resultado.push({ titulo: 'Pagas', situacao: 'paga', itens: pagas });
     }
 
+    if (ordenarPorValor) {
+      for (const secao of resultado) {
+        secao.itens.sort((a, b) => valorParaMim(b) - valorParaMim(a));
+      }
+    }
+
     return resultado;
-  }, [lancamentosFiltrados, hojeIso]);
+  }, [lancamentosFiltrados, hojeIso, ordenarPorValor]);
+
+  // Uma linha por cabeçalho ou conta: a FlatList só desenha o que aparece na tela
+  const linhas = useMemo(() => {
+    const resultado: LinhaLista[] = [];
+    for (const secao of secoes) {
+      resultado.push({ tipo: 'cabecalho', chave: `s-${secao.situacao}`, secao });
+      for (const lancamento of secao.itens) {
+        resultado.push({ tipo: 'conta', chave: `l-${lancamento.id}`, lancamento });
+      }
+    }
+    return resultado;
+  }, [secoes]);
 
   return (
     <SafeAreaView
@@ -176,6 +206,38 @@ export default function ContasScreen() {
               </Pressable>
             );
           })}
+          <Pressable
+            accessibilityRole="switch"
+            accessibilityState={{ checked: ordenarPorValor }}
+            accessibilityLabel="Mostrar as maiores contas primeiro"
+            onPress={() => setOrdenarPorValor(!ordenarPorValor)}
+            style={[
+              styles.filtroPill,
+              {
+                flexDirection: 'row',
+                alignItems: 'center',
+                backgroundColor: ordenarPorValor ? colors.primaryLight : colors.surface,
+                borderColor: ordenarPorValor ? colors.primary : colors.border,
+                borderRadius: radii.full,
+                paddingHorizontal: spacing.md,
+                paddingVertical: 6,
+              },
+            ]}>
+            <Ionicons
+              name="swap-vertical"
+              size={14}
+              color={ordenarPorValor ? colors.primary : colors.textSecondary}
+            />
+            <Text
+              style={{
+                color: ordenarPorValor ? colors.primary : colors.textSecondary,
+                fontFamily: typography.fontFamily.medium,
+                fontSize: 13,
+                marginLeft: 4,
+              }}>
+              Maiores
+            </Text>
+          </Pressable>
         </View>
 
         {/* Chips de Categorias */}
@@ -261,9 +323,11 @@ export default function ContasScreen() {
         </ScrollView>
       ) : (
         <FlatList
-          data={secoes}
-          keyExtractor={(item) => item.situacao}
+          data={linhas}
+          keyExtractor={(item) => item.chave}
           contentContainerStyle={{ padding: spacing.base, paddingBottom: 100 }}
+          initialNumToRender={15}
+          windowSize={7}
           refreshControl={
             <RefreshControl
               refreshing={carregando}
@@ -271,37 +335,38 @@ export default function ContasScreen() {
               colors={[colors.primary]}
             />
           }
-          renderItem={({ item: secao }) => (
-            <View style={styles.secaoBloco}>
-              <View style={styles.secaoCabecalho}>
+          renderItem={({ item }) =>
+            item.tipo === 'cabecalho' ? (
+              <View style={[styles.secaoCabecalho, { marginTop: spacing.sm }]}>
                 <Text
+                  accessibilityRole="header"
                   style={[
                     styles.secaoTexto,
                     {
                       color:
-                        secao.situacao === 'atrasada'
+                        item.secao.situacao === 'atrasada'
                           ? colors.danger
-                          : secao.situacao === 'esta_semana'
+                          : item.secao.situacao === 'esta_semana'
                           ? colors.warning
-                          : secao.situacao === 'paga'
+                          : item.secao.situacao === 'paga'
                           ? colors.success
                           : colors.textSecondary,
                       fontFamily: typography.fontFamily.bold,
                     },
                   ]}>
-                  {secao.titulo.toUpperCase()} ({secao.itens.length})
+                  {item.secao.titulo.toUpperCase()} ({item.secao.itens.length})
                 </Text>
               </View>
-              {secao.itens.map((lancamento) => (
-                <ItemConta
-                  key={lancamento.id}
-                  lancamento={lancamento}
-                  onPress={() => router.push(`/conta/${lancamento.conta_id}`)}
-                  onTogglePago={() => marcarPago(db, lancamento.id, lancamento.pago === 0)}
-                />
-              ))}
-            </View>
-          )}
+            ) : (
+              <ItemConta
+                lancamento={item.lancamento}
+                onPress={() => router.push(`/conta/${item.lancamento.conta_id}`)}
+                onTogglePago={() =>
+                  marcarPago(db, item.lancamento.id, item.lancamento.pago === 0)
+                }
+              />
+            )
+          }
         />
       )}
 
@@ -365,9 +430,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     paddingHorizontal: 12,
     paddingVertical: 6,
-  },
-  secaoBloco: {
-    marginBottom: 16,
   },
   secaoCabecalho: {
     marginBottom: 8,
