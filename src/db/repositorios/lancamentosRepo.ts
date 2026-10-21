@@ -2,6 +2,7 @@ import { SQLiteDatabase } from 'expo-sqlite';
 import { Conta, Lancamento, LancamentoComDetalhes } from '@/src/types';
 import { ajustarDiaDoMes, diaDeVencimento } from '@/src/domain/gerarLancamentos';
 import { redistribuirDivisao } from '@/src/domain/dividirConta';
+import { LancamentoParaLembrete } from '@/src/domain/planejarLembretes';
 
 export const lancamentosRepo = {
   async criar(
@@ -63,6 +64,22 @@ export const lancamentosRepo = {
       [mesRef]
     );
     return rows;
+  },
+
+  /** Lançamentos não pagos com vencimento entre as datas (inclusive), para os lembretes. */
+  async listarPendentesEntre(
+    db: SQLiteDatabase,
+    deIso: string,
+    ateIso: string
+  ): Promise<LancamentoParaLembrete[]> {
+    return await db.getAllAsync<LancamentoParaLembrete>(
+      `SELECT l.id, l.conta_id, l.vencimento, l.valor_centavos, c.nome AS conta_nome, c.sem_vencimento
+       FROM lancamentos l
+       INNER JOIN contas c ON c.id = l.conta_id
+       WHERE l.pago = 0 AND l.vencimento BETWEEN ? AND ?
+       ORDER BY l.vencimento ASC, l.id ASC;`,
+      [deIso, ateIso]
+    );
   },
 
   async listarPorConta(db: SQLiteDatabase, contaId: number): Promise<Lancamento[]> {
