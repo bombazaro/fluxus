@@ -14,6 +14,8 @@ import { CartaoMenorSaldo } from '@/src/components/home/CartaoMenorSaldo';
 import { EntradasDoMes } from '@/src/components/home/EntradasDoMes';
 import { ProximosVencimentos } from '@/src/components/home/ProximosVencimentos';
 import { GastosPorCategoria } from '@/src/components/home/GastosPorCategoria';
+import { CartaoComparacao } from '@/src/components/home/CartaoComparacao';
+import { compararMeses } from '@/src/domain/compararMeses';
 import { avaliarAperto } from '@/src/domain/avaliarAperto';
 import { calcularSaldoPorDia } from '@/src/domain/saldoPorDia';
 import { totaisPorCategoria } from '@/src/domain/totaisPorCategoria';
@@ -31,6 +33,7 @@ export default function HomeScreen() {
     rendas,
     resumo,
     saldoInicial,
+    lancamentosAnterior,
     carregando,
     erro,
     trocarMes,
@@ -52,7 +55,15 @@ export default function HomeScreen() {
       .slice(0, 4);
   }, [lancamentos]);
 
-  const categoriasTotais = useMemo(() => totaisPorCategoria(lancamentos), [lancamentos]);
+  const contarSoMinhaParte = useConfigStore((s) => s.config.contarSoMinhaParte);
+  const categoriasTotais = useMemo(
+    () => totaisPorCategoria(lancamentos, contarSoMinhaParte),
+    [lancamentos, contarSoMinhaParte]
+  );
+  const comparacao = useMemo(
+    () => compararMeses(lancamentos, lancamentosAnterior, contarSoMinhaParte),
+    [lancamentos, lancamentosAnterior, contarSoMinhaParte]
+  );
 
   const limiteAtencaoPercentual = useConfigStore((s) => s.config.limiteAtencaoPercentual);
 
@@ -113,6 +124,12 @@ export default function HomeScreen() {
             mesAnterior={adicionarMeses(mesRef, -1)}
           />
         ) : null}
+
+        <CartaoComparacao
+          comparacao={comparacao}
+          mesAnterior={adicionarMeses(mesRef, -1)}
+          onPress={() => router.push('/comparacao')}
+        />
 
         <EntradasDoMes
           rendas={rendas}
