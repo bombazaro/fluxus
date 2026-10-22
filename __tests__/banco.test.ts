@@ -439,3 +439,101 @@ describe('reservaRepo', () => {
     expect((await reservaRepo.listarAportes(db)).map((a) => a.valor_centavos)).toEqual([-3000, 10000]);
   });
 });
+
+describe('pessoasRepo', () => {
+  it('renomeia e exclui pessoas, mas nunca o "Eu"', async () => {
+    const db = await criarBanco();
+    const anaId = await pessoasRepo.criar(db, 'Ana');
+
+    await pessoasRepo.renomear(db, anaId, 'Ana Paula');
+    await pessoasRepo.renomear(db, 1, 'Outro nome');
+    await pessoasRepo.excluir(db, 1);
+
+    expect(await pessoasRepo.listarTodas(db)).toEqual([
+      { id: 1, nome: 'Eu' },
+      { id: anaId, nome: 'Ana Paula' },
+    ]);
+  });
+
+  it('excluir a pessoa apaga as divisões dela', async () => {
+    const db = await criarBanco();
+    const anaId = await pessoasRepo.criar(db, 'Ana');
+    const conta = await criarConta(db, { compartilhada: 1 });
+    const l = await criarLancamento(db, conta, '2026-10');
+    await divisoesRepo.salvarDivisoes(db, l, [
+      { pessoa_id: 1, valor_centavos: 5000 },
+      { pessoa_id: anaId, valor_centavos: 5000 },
+    ]);
+
+    expect(await pessoasRepo.contarDivisoes(db, anaId)).toBe(1);
+    await pessoasRepo.excluir(db, anaId);
+    expect(await divisoesRepo.listarPorLancamento(db, l)).toHaveLength(1);
+  });
+});
+
+describe('divisoesRepo acertos', () => {
+  it('lista o que os outros devem até o mês e marca como acertado', async () => {
+    const db = await criarBanco();
+    const anaId = await pessoasRepo.criar(db, 'Ana');
+    const conta = await criarConta(db, { nome: 'Aluguel', compartilhada: 1 });
+
+    const dividir = async (mesRef: string) => {
+      const l = await criarLancamento(db, conta, mesRef);
+      await divisoesRepo.salvarDivisoes(db, l, [
+        { pessoa_id: 1, valor_centavos: 5000 },
+        { pessoa_id: anaId, valor_centavos: 5000 },
+      ]);
+    };
+    await dividir('2026-09');
+    await dividir('2026-10');
+    await dividir('2026-11');
+
+    const pendentes = await divisoesRepo.listarAcertosPendentes(db, '2026-10');
+    expect(pendentes.map((p) => [p.pessoa_nome, p.conta_nome, p.mes_ref, p.valor_centavos])).toEqual([
+      ['Ana', 'Aluguel', '2026-09', 5000],
+      ['Ana', 'Aluguel', '2026-10', 5000],
+    ]);
+
+    await divisoesRepo.marcarAcertadas(db, [pendentes[0].divisao_id]);
+    expect(await divisoesRepo.listarAcertosPendentes(db, '2026-10')).toHaveLength(1);
+  });
+});
+
+describe('mudar o valor de conta dividida', () => {
+  async function contaDividida(db: SQLiteDatabase, mesRef: string, anaId: number) {
+    const l = await criarLancamento(db, 1, mesRef, 0, 10000);
+    await divisoesRepo.salvarDivisoes(db, l, [
+      { pessoa_id: 1, valor_centavos: 6000 },
+      { pessoa_id: anaId, valor_centavos: 4000 },
+    ]);
+    return l;
+  }
+
+  it('atualizarValor refaz a divisão na mesma proporção', async () => {
+    const db = await criarBanco();
+    const anaId = await pessoasRepo.criar(db, 'Ana');
+    await criarConta(db, { compartilhada: 1 });
+    const l = await contaDividida(db, '2026-10', anaId);
+
+    await lancamentosRepo.atualizarValor(db, l, 15000);
+
+    expect((await divisoesRepo.listarPorLancamento(db, l)).map((d) => d.valor_centavos)).toEqual([
+      9000, 6000,
+    ]);
+  });
+
+  it('atualizarValorNaoPagosAPartirDe refaz a divisão de cada mês alterado', async () => {
+    const db = await criarBanco();
+    const anaId = await pessoasRepo.criar(db, 'Ana');
+    await criarConta(db, { compartilhada: 1 });
+    const outubro = await contaDividida(db, '2026-10', anaId);
+    const novembro = await contaDividida(db, '2026-11', anaId);
+
+    await lancamentosRepo.atualizarValorNaoPagosAPartirDe(db, 1, '2026-11', 20000);
+
+    const valores = async (id: number) =>
+      (await divisoesRepo.listarPorLancamento(db, id)).map((d) => d.valor_centavos);
+    expect(await valores(outubro)).toEqual([6000, 4000]);
+    expect(await valores(novembro)).toEqual([12000, 8000]);
+  });
+});

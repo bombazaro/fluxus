@@ -1,5 +1,6 @@
 import { SQLiteDatabase } from 'expo-sqlite';
 import { Divisao } from '@/src/types';
+import { LinhaAcerto } from '@/src/domain/acertos';
 
 export const divisoesRepo = {
   /**
@@ -51,44 +52,28 @@ export const divisoesRepo = {
     );
   },
 
-  async marcarPaga(
-    db: SQLiteDatabase,
-    divisaoId: number,
-    pago: boolean
-  ): Promise<void> {
-    await db.runAsync('UPDATE divisoes SET pago = ? WHERE id = ?;', [
-      pago ? 1 : 0,
-      divisaoId,
-    ]);
+  /**
+   * Partes de outras pessoas ainda não acertadas, em contas até o mês informado
+   * (parcelas de meses futuros ainda não são devidas).
+   */
+  async listarAcertosPendentes(db: SQLiteDatabase, ateMesRef: string): Promise<LinhaAcerto[]> {
+    return await db.getAllAsync<LinhaAcerto>(
+      `SELECT d.id AS divisao_id, d.pessoa_id, p.nome AS pessoa_nome, c.nome AS conta_nome,
+         l.mes_ref, d.valor_centavos
+       FROM divisoes d
+       INNER JOIN pessoas p ON p.id = d.pessoa_id
+       INNER JOIN lancamentos l ON l.id = d.lancamento_id
+       INNER JOIN contas c ON c.id = l.conta_id
+       WHERE p.nome != 'Eu' AND d.pago = 0 AND d.valor_centavos > 0 AND l.mes_ref <= ?
+       ORDER BY l.mes_ref ASC, d.id ASC;`,
+      [ateMesRef]
+    );
   },
 
-  async obterAcertosPorPessoa(db: SQLiteDatabase): Promise<
-    {
-      pessoa_id: number;
-      pessoa_nome: string;
-      total_devido_centavos: number;
-      total_pago_centavos: number;
-      saldo_centavos: number;
-    }[]
-  > {
-    return await db.getAllAsync<{
-      pessoa_id: number;
-      pessoa_nome: string;
-      total_devido_centavos: number;
-      total_pago_centavos: number;
-      saldo_centavos: number;
-    }>(
-      `SELECT
-        p.id AS pessoa_id,
-        p.nome AS pessoa_nome,
-        COALESCE(SUM(CASE WHEN d.pago = 0 THEN d.valor_centavos ELSE 0 END), 0) AS total_devido_centavos,
-        COALESCE(SUM(CASE WHEN d.pago = 1 THEN d.valor_centavos ELSE 0 END), 0) AS total_pago_centavos,
-        COALESCE(SUM(CASE WHEN d.pago = 0 THEN d.valor_centavos ELSE 0 END), 0) AS saldo_centavos
-      FROM pessoas p
-      LEFT JOIN divisoes d ON d.pessoa_id = p.id
-      WHERE p.nome != 'Eu'
-      GROUP BY p.id, p.nome
-      ORDER BY p.nome ASC;`
-    );
+  /** Marca partes como acertadas (a pessoa já pagou a parte dela). */
+  async marcarAcertadas(db: SQLiteDatabase, divisaoIds: number[]): Promise<void> {
+    if (divisaoIds.length === 0) return;
+    const marcadores = divisaoIds.map(() => '?').join(', ');
+    await db.runAsync(`UPDATE divisoes SET pago = 1 WHERE id IN (${marcadores});`, divisaoIds);
   },
 };
