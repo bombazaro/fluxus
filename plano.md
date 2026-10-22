@@ -2,7 +2,9 @@
 
 App mobile de controle de contas a pagar. 100% offline, dados no próprio celular (SQLite), instalação via APK em dois celulares Android.
 
-**Stack:** Expo, TypeScript, Expo Router, expo-sqlite, Zustand, react-native-gifted-charts, expo-notifications.
+**Stack:** Expo, TypeScript, Expo Router, expo-sqlite, Zustand, expo-notifications, react-native-svg.
+
+> **Mudança no caminho:** o plano previa `react-native-gifted-charts`, mas os gráficos acabaram feitos com `View`s simples e `react-native-svg`. Ficou mais leve, segue o tema sem configuração e evitou uma dependência a mais. A biblioteca foi removida.
 
 ---
 
@@ -529,7 +531,7 @@ Ao terminar: `git tag -a v0.2.0 -m "Etapa 6: avisos e notificações"`
 
 1. Criar `compararMeses.ts`: devolve, por categoria e no total, a diferença em R$ e em %.
 2. Cartão no Início: "Você gastou 12% a mais que em abril" com seta (vermelha para cima, verde para baixo).
-3. Tela com barras lado a lado por categoria (`react-native-gifted-charts`, `BarChart` com duas séries).
+3. Tela com barras lado a lado por categoria (feita com `View`s, ver a nota no topo sobre o `react-native-gifted-charts`).
 4. Destacar a categoria que mais subiu.
 
 ### 10.2 Previsão do saldo

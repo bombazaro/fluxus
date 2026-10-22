@@ -16,13 +16,23 @@ App Android de controle de contas a pagar. Você cadastra contas e rendas e o ap
 - **Rendas** fixas, variáveis (informa quanto caiu de verdade) e pontuais (13º, bônus).
 - **Saldo ao longo do mês:** mostra o dia em que o saldo fica mais baixo (ex.: o aluguel vence dia 5 e o salário só cai dia 10).
 - **Calendário** de vencimentos com cores por situação, lista do dia e troca de mês deslizando.
-- **Contas compartilhadas:** conta só a sua parte no resumo.
+- **Sobra do mês anterior:** o que sobrou entra como saldo inicial, então quem recebe dia 30 e paga dia 10 não vê o mês "no vermelho" à toa.
+- **Aviso de aperto:** avisa quando as contas passam do dinheiro do mês, quando o saldo fica negativo em algum dia ou quando passam do limite escolhido (80% por padrão).
+- **Lembretes de vencimento:** notificação alguns dias antes e no dia, no horário escolhido. Tocar no lembrete abre a conta.
+- **Comparação com o mês anterior:** quanto gastou a mais ou a menos, por categoria, e qual subiu mais.
+- **Previsão dos próximos 6 meses** e quando cada parcelamento termina.
+- **Reserva de emergência:** meta em meses de gasto ou valor fixo, aportes e retiradas, e em quanto tempo chega na meta.
+- **Simulador de parcelas:** mostra se a compra cabe nos próximos meses, com ou sem juros, sem gravar nada.
+- **Contas compartilhadas:** divide por igual, por porcentagem ou por valor; o resumo conta só a sua parte, e a tela Acertos mostra quanto cada pessoa deve, com resumo para mandar no WhatsApp.
 - **Backup:** exporta todos os dados em um arquivo e importa de volta. Também serve para passar os dados para outro celular.
-- Modo claro e escuro seguindo o celular.
+- **Configurações:** tema, lembretes, limite do aviso, meses da média e o que entra no resumo. Na primeira vez, uma tela de boas-vindas explica o app.
+- Datas no formato brasileiro (DD/MM/AAAA), modo claro e escuro e rótulos para leitor de tela.
 
 ## Stack
 
-Expo (development build) · TypeScript estrito · Expo Router · expo-sqlite · Zustand · Jest
+Expo (development build) · TypeScript estrito · Expo Router · expo-sqlite · Zustand · expo-notifications · react-native-svg · Jest
+
+Os gráficos são desenhados com `View`s simples (e um SVG para o anel da reserva), sem biblioteca de gráficos: fica mais leve e segue o tema claro/escuro sem configuração extra.
 
 ## Arquitetura
 
@@ -54,13 +64,17 @@ npx expo run:android     # compila e instala o development build
 
 Nas próximas vezes, basta `npx expo start` com o app aberto no celular. O app de desenvolvimento precisa desse servidor para carregar.
 
-> **Máquina com 8 GB de RAM ou menos:** compile só a arquitetura do celular e com menos paralelismo, colocando no `~/.gradle/gradle.properties`:
+> **Máquina com 8 GB de RAM ou menos:** compile só a arquitetura do celular e com menos paralelismo, colocando no `~/.gradle/gradle.properties` (sem isso, o build pode travar o computador):
 >
 > ```properties
 > reactNativeArchitectures=arm64-v8a
 > org.gradle.parallel=false
-> org.gradle.workers.max=2
+> org.gradle.workers.max=1
+> org.gradle.jvmargs=-Xmx2048m -XX:MaxMetaspaceSize=512m
+> kotlin.compiler.execution.strategy=in-process
 > ```
+>
+> E rode o build com prioridade baixa: `nice -n 19 ionice -c3 ./gradlew assembleRelease`. Leva uns 20 minutos.
 
 ## Versão de produção (APK)
 
@@ -93,7 +107,9 @@ O plano completo está em [`plano.md`](plano.md).
 - [x] Etapas 0 a 3: projeto, design base, banco de dados, cadastro de contas e resumo do mês
 - [x] Etapa 4: rendas e saldo por dia
 - [x] Etapa 5: calendário de vencimentos
-- [ ] Etapa 6: aviso de aperto e notificações
-- [ ] Etapa 7: comparação com o mês anterior e previsão
-- [ ] Etapas 8 a 10: reserva de emergência, simulador de parcelas, contas compartilhadas completas
-- [ ] Etapas 11 e 12: acabamento e APK de produção
+- [x] Etapa 6: aviso de aperto e notificações
+- [x] Etapa 7: comparação com o mês anterior e previsão
+- [x] Etapas 8 a 10: reserva de emergência, simulador de parcelas, contas compartilhadas completas
+- [x] Etapa 11: acabamento (configurações, boas-vindas, ícone, acessibilidade, testes de borda)
+- [x] Etapa 12: APK de produção assinado e instalado no celular
+- [ ] Portfólio: prints, GIF de uso e APK na seção Releases do GitHub
