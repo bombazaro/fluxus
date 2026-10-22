@@ -173,7 +173,7 @@ export function ItemConta({
           {formatarMoeda(valorExibido)}
         </Text>
 
-        {lancamento.compartilhada === 1 && (
+        {lancamento.compartilhada === 1 && typeof lancamento.minha_parte_centavos === 'number' && (
           <Text
             style={[
               styles.compartilhadoTexto,
@@ -183,7 +183,7 @@ export function ItemConta({
                 fontSize: typography.fontSize.tiny,
               },
             ]}>
-            de {formatarMoeda(lancamento.valor_centavos)}
+            sua parte · de {formatarMoeda(lancamento.valor_centavos)}
           </Text>
         )}
 

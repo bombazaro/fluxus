@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
   KeyboardAvoidingView,
   Platform,
@@ -10,7 +10,7 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { Ionicons } from '@expo/vector-icons';
 import { useTema } from '@/src/theme';
@@ -20,6 +20,7 @@ import {
   CampoTexto,
   CampoData,
   Cartao,
+  GrupoOpcoes,
   SeletorMesCompacto,
 } from '@/src/components/ui';
 import { Categoria, Pessoa, TipoConta } from '@/src/types';
@@ -39,7 +40,7 @@ import {
   formatarMoeda,
   dataBrParaIso,
 } from '@/src/utils/formatadores';
-import { dividirContaPorIgual } from '@/src/domain/dividirConta';
+import { ModoDivisao, montarDivisao, redistribuirDivisao } from '@/src/domain/dividirConta';
 import { SeletorCategoria } from '@/src/components/contas/SeletorCategoria';
 
 const TIPOS_CONTA: {
@@ -117,6 +118,10 @@ export default function NovaContaModal() {
   const [categorias, setCategorias] = useState<Categoria[]>([]);
   const [pessoas, setPessoas] = useState<Pessoa[]>([]);
   const [pessoasSelecionadas, setPessoasSelecionadas] = useState<number[]>([]);
+  const [modoDivisao, setModoDivisao] = useState<ModoDivisao>('igual');
+  // Porcentagem como texto (aceita "33,5" enquanto digita); valor em centavos
+  const [porcentagens, setPorcentagens] = useState<Record<number, string>>({});
+  const [valoresDivisao, setValoresDivisao] = useState<Record<number, number>>({});
   const [salvando, setSalvando] = useState(false);
   // null = segue a sugestão; muda quando a pessoa usa as setas
   const [mesInicioEscolhido, setMesInicioEscolhido] = useState<string | null>(
@@ -131,15 +136,23 @@ export default function NovaContaModal() {
         setCategoriaId((atual) => atual ?? listaCat[0].id);
       }
 
-      const listaPessoas = await pessoasRepo.listarTodas(db);
-      setPessoas(listaPessoas);
-      const eu = listaPessoas.find((p) => p.nome === 'Eu');
-      if (eu) {
-        setPessoasSelecionadas([eu.id]);
-      }
     }
     carregarDados();
   }, [db]);
+
+  // Pessoas recarregam ao voltar da tela de pessoas, sem perder quem já foi escolhido
+  useFocusEffect(
+    useCallback(() => {
+      pessoasRepo.listarTodas(db).then((lista) => {
+        setPessoas(lista);
+        const eu = lista.find((p) => p.nome === 'Eu');
+        setPessoasSelecionadas((atual) => {
+          const existentes = atual.filter((id) => lista.some((p) => p.id === id));
+          return existentes.length > 0 ? existentes : eu ? [eu.id] : [];
+        });
+      });
+    }, [db])
+  );
 
   const togglePessoa = (idPessoa: number) => {
     if (pessoasSelecionadas.includes(idPessoa)) {
@@ -164,7 +177,27 @@ export default function NovaContaModal() {
   const valorValido = valorCentavos > 0;
   const categoriaValida = !!categoriaId;
 
+  const divisao = compartilhada
+    ? montarDivisao(
+        valorCentavos,
+        pessoasSelecionadas,
+        modoDivisao,
+        modoDivisao === 'porcentagem'
+          ? Object.fromEntries(
+              Object.entries(porcentagens).map(([id, t]) => [id, Number(t.replace(',', '.')) || 0])
+            )
+          : valoresDivisao
+      )
+    : null;
+  const idEu = pessoas.find((p) => p.nome === 'Eu')?.id;
+  const minhaParteDivisao =
+    divisao?.valores && idEu !== undefined
+      ? divisao.valores[pessoasSelecionadas.indexOf(idEu)] ?? 0
+      : 0;
+  const divisaoValida = !compartilhada || !!divisao?.valores;
+
   const formularioValido =
+    divisaoValida &&
     nomeValido &&
     valorValido &&
     diaValido &&
@@ -233,14 +266,12 @@ export default function NovaContaModal() {
         for (const lp of lancamentosPrevistos) {
           const idLancamento = await lancamentosRepo.criar(db, lp);
 
-          if (compartilhada && pessoasSelecionadas.length > 0) {
-            const divisaoPorcentagem = dividirContaPorIgual(
-              lp.valor_centavos,
-              pessoasSelecionadas.length
-            );
+          if (compartilhada && divisao?.valores) {
+            // Mesma proporção em cada lançamento (o valor pode mudar por mês)
+            const valores = redistribuirDivisao(divisao.valores, lp.valor_centavos);
             const divisoesObj = pessoasSelecionadas.map((pessoaId, index) => ({
               pessoa_id: pessoaId,
-              valor_centavos: divisaoPorcentagem[index] || 0,
+              valor_centavos: valores[index] ?? 0,
             }));
             await divisoesRepo.salvarDivisoes(db, idLancamento, divisoesObj);
           }
@@ -574,7 +605,88 @@ export default function NovaContaModal() {
                   })}
                 </View>
 
-                {pessoasSelecionadas.length > 0 ? (
+                {pessoas.length <= 1 ? (
+                  <Botao
+                    titulo="Cadastrar pessoas"
+                    variante="fantasma"
+                    tamanho="pequeno"
+                    onPress={() => router.push('/pessoas')}
+                    style={{ alignSelf: 'flex-start', marginTop: spacing.xs }}
+                  />
+                ) : null}
+
+                <Text
+                  style={[
+                    styles.subSecao,
+                    {
+                      color: colors.text,
+                      fontFamily: typography.fontFamily.medium,
+                      marginTop: spacing.base,
+                    },
+                  ]}>
+                  Como dividir:
+                </Text>
+                <GrupoOpcoes<ModoDivisao>
+                  rotuloAcessivel="Como dividir"
+                  opcoes={[
+                    { valor: 'igual', rotulo: 'Igual' },
+                    { valor: 'porcentagem', rotulo: 'Porcentagem' },
+                    { valor: 'valor', rotulo: 'Valor' },
+                  ]}
+                  valor={modoDivisao}
+                  onMudar={setModoDivisao}
+                />
+
+                {modoDivisao !== 'igual'
+                  ? pessoasSelecionadas.map((id) => {
+                      const pessoa = pessoas.find((p) => p.id === id);
+                      return (
+                        <View key={id} style={[styles.linhaDivisao, { marginTop: spacing.sm }]}>
+                          <Text
+                            style={{
+                              flex: 1,
+                              color: colors.text,
+                              fontFamily: typography.fontFamily.medium,
+                              fontSize: 14,
+                            }}>
+                            {pessoa?.nome}
+                          </Text>
+                          <View style={{ width: 150 }}>
+                            {modoDivisao === 'porcentagem' ? (
+                              <CampoTexto
+                                accessibilityLabel={`Porcentagem de ${pessoa?.nome}`}
+                                keyboardType="decimal-pad"
+                                placeholder="%"
+                                value={porcentagens[id] ?? ''}
+                                onChangeText={(t) => setPorcentagens({ ...porcentagens, [id]: t })}
+                              />
+                            ) : (
+                              <CampoMoeda
+                                valorCentavos={valoresDivisao[id] ?? 0}
+                                onChangeCentavos={(v) =>
+                                  setValoresDivisao({ ...valoresDivisao, [id]: v })
+                                }
+                              />
+                            )}
+                          </View>
+                        </View>
+                      );
+                    })
+                  : null}
+
+                {divisao?.erro ? (
+                  <Text
+                    style={[
+                      styles.divisaoPrevia,
+                      {
+                        color: colors.danger,
+                        fontFamily: typography.fontFamily.medium,
+                        marginTop: spacing.sm,
+                      },
+                    ]}>
+                    {divisao.erro}
+                  </Text>
+                ) : divisao?.valores ? (
                   <Text
                     style={[
                       styles.divisaoPrevia,
@@ -584,10 +696,9 @@ export default function NovaContaModal() {
                         marginTop: spacing.sm,
                       },
                     ]}>
-                    Sua parte estimada:{' '}
-                    {formatarMoeda(
-                      dividirContaPorIgual(valorCentavos, pessoasSelecionadas.length)[0] || 0
-                    )}
+                    {idEu !== undefined && pessoasSelecionadas.includes(idEu)
+                      ? `Sua parte: ${formatarMoeda(minhaParteDivisao)} de ${formatarMoeda(valorCentavos)}`
+                      : `Você não está na divisão: sua parte é ${formatarMoeda(0)}`}
                   </Text>
                 ) : null}
               </View>
@@ -656,6 +767,10 @@ const styles = StyleSheet.create({
   },
   tipoDescricao: {},
   linhaSwitch: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  linhaDivisao: {
     flexDirection: 'row',
     alignItems: 'center',
   },
