@@ -1,7 +1,7 @@
 import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useTema } from '@/src/theme';
-import { Platform } from 'react-native';
+import { Platform, Text } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function TabLayout() {
@@ -22,10 +22,15 @@ export default function TabLayout() {
           paddingBottom: Math.max(insets.bottom, 6),
           paddingTop: 6,
         },
-        tabBarLabelStyle: {
-          fontFamily: typography.fontFamily.medium,
-          fontSize: 12,
-        },
+        tabBarLabel: ({ color, children }) => (
+          <Text
+            numberOfLines={1}
+            adjustsFontSizeToFit
+            minimumFontScale={0.75}
+            style={{ color, fontFamily: typography.fontFamily.medium, fontSize: 12 }}>
+            {children}
+          </Text>
+        ),
       }}>
       <Tabs.Screen
         name="index"
