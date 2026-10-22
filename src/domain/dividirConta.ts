@@ -1,3 +1,5 @@
+import { formatarMoeda } from '../utils/formatadores';
+
 /**
  * Divide um valor total em centavos igualmente entre N pessoas.
  * Se houver sobra de centavos indivisíveis, distribui os centavos restantes
@@ -72,4 +74,49 @@ export function redistribuirDivisao(
 
   const porcentagens = valoresAnteriores.map((v) => (v * 100) / totalAnterior);
   return dividirContaPorPorcentagem(novoTotalCentavos, porcentagens);
+}
+
+export type ModoDivisao = 'igual' | 'porcentagem' | 'valor';
+
+/**
+ * Monta a divisão do formulário: quanto cabe a cada pessoa (na ordem de pessoaIds)
+ * ou o erro a mostrar. Em 'porcentagem' as entradas são % (aceita decimais) e
+ * precisam somar 100; em 'valor' são centavos e precisam somar o total.
+ */
+export function montarDivisao(
+  totalCentavos: number,
+  pessoaIds: number[],
+  modo: ModoDivisao,
+  entradas: Record<number, number>
+): { valores: number[] | null; erro: string | null } {
+  if (pessoaIds.length === 0) return { valores: null, erro: 'Escolha com quem dividir.' };
+
+  if (modo === 'igual') {
+    return { valores: dividirContaPorIgual(totalCentavos, pessoaIds.length), erro: null };
+  }
+
+  const informados = pessoaIds.map((id) => entradas[id] ?? 0);
+  const soma = informados.reduce((acc, v) => acc + v, 0);
+
+  if (modo === 'porcentagem') {
+    if (Math.abs(soma - 100) > 0.001) {
+      const somaTexto = String(Math.round(soma * 100) / 100).replace('.', ',');
+      return { valores: null, erro: `As porcentagens somam ${somaTexto}%. Precisam fechar 100%.` };
+    }
+    return { valores: dividirContaPorPorcentagem(totalCentavos, informados), erro: null };
+  }
+
+  if (soma < totalCentavos) {
+    return {
+      valores: null,
+      erro: `Faltam ${formatarMoeda(totalCentavos - soma)} para fechar o valor da conta.`,
+    };
+  }
+  if (soma > totalCentavos) {
+    return {
+      valores: null,
+      erro: `A divisão passa ${formatarMoeda(soma - totalCentavos)} do valor da conta.`,
+    };
+  }
+  return { valores: informados, erro: null };
 }
