@@ -9,7 +9,11 @@ function MiniCartao({ rotulo, valor, cor }: { rotulo: string; valor: number; cor
   const { colors, typography, spacing } = useTema();
 
   return (
-    <Cartao style={[styles.miniCard, { flex: 1, padding: spacing.md }]}>
+    <Cartao
+      style={[
+        styles.miniCard,
+        { flex: 1, paddingVertical: spacing.md, paddingHorizontal: spacing.sm },
+      ]}>
       <Text
         style={[
           styles.miniLabel,
@@ -19,6 +23,8 @@ function MiniCartao({ rotulo, valor, cor }: { rotulo: string; valor: number; cor
       </Text>
       <Text
         numberOfLines={1}
+        adjustsFontSizeToFit
+        minimumFontScale={0.7}
         style={[styles.miniValor, { color: cor, fontFamily: typography.fontFamily.bold }]}>
         {formatarMoeda(valor)}
       </Text>
