@@ -11,3 +11,4 @@ export * from './CabecalhoTela';
 export * from './GrupoOpcoes';
 export * from './LinhaSwitch';
 export * from './TituloSecao';
+export * from './SeletorMesCompacto';

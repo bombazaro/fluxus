@@ -10,7 +10,7 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { Ionicons } from '@expo/vector-icons';
 import { useTema } from '@/src/theme';
@@ -19,6 +19,7 @@ import {
   CampoMoeda,
   CampoTexto,
   Cartao,
+  SeletorMesCompacto,
 } from '@/src/components/ui';
 import { Categoria, Pessoa, TipoConta } from '@/src/types';
 import { categoriasRepo } from '@/src/db/repositorios/categoriasRepo';
@@ -27,7 +28,6 @@ import { lancamentosRepo } from '@/src/db/repositorios/lancamentosRepo';
 import { pessoasRepo } from '@/src/db/repositorios/pessoasRepo';
 import { divisoesRepo } from '@/src/db/repositorios/divisoesRepo';
 import {
-  adicionarMeses,
   ajustarDiaDoMes,
   gerarLancamentosParaConta,
   sugerirMesInicio,
@@ -35,7 +35,6 @@ import {
 import { useMesStore, obterHojeIso, obterMesAtualIso } from '@/src/store/useMesStore';
 import {
   formatarData,
-  formatarMesAno,
   formatarMoeda,
   ehDataIsoValida,
 } from '@/src/utils/formatadores';
@@ -90,13 +89,26 @@ export default function NovaContaModal() {
   // Mês aberto na tela de trás: a conta nova começa nele (ou logo depois)
   const mesVisto = useMesStore((s) => s.mesRef);
 
-  const [tipo, setTipo] = useState<TipoConta>('fixa');
-  const [nome, setNome] = useState('');
-  const [valorCentavos, setValorCentavos] = useState(0);
+  // O simulador de parcelas abre este formulário já preenchido
+  const preenchido = useLocalSearchParams<{
+    tipo?: string;
+    nome?: string;
+    valor?: string;
+    parcelas?: string;
+    mes?: string;
+  }>();
+  const [tipo, setTipo] = useState<TipoConta>(
+    TIPOS_CONTA.some((t) => t.tipo === preenchido.tipo) ? (preenchido.tipo as TipoConta) : 'fixa'
+  );
+  const [nome, setNome] = useState(preenchido.nome ?? '');
+  const [valorCentavos, setValorCentavos] = useState(() => {
+    const valor = Number(preenchido.valor);
+    return Number.isInteger(valor) && valor > 0 ? valor : 0;
+  });
   const [diaVencimento, setDiaVencimento] = useState('10');
   const [dataUnica, setDataUnica] = useState(() => dataPadraoNoMes(mesVisto));
   const [temVencimento, setTemVencimento] = useState(true);
-  const [parcelasTotal, setParcelasTotal] = useState('2');
+  const [parcelasTotal, setParcelasTotal] = useState(preenchido.parcelas ?? '2');
   const [categoriaId, setCategoriaId] = useState<number | null>(null);
   const [compartilhada, setCompartilhada] = useState(false);
 
@@ -105,7 +117,9 @@ export default function NovaContaModal() {
   const [pessoasSelecionadas, setPessoasSelecionadas] = useState<number[]>([]);
   const [salvando, setSalvando] = useState(false);
   // null = segue a sugestão; muda quando a pessoa usa as setas
-  const [mesInicioEscolhido, setMesInicioEscolhido] = useState<string | null>(null);
+  const [mesInicioEscolhido, setMesInicioEscolhido] = useState<string | null>(
+    preenchido.mes && /^\d{4}-\d{2}$/.test(preenchido.mes) ? preenchido.mes : null
+  );
 
   useEffect(() => {
     async function carregarDados() {
@@ -449,41 +463,11 @@ export default function NovaContaModal() {
                 }}>
                 {tipo === 'parcelada' ? 'Primeira parcela em' : 'Primeira cobrança em'}
               </Text>
-              <View
-                style={[
-                  styles.linhaMesInicio,
-                  {
-                    marginTop: spacing.xs,
-                    backgroundColor: colors.surface,
-                    borderColor: colors.border,
-                    borderRadius: radii.button,
-                  },
-                ]}>
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityLabel="Mês anterior"
-                  onPress={() => setMesInicioEscolhido(adicionarMeses(mesInicio, -1))}
-                  hitSlop={12}
-                  style={styles.setaMes}>
-                  <Ionicons name="chevron-back" size={22} color={colors.text} />
-                </Pressable>
-                <Text
-                  style={{
-                    color: colors.text,
-                    fontFamily: typography.fontFamily.semiBold,
-                    fontSize: typography.fontSize.body,
-                  }}>
-                  {formatarMesAno(mesInicio)}
-                </Text>
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityLabel="Próximo mês"
-                  onPress={() => setMesInicioEscolhido(adicionarMeses(mesInicio, 1))}
-                  hitSlop={12}
-                  style={styles.setaMes}>
-                  <Ionicons name="chevron-forward" size={22} color={colors.text} />
-                </Pressable>
-              </View>
+              <SeletorMesCompacto
+                mesRef={mesInicio}
+                onMudar={setMesInicioEscolhido}
+                style={{ marginTop: spacing.xs }}
+              />
               <Text
                 style={{
                   color: primeiroJaVenceu ? colors.danger : colors.textSecondary,
@@ -671,15 +655,6 @@ const styles = StyleSheet.create({
     fontSize: 15,
   },
   tipoDescricao: {},
-  linhaMesInicio: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    borderWidth: 1,
-  },
-  setaMes: {
-    padding: 10,
-  },
   linhaSwitch: {
     flexDirection: 'row',
     alignItems: 'center',

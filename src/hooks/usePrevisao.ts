@@ -14,10 +14,11 @@ import { obterMesAtualIso } from '@/src/store/useMesStore';
 export const MESES_PREVISAO = 6;
 
 /**
- * Dados da previsão dos próximos meses, a partir do mês atual. Recarrega sempre
- * que a tela volta a aparecer (ex.: depois de cadastrar uma parcela).
+ * Dados da previsão dos próximos meses (6, ou quantos forem pedidos), a partir do
+ * mês atual. Recarrega sempre que a tela volta a aparecer (ex.: depois de
+ * cadastrar uma parcela).
  */
-export function usePrevisao() {
+export function usePrevisao(quantidadeMeses = MESES_PREVISAO) {
   const db = useSQLiteContext();
   const mesesMedia = useConfigStore((s) => s.config.mesesMedia);
   const [dados, setDados] = useState<DadosPrevisao | null>(null);
@@ -34,7 +35,7 @@ export function usePrevisao() {
           // O mês atual precisa estar gerado para não contar as fixas duas vezes
           await lancamentosRepo.garantirMes(db, mesInicial);
           const [novosDados, parcelas] = await Promise.all([
-            previsaoRepo.carregar(db, mesInicial, MESES_PREVISAO, mesesMedia),
+            previsaoRepo.carregar(db, mesInicial, quantidadeMeses, mesesMedia),
             previsaoRepo.ultimasParcelas(db),
           ]);
           if (!ativo) return;
@@ -49,7 +50,7 @@ export function usePrevisao() {
       return () => {
         ativo = false;
       };
-    }, [db, mesInicial, mesesMedia])
+    }, [db, mesInicial, mesesMedia, quantidadeMeses])
   );
 
   return { dados, parcelamentos, mesInicial, erro };
