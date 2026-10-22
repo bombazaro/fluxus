@@ -32,7 +32,7 @@ App Android de controle de contas a pagar. Você cadastra contas e rendas e o ap
 </tr>
 </table>
 
-[**Baixar o APK**](https://github.com/bombazaro/fluxus/releases/latest) (Android 7 ou mais novo)
+[**Baixar o APK**](https://github.com/bombazaro/fluxus/releases/latest) (Android 7 ou mais novo) · [Como instalar](#como-instalar-no-celular)
 
 ## Funcionalidades
 
@@ -55,6 +55,21 @@ App Android de controle de contas a pagar. Você cadastra contas e rendas e o ap
 - **Backup:** exporta todos os dados em um arquivo e importa de volta. Também serve para passar os dados para outro celular.
 - **Configurações:** tema, lembretes, limite do aviso, meses da média e o que entra no resumo. Na primeira vez, uma tela de boas-vindas explica o app.
 - Datas no formato brasileiro (DD/MM/AAAA), modo claro e escuro e rótulos para leitor de tela.
+
+## Como instalar no celular
+
+O Fluxus não está na Play Store: ele é instalado pelo arquivo APK. Funciona em **Android 7 ou mais novo** (iPhone não instala APK).
+
+1. No celular, abra a [página da última versão](https://github.com/bombazaro/fluxus/releases/latest) e toque em `fluxus-v1.0.0.apk` para baixar.
+2. Abra o arquivo baixado. Na primeira vez, o Android avisa que o navegador (ou o app de arquivos) não tem permissão para instalar apps: toque em **Configurações**, ative **Permitir desta fonte** e volte.
+3. Toque em **Instalar**.
+4. Se o Google Play Protect mostrar um aviso de app desconhecido, toque em **Mais detalhes** e depois em **Instalar mesmo assim**. Alguns celulares (como os da Xiaomi) mostram mais uma tela de confirmação.
+
+> **Dicas**
+>
+> - Prefira mandar o **link** da página acima em vez do arquivo pelo WhatsApp: às vezes ele renomeia ou bloqueia arquivos `.apk`.
+> - **Para atualizar**, baixe o APK da versão nova e instale por cima. Os dados continuam no app.
+> - Os dados ficam só no celular. Antes de trocar de celular ou desinstalar, faça um backup em **Mais › Backup dos dados**.
 
 ## Stack
 
