@@ -15,6 +15,18 @@ const ITENS: { titulo: string; descricao: string; icone: IconeIonicons; rota: Hr
     rota: '/rendas',
   },
   {
+    titulo: 'Pessoas',
+    descricao: 'Quem divide contas com você',
+    icone: 'people-outline',
+    rota: '/pessoas',
+  },
+  {
+    titulo: 'Acertos',
+    descricao: 'Quanto cada pessoa deve das contas divididas',
+    icone: 'swap-horizontal-outline',
+    rota: '/acertos',
+  },
+  {
     titulo: 'Configurações',
     descricao: 'Tema, lembretes, avisos e cálculos',
     icone: 'settings-outline',

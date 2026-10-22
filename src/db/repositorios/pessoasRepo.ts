@@ -21,7 +21,21 @@ export const pessoasRepo = {
     return result.lastInsertRowId;
   },
 
+  async renomear(db: SQLiteDatabase, id: number, nome: string): Promise<void> {
+    await db.runAsync("UPDATE pessoas SET nome = ? WHERE id = ? AND nome != 'Eu';", [nome, id]);
+  },
+
+  /** Em quantas divisões de contas a pessoa aparece (some ao excluir a pessoa). */
+  async contarDivisoes(db: SQLiteDatabase, id: number): Promise<number> {
+    const row = await db.getFirstAsync<{ total: number }>(
+      'SELECT COUNT(*) AS total FROM divisoes WHERE pessoa_id = ?;',
+      [id]
+    );
+    return row?.total ?? 0;
+  },
+
+  /** "Eu" nunca é excluído: é como o app sabe qual é a parte do usuário. */
   async excluir(db: SQLiteDatabase, id: number): Promise<void> {
-    await db.runAsync('DELETE FROM pessoas WHERE id = ?;', [id]);
+    await db.runAsync("DELETE FROM pessoas WHERE id = ? AND nome != 'Eu';", [id]);
   },
 };
