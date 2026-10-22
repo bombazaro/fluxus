@@ -19,7 +19,7 @@
       },
       "predictiveBackGestureEnabled": false,
       "package": "com.bernardo.fluxus",
-      "versionCode": 2
+      "versionCode": 3
     },
     "web": {
       "bundler": "metro",
