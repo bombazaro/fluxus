@@ -60,7 +60,11 @@ export function compararMeses(
   }
 
   const categorias = Array.from(mapa.values())
-    .map((c) => ({ ...c, diferenca: c.atual - c.anterior, percentual: variacao(c.atual, c.anterior) }))
+    .map((c) => ({
+      ...c,
+      diferenca: c.atual - c.anterior,
+      percentual: variacao(c.atual, c.anterior),
+    }))
     .sort((a, b) => b.atual - a.atual || b.anterior - a.anterior);
 
   const totalAtual = categorias.reduce((soma, c) => soma + c.atual, 0);

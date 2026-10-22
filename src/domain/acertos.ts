@@ -45,7 +45,8 @@ export function textoAcerto(acerto: AcertoPessoa): string {
     `Oi, ${acerto.nome}! Resumo das contas divididas:`,
     '',
     ...acerto.itens.map(
-      (i) => `• ${i.conta_nome} (${formatarMesAnoAbrev(i.mes_ref)}): ${formatarMoeda(i.valor_centavos)}`
+      (i) =>
+        `• ${i.conta_nome} (${formatarMesAnoAbrev(i.mes_ref)}): ${formatarMoeda(i.valor_centavos)}`
     ),
     '',
     `Total: ${formatarMoeda(acerto.totalCentavos)}`,

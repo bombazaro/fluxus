@@ -6,13 +6,23 @@ function aporte(valor: number, data: string): ReservaAporte {
   return { id: id++, valor_centavos: valor, data, observacao: null };
 }
 
-const META_FIXA: ReservaMeta = { id: 1, valor_meta_centavos: 1000000, tipo_meta: 'fixo', meses_gastos: 6 };
+const META_FIXA: ReservaMeta = {
+  id: 1,
+  valor_meta_centavos: 1000000,
+  tipo_meta: 'fixo',
+  meses_gastos: 6,
+};
 const HOJE = '2026-10-21';
 
 describe('calcularReserva', () => {
   it('sem meta, só soma o guardado', () => {
     const r = calcularReserva(null, [aporte(50000, '2026-10-01')], 300000, HOJE);
-    expect(r).toMatchObject({ metaCentavos: 0, guardadoCentavos: 50000, percentual: 0, metaBatida: false });
+    expect(r).toMatchObject({
+      metaCentavos: 0,
+      guardadoCentavos: 50000,
+      percentual: 0,
+      metaBatida: false,
+    });
   });
 
   it('soma aportes e desconta retiradas', () => {

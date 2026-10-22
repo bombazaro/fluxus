@@ -3,11 +3,7 @@ import { useFocusEffect } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { previsaoRepo } from '@/src/db/repositorios/previsaoRepo';
 import { lancamentosRepo } from '@/src/db/repositorios/lancamentosRepo';
-import {
-  DadosPrevisao,
-  FimParcelamento,
-  fimDosParcelamentos,
-} from '@/src/domain/preverSaldo';
+import { DadosPrevisao, FimParcelamento, fimDosParcelamentos } from '@/src/domain/preverSaldo';
 import { useConfigStore } from '@/src/store/useConfigStore';
 import { obterMesAtualIso } from '@/src/store/useMesStore';
 

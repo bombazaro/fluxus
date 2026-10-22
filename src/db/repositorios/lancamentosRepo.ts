@@ -30,10 +30,7 @@ async function redistribuirDivisoes(
 }
 
 export const lancamentosRepo = {
-  async criar(
-    db: SQLiteDatabase,
-    lancamento: Omit<Lancamento, 'id'>
-  ): Promise<number> {
+  async criar(db: SQLiteDatabase, lancamento: Omit<Lancamento, 'id'>): Promise<number> {
     const result = await db.runAsync(
       `INSERT INTO lancamentos (
         conta_id, mes_ref, vencimento, valor_centavos, pago, pago_em, parcela_numero
@@ -52,10 +49,7 @@ export const lancamentosRepo = {
   },
 
   async buscarPorId(db: SQLiteDatabase, id: number): Promise<Lancamento | null> {
-    const row = await db.getFirstAsync<Lancamento>(
-      'SELECT * FROM lancamentos WHERE id = ?;',
-      [id]
-    );
+    const row = await db.getFirstAsync<Lancamento>('SELECT * FROM lancamentos WHERE id = ?;', [id]);
     return row || null;
   },
 
@@ -71,10 +65,7 @@ export const lancamentosRepo = {
     return row || null;
   },
 
-  async listarPorMes(
-    db: SQLiteDatabase,
-    mesRef: string
-  ): Promise<LancamentoComDetalhes[]> {
+  async listarPorMes(db: SQLiteDatabase, mesRef: string): Promise<LancamentoComDetalhes[]> {
     const rows = await db.getAllAsync<LancamentoComDetalhes>(
       `SELECT
         l.id, l.conta_id, l.mes_ref, l.vencimento, l.valor_centavos, l.pago, l.pago_em, l.parcela_numero,
@@ -114,11 +105,7 @@ export const lancamentosRepo = {
     );
   },
 
-  async listarPagosDaConta(
-    db: SQLiteDatabase,
-    contaId: number,
-    limite = 6
-  ): Promise<Lancamento[]> {
+  async listarPagosDaConta(db: SQLiteDatabase, contaId: number, limite = 6): Promise<Lancamento[]> {
     return await db.getAllAsync<Lancamento>(
       `SELECT * FROM lancamentos
        WHERE conta_id = ? AND pago = 1
@@ -128,39 +115,25 @@ export const lancamentosRepo = {
     );
   },
 
-  async marcarPago(
-    db: SQLiteDatabase,
-    id: number,
-    pago: boolean
-  ): Promise<void> {
+  async marcarPago(db: SQLiteDatabase, id: number, pago: boolean): Promise<void> {
     const pagoEm = pago ? new Date().toISOString() : null;
-    await db.runAsync(
-      'UPDATE lancamentos SET pago = ?, pago_em = ? WHERE id = ?;',
-      [pago ? 1 : 0, pagoEm, id]
-    );
+    await db.runAsync('UPDATE lancamentos SET pago = ?, pago_em = ? WHERE id = ?;', [
+      pago ? 1 : 0,
+      pagoEm,
+      id,
+    ]);
   },
 
-  async atualizarValor(
-    db: SQLiteDatabase,
-    id: number,
-    valorCentavos: number
-  ): Promise<void> {
-    await db.runAsync(
-      'UPDATE lancamentos SET valor_centavos = ? WHERE id = ?;',
-      [valorCentavos, id]
-    );
+  async atualizarValor(db: SQLiteDatabase, id: number, valorCentavos: number): Promise<void> {
+    await db.runAsync('UPDATE lancamentos SET valor_centavos = ? WHERE id = ?;', [
+      valorCentavos,
+      id,
+    ]);
     await redistribuirDivisoes(db, id, valorCentavos);
   },
 
-  async atualizarVencimento(
-    db: SQLiteDatabase,
-    id: number,
-    vencimento: string
-  ): Promise<void> {
-    await db.runAsync(
-      'UPDATE lancamentos SET vencimento = ? WHERE id = ?;',
-      [vencimento, id]
-    );
+  async atualizarVencimento(db: SQLiteDatabase, id: number, vencimento: string): Promise<void> {
+    await db.runAsync('UPDATE lancamentos SET vencimento = ? WHERE id = ?;', [vencimento, id]);
   },
 
   async excluir(db: SQLiteDatabase, id: number): Promise<void> {
@@ -211,10 +184,10 @@ export const lancamentosRepo = {
     contaId: number,
     mesRefApartirDe: string
   ): Promise<void> {
-    await db.runAsync(
-      'DELETE FROM lancamentos WHERE conta_id = ? AND mes_ref >= ? AND pago = 0;',
-      [contaId, mesRefApartirDe]
-    );
+    await db.runAsync('DELETE FROM lancamentos WHERE conta_id = ? AND mes_ref >= ? AND pago = 0;', [
+      contaId,
+      mesRefApartirDe,
+    ]);
   },
 
   /**

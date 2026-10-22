@@ -126,7 +126,10 @@ export function formatarMoedaCurta(centavos: number): string {
   const reais = Math.round(Math.abs(centavos) / 100);
   const sinal = centavos < 0 ? '−' : '';
   if (reais < 1000) return `${sinal}R$ ${reais}`;
-  const mil = (reais / 1000).toFixed(reais < 10000 ? 1 : 0).replace('.', ',').replace(/,0$/, '');
+  const mil = (reais / 1000)
+    .toFixed(reais < 10000 ? 1 : 0)
+    .replace('.', ',')
+    .replace(/,0$/, '');
   return `${sinal}R$ ${mil} mil`;
 }
 

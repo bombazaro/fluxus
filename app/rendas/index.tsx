@@ -1,27 +1,11 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import {
-  Alert,
-  Modal,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Switch,
-  Text,
-  View,
-} from 'react-native';
+import { Alert, Modal, Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { Ionicons } from '@expo/vector-icons';
 import { useTema } from '@/src/theme';
-import {
-  Botao,
-  CampoMoeda,
-  CampoTexto,
-  Cartao,
-  EstadoVazio,
-  Etiqueta,
-} from '@/src/components/ui';
+import { Botao, CampoMoeda, CampoTexto, Cartao, EstadoVazio, Etiqueta } from '@/src/components/ui';
 import { Renda, RendaRecebida, TipoRenda } from '@/src/types';
 import { rendasRepo } from '@/src/db/repositorios/rendasRepo';
 import { useMesStore } from '@/src/store/useMesStore';
@@ -174,22 +158,18 @@ export default function RendasScreen() {
   };
 
   const handleExcluir = async (renda: Renda) => {
-    Alert.alert(
-      'Excluir Renda',
-      `Tem certeza que deseja excluir "${renda.nome}"?`,
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        {
-          text: 'Excluir',
-          style: 'destructive',
-          onPress: async () => {
-            await rendasRepo.excluir(db, renda.id);
-            await recarregar();
-            await carregarMes(db);
-          },
+    Alert.alert('Excluir Renda', `Tem certeza que deseja excluir "${renda.nome}"?`, [
+      { text: 'Cancelar', style: 'cancel' },
+      {
+        text: 'Excluir',
+        style: 'destructive',
+        onPress: async () => {
+          await rendasRepo.excluir(db, renda.id);
+          await recarregar();
+          await carregarMes(db);
         },
-      ]
-    );
+      },
+    ]);
   };
 
   const idsDoMes = new Set(rendasDoMes.map((r) => r.id));
@@ -299,9 +279,7 @@ export default function RendasScreen() {
                         opacity: valeNoMes ? 1 : 0.4,
                       },
                     ]}>
-                    {jaRecebida ? (
-                      <Ionicons name="checkmark" size={16} color="#FFFFFF" />
-                    ) : null}
+                    {jaRecebida ? <Ionicons name="checkmark" size={16} color="#FFFFFF" /> : null}
                   </Pressable>
 
                   <View style={{ flex: 1 }}>
@@ -315,7 +293,13 @@ export default function RendasScreen() {
                       </Text>
                       <View style={{ marginLeft: 6 }}>
                         <Etiqueta
-                          texto={r.tipo === 'variavel' ? 'Variável' : r.tipo === 'pontual' ? 'Pontual' : 'Fixa'}
+                          texto={
+                            r.tipo === 'variavel'
+                              ? 'Variável'
+                              : r.tipo === 'pontual'
+                                ? 'Pontual'
+                                : 'Fixa'
+                          }
                           tipo="info"
                         />
                       </View>
@@ -358,7 +342,12 @@ export default function RendasScreen() {
                 <View
                   style={[
                     styles.rendaAcoes,
-                    { borderTopColor: colors.border, borderTopWidth: 1, marginTop: spacing.sm, paddingTop: spacing.xs },
+                    {
+                      borderTopColor: colors.border,
+                      borderTopWidth: 1,
+                      marginTop: spacing.sm,
+                      paddingTop: spacing.xs,
+                    },
                   ]}>
                   <Pressable
                     accessibilityRole="button"

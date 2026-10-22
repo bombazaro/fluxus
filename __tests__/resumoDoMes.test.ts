@@ -28,11 +28,7 @@ describe('resumoDoMes', () => {
     ...extra,
   });
 
-  const criarRenda = (
-    id: number,
-    valorCentavos: number,
-    ativa: 0 | 1 = 1
-  ): Renda => ({
+  const criarRenda = (id: number, valorCentavos: number, ativa: 0 | 1 = 1): Renda => ({
     id,
     nome: `Renda ${id}`,
     valor_centavos: valorCentavos,
@@ -59,19 +55,19 @@ describe('resumoDoMes', () => {
   it('calcula mês com contas pendentes e pagas', () => {
     const lancamentos = [
       criarLancamento(1, 10000, 1), // R$ 100 pago
-      criarLancamento(2, 5000, 0),  // R$ 50 pendente
-      criarLancamento(3, 2550, 0),  // R$ 25,50 pendente
+      criarLancamento(2, 5000, 0), // R$ 50 pendente
+      criarLancamento(3, 2550, 0), // R$ 25,50 pendente
     ];
     const rendas = [criarRenda(1, 30000)]; // R$ 300 renda
 
     const resumo = resumoDoMes(lancamentos, rendas);
 
     expect(resumo.totalContas).toBe(17550); // R$ 175,50
-    expect(resumo.totalPago).toBe(10000);   // R$ 100,00
-    expect(resumo.faltaPagar).toBe(7550);   // R$ 75,50
-    expect(resumo.rendaTotal).toBe(30000);  // R$ 300,00
-    expect(resumo.sobra).toBe(12450);       // 30000 - 17550 = R$ 124,50
-    expect(resumo.sobraAtual).toBe(20000);  // 30000 - 10000 = R$ 200,00
+    expect(resumo.totalPago).toBe(10000); // R$ 100,00
+    expect(resumo.faltaPagar).toBe(7550); // R$ 75,50
+    expect(resumo.rendaTotal).toBe(30000); // R$ 300,00
+    expect(resumo.sobra).toBe(12450); // 30000 - 17550 = R$ 124,50
+    expect(resumo.sobraAtual).toBe(20000); // 30000 - 10000 = R$ 200,00
     expect(resumo.percentualUsado).toBeCloseTo(17550 / 30000);
   });
 

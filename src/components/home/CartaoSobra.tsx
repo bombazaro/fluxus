@@ -91,7 +91,9 @@ export function CartaoSobra({ resumo, onGuardarNaReserva }: CartaoSobraProps) {
           variante="fantasma"
           tamanho="pequeno"
           onPress={onGuardarNaReserva}
-          iconeEsquerda={<Ionicons name="shield-checkmark-outline" size={16} color={colors.primary} />}
+          iconeEsquerda={
+            <Ionicons name="shield-checkmark-outline" size={16} color={colors.primary} />
+          }
           style={{ marginTop: spacing.sm, alignSelf: 'flex-start' }}
         />
       ) : null}

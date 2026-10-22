@@ -41,7 +41,9 @@ export function Inicializacao() {
   }, [db]);
 
   useEffect(() => {
-    Appearance.setColorScheme(tema === 'sistema' ? 'unspecified' : tema === 'claro' ? 'light' : 'dark');
+    Appearance.setColorScheme(
+      tema === 'sistema' ? 'unspecified' : tema === 'claro' ? 'light' : 'dark'
+    );
   }, [tema]);
 
   useEffect(() => {

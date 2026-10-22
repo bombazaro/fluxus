@@ -142,7 +142,11 @@ export default function ConfiguracoesScreen() {
               <View
                 style={[
                   styles.dica,
-                  { backgroundColor: colors.warningLight, marginTop: spacing.base, padding: spacing.md },
+                  {
+                    backgroundColor: colors.warningLight,
+                    marginTop: spacing.base,
+                    padding: spacing.md,
+                  },
                 ]}>
                 <Text style={[textoAjuda, { color: colors.text }]}>
                   Em alguns celulares (Xiaomi, Samsung, Motorola), a economia de bateria atrasa ou
@@ -174,8 +178,8 @@ export default function ConfiguracoesScreen() {
             onMudar={(limiteAtencaoPercentual) => mudar({ limiteAtencaoPercentual })}
           />
           <Text style={[textoAjuda, { marginTop: spacing.xs }]}>
-            Do dinheiro do mês (renda + o que sobrou do mês anterior). Passou de 100%, o aviso
-            fica vermelho.
+            Do dinheiro do mês (renda + o que sobrou do mês anterior). Passou de 100%, o aviso fica
+            vermelho.
           </Text>
         </Cartao>
 

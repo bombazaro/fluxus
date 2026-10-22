@@ -57,9 +57,7 @@ export default function CalendarioScreen() {
   const lancamentosDoDia = useMemo(
     () =>
       diaAberto
-        ? lancamentos.filter(
-            (l) => l.sem_vencimento !== 1 && l.vencimento === diaAberto.dataIso
-          )
+        ? lancamentos.filter((l) => l.sem_vencimento !== 1 && l.vencimento === diaAberto.dataIso)
         : [],
     [lancamentos, diaAberto]
   );

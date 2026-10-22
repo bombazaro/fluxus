@@ -37,7 +37,7 @@ tela (app/)  →  store (src/store, Zustand)  →  repositórios (src/db) + cál
 ## Decisões do projeto
 
 - **Dinheiro em centavos inteiros:** R$ 10,50 é guardado como `1050`. Isso evita erros de arredondamento com números decimais.
-- **Conta × lançamento:** a *conta* é o cadastro ("Internet, R$ 100, todo dia 10") e o *lançamento* é a cobrança de um mês ("Internet de maio, não paga"). Assim cada mês tem seu próprio valor e seu "pago".
+- **Conta × lançamento:** a _conta_ é o cadastro ("Internet, R$ 100, todo dia 10") e o _lançamento_ é a cobrança de um mês ("Internet de maio, não paga"). Assim cada mês tem seu próprio valor e seu "pago".
 - **Contas fixas geradas sob demanda:** o lançamento do mês é criado quando o mês é aberto (`garantirMes`), sem duplicar. Os meses excluídos com "só este mês" ficam registrados para não voltarem.
 - **Dia 31 em mês curto:** usa o último dia do mês (28/02, 30/04...).
 - **Offline e sem nuvem:** a privacidade e a simplicidade valem mais que a sincronização. Para não perder dados, existe o backup manual em arquivo.
@@ -55,6 +55,7 @@ npx expo run:android     # compila e instala o development build
 Nas próximas vezes, basta `npx expo start` com o app aberto no celular. O app de desenvolvimento precisa desse servidor para carregar.
 
 > **Máquina com 8 GB de RAM ou menos:** compile só a arquitetura do celular e com menos paralelismo, colocando no `~/.gradle/gradle.properties`:
+>
 > ```properties
 > reactNativeArchitectures=arm64-v8a
 > org.gradle.parallel=false

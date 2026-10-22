@@ -15,13 +15,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { Ionicons } from '@expo/vector-icons';
 import { useTema } from '@/src/theme';
-import {
-  Botao,
-  CampoMoeda,
-  CampoTexto,
-  Cartao,
-  Etiqueta,
-} from '@/src/components/ui';
+import { Botao, CampoMoeda, CampoTexto, Cartao, Etiqueta } from '@/src/components/ui';
 import { Categoria, Conta, Lancamento } from '@/src/types';
 import { contasRepo } from '@/src/db/repositorios/contasRepo';
 import { categoriasRepo } from '@/src/db/repositorios/categoriasRepo';
@@ -245,32 +239,28 @@ export default function DetalheContaScreen() {
   };
 
   const handleExcluir = async () => {
-    Alert.alert(
-      'Excluir Conta',
-      'Como deseja excluir esta conta?',
-      [
-        {
-          text: 'Apenas deste mês',
-          onPress: async () => {
-            if (lancamentoDoMes) {
-              await lancamentosRepo.excluirSoDesteMes(db, lancamentoDoMes);
-              await carregarMes(db);
-              router.back();
-            }
-          },
-        },
-        {
-          text: 'Este e os próximos',
-          style: 'destructive',
-          onPress: async () => {
-            await contasRepo.encerrarAPartirDe(db, conta.id, mesRef);
+    Alert.alert('Excluir Conta', 'Como deseja excluir esta conta?', [
+      {
+        text: 'Apenas deste mês',
+        onPress: async () => {
+          if (lancamentoDoMes) {
+            await lancamentosRepo.excluirSoDesteMes(db, lancamentoDoMes);
             await carregarMes(db);
             router.back();
-          },
+          }
         },
-        { text: 'Cancelar', style: 'cancel' },
-      ]
-    );
+      },
+      {
+        text: 'Este e os próximos',
+        style: 'destructive',
+        onPress: async () => {
+          await contasRepo.encerrarAPartirDe(db, conta.id, mesRef);
+          await carregarMes(db);
+          router.back();
+        },
+      },
+      { text: 'Cancelar', style: 'cancel' },
+    ]);
   };
 
   return (
@@ -309,11 +299,7 @@ export default function DetalheContaScreen() {
           onPress={() => setEditando(!editando)}
           hitSlop={12}
           style={styles.btnEditar}>
-          <Ionicons
-            name={editando ? 'close' : 'create-outline'}
-            size={22}
-            color={colors.primary}
-          />
+          <Ionicons name={editando ? 'close' : 'create-outline'} size={22} color={colors.primary} />
         </Pressable>
       </View>
 
@@ -321,10 +307,7 @@ export default function DetalheContaScreen() {
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         style={{ flex: 1 }}>
         <ScrollView
-          contentContainerStyle={[
-            styles.content,
-            { padding: spacing.base, paddingBottom: 60 },
-          ]}
+          contentContainerStyle={[styles.content, { padding: spacing.base, paddingBottom: 60 }]}
           keyboardShouldPersistTaps="handled">
           {/* Card Principal */}
           <Cartao style={{ marginBottom: spacing.base }}>
@@ -613,11 +596,7 @@ export default function DetalheContaScreen() {
               onPress={handleDesativar}
               variante="secundario"
             />
-            <Botao
-              titulo="Excluir Conta"
-              onPress={handleExcluir}
-              variante="perigo"
-            />
+            <Botao titulo="Excluir Conta" onPress={handleExcluir} variante="perigo" />
           </View>
         </ScrollView>
       </KeyboardAvoidingView>

@@ -85,7 +85,7 @@ export function preverSaldo(
       const chave = `${c.id}|${mesRef}`;
       if (!contaRecorrenteNoMes(c, mesRef) || existe.has(chave) || ignorado.has(chave)) continue;
       const valor =
-        c.tipo === 'variavel' ? dados.mediaVariaveis[c.id] ?? c.valor_centavos : c.valor_centavos;
+        c.tipo === 'variavel' ? (dados.mediaVariaveis[c.id] ?? c.valor_centavos) : c.valor_centavos;
       contasCentavos += parteDoValor(c.id, valor);
     }
 
@@ -123,7 +123,10 @@ export interface FimParcelamento {
 }
 
 /** Parcelamentos que ainda não terminaram, do que acaba primeiro ao último. */
-export function fimDosParcelamentos(parcelas: UltimaParcela[], mesAtual: string): FimParcelamento[] {
+export function fimDosParcelamentos(
+  parcelas: UltimaParcela[],
+  mesAtual: string
+): FimParcelamento[] {
   return parcelas
     .filter((p) => p.ultimo_mes >= mesAtual)
     .sort((a, b) => a.ultimo_mes.localeCompare(b.ultimo_mes))

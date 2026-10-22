@@ -143,9 +143,7 @@ export default function BoasVindasScreen() {
       </ScrollView>
 
       <View style={{ paddingHorizontal: spacing.xl, paddingBottom: spacing.base }}>
-        <View
-          style={styles.pontos}
-          accessibilityLabel={`Passo ${passo + 1} de ${PASSOS.length}`}>
+        <View style={styles.pontos} accessibilityLabel={`Passo ${passo + 1} de ${PASSOS.length}`}>
           {PASSOS.map((p, i) => (
             <View
               key={p.titulo}

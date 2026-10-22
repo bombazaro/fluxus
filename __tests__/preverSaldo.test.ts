@@ -50,7 +50,11 @@ describe('preverSaldo', () => {
     const meses = preverSaldo(dados({ contas: [conta()] }), '2026-11', 3);
     expect(meses.map((m) => m.mesRef)).toEqual(['2026-11', '2026-12', '2027-01']);
     for (const m of meses) {
-      expect(m).toMatchObject({ rendaCentavos: 300000, contasCentavos: 10000, sobraCentavos: 290000 });
+      expect(m).toMatchObject({
+        rendaCentavos: 300000,
+        contasCentavos: 10000,
+        sobraCentavos: 290000,
+      });
     }
   });
 
@@ -108,7 +112,13 @@ describe('preverSaldo', () => {
       dados({
         contas: [conta({ compartilhada: 1, valor_centavos: 20000 })],
         lancamentos: [
-          { id: 1, conta_id: 1, mes_ref: '2026-11', valor_centavos: 20000, minha_parte_centavos: 10000 },
+          {
+            id: 1,
+            conta_id: 1,
+            mes_ref: '2026-11',
+            valor_centavos: 20000,
+            minha_parte_centavos: 10000,
+          },
         ],
         fracaoMinhaParte: { 1: 0.5 },
       }),
@@ -136,11 +146,7 @@ describe('preverSaldo', () => {
   });
 
   it('sobra negativa quando as contas passam da renda', () => {
-    const meses = preverSaldo(
-      dados({ contas: [conta({ valor_centavos: 350000 })] }),
-      '2026-11',
-      1
-    );
+    const meses = preverSaldo(dados({ contas: [conta({ valor_centavos: 350000 })] }), '2026-11', 1);
     expect(meses[0].sobraCentavos).toBe(-50000);
   });
 });
@@ -149,15 +155,47 @@ describe('fimDosParcelamentos', () => {
   it('lista quando cada parcelamento termina e quanto libera, do mais próximo ao mais longe', () => {
     const fim = fimDosParcelamentos(
       [
-        { conta_id: 1, nome: 'Celular', ultimo_mes: '2027-03', valor_parcela_centavos: 20000, parcelas_restantes: 5 },
-        { conta_id: 2, nome: 'Geladeira', ultimo_mes: '2026-12', valor_parcela_centavos: 30000, parcelas_restantes: 2 },
-        { conta_id: 3, nome: 'Curso', ultimo_mes: '2026-09', valor_parcela_centavos: 10000, parcelas_restantes: 0 },
+        {
+          conta_id: 1,
+          nome: 'Celular',
+          ultimo_mes: '2027-03',
+          valor_parcela_centavos: 20000,
+          parcelas_restantes: 5,
+        },
+        {
+          conta_id: 2,
+          nome: 'Geladeira',
+          ultimo_mes: '2026-12',
+          valor_parcela_centavos: 30000,
+          parcelas_restantes: 2,
+        },
+        {
+          conta_id: 3,
+          nome: 'Curso',
+          ultimo_mes: '2026-09',
+          valor_parcela_centavos: 10000,
+          parcelas_restantes: 0,
+        },
       ],
       '2026-11'
     );
     expect(fim).toEqual([
-      { contaId: 2, nome: 'Geladeira', ultimoMes: '2026-12', liberaAPartirDe: '2027-01', valorCentavos: 30000, parcelasRestantes: 2 },
-      { contaId: 1, nome: 'Celular', ultimoMes: '2027-03', liberaAPartirDe: '2027-04', valorCentavos: 20000, parcelasRestantes: 5 },
+      {
+        contaId: 2,
+        nome: 'Geladeira',
+        ultimoMes: '2026-12',
+        liberaAPartirDe: '2027-01',
+        valorCentavos: 30000,
+        parcelasRestantes: 2,
+      },
+      {
+        contaId: 1,
+        nome: 'Celular',
+        ultimoMes: '2027-03',
+        liberaAPartirDe: '2027-04',
+        valorCentavos: 20000,
+        parcelasRestantes: 5,
+      },
     ]);
   });
 });

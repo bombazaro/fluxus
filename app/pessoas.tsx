@@ -85,8 +85,8 @@ export default function PessoasScreen() {
             fontSize: typography.fontSize.caption,
             lineHeight: 18,
           }}>
-          Cadastre quem divide contas com você (ex.: quem mora junto). A divisão é anotada só
-          neste celular: o celular da outra pessoa não é atualizado.
+          Cadastre quem divide contas com você (ex.: quem mora junto). A divisão é anotada só neste
+          celular: o celular da outra pessoa não é atualizado.
         </Text>
 
         <Cartao style={{ marginTop: spacing.base }}>

@@ -31,10 +31,7 @@ describe('validarBackup', () => {
   });
 
   it('recusa tabela que não é lista', () => {
-    const resultado = validarBackup(
-      { ...backupValido, tabelas: { contas: { id: 1 } } },
-      2
-    );
+    const resultado = validarBackup({ ...backupValido, tabelas: { contas: { id: 1 } } }, 2);
     expect(resultado.ok).toBe(false);
   });
 

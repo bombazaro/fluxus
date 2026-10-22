@@ -49,7 +49,10 @@ export function SeletorMes({
           onPress={onIrParaHoje}
           style={styles.mesTitulo}>
           <Text
-            style={[styles.mesTexto, { color: colors.text, fontFamily: typography.fontFamily.bold }]}>
+            style={[
+              styles.mesTexto,
+              { color: colors.text, fontFamily: typography.fontFamily.bold },
+            ]}>
             {formatarMesAno(mesRef)}
           </Text>
         </Pressable>

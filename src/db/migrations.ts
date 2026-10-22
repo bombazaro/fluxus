@@ -22,10 +22,11 @@ export async function executarMigracoes(db: SQLiteDatabase): Promise<void> {
 
       if (!catCount || catCount.count === 0) {
         for (const cat of CATEGORIAS_PADRAO) {
-          await db.runAsync(
-            'INSERT INTO categorias (nome, cor, icone) VALUES (?, ?, ?);',
-            [cat.nome, cat.cor, cat.icone]
-          );
+          await db.runAsync('INSERT INTO categorias (nome, cor, icone) VALUES (?, ?, ?);', [
+            cat.nome,
+            cat.cor,
+            cat.icone,
+          ]);
         }
       }
 

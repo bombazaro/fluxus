@@ -7,17 +7,12 @@ export const pessoasRepo = {
   },
 
   async buscarPorId(db: SQLiteDatabase, id: number): Promise<Pessoa | null> {
-    const row = await db.getFirstAsync<Pessoa>(
-      'SELECT * FROM pessoas WHERE id = ?;',
-      [id]
-    );
+    const row = await db.getFirstAsync<Pessoa>('SELECT * FROM pessoas WHERE id = ?;', [id]);
     return row || null;
   },
 
   async criar(db: SQLiteDatabase, nome: string): Promise<number> {
-    const result = await db.runAsync('INSERT INTO pessoas (nome) VALUES (?);', [
-      nome,
-    ]);
+    const result = await db.runAsync('INSERT INTO pessoas (nome) VALUES (?);', [nome]);
     return result.lastInsertRowId;
   },
 

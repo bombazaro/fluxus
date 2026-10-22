@@ -34,7 +34,9 @@ export function BarrasComparacao({
       <View style={[styles.legenda, { marginBottom: spacing.md }]}>
         <View style={[styles.marcador, { backgroundColor: colors.textMuted }]} />
         <Text style={[styles.legendaTexto, { color: colors.textSecondary }]}>{rotuloAnterior}</Text>
-        <View style={[styles.marcador, { backgroundColor: colors.primary, marginLeft: spacing.base }]} />
+        <View
+          style={[styles.marcador, { backgroundColor: colors.primary, marginLeft: spacing.base }]}
+        />
         <Text style={[styles.legendaTexto, { color: colors.textSecondary }]}>{rotuloAtual}</Text>
       </View>
 
@@ -69,7 +71,12 @@ export function BarrasComparacao({
                 }}>
                 {c.nome}
               </Text>
-              <Text style={{ color: corVariacao, fontFamily: typography.fontFamily.bold, fontSize: 13 }}>
+              <Text
+                style={{
+                  color: corVariacao,
+                  fontFamily: typography.fontFamily.bold,
+                  fontSize: 13,
+                }}>
                 {variacao}
               </Text>
             </View>

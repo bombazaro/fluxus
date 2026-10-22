@@ -9,9 +9,11 @@ App mobile de controle de contas a pagar. 100% offline, dados no próprio celula
 ## 1. Visão geral
 
 ### O que o app faz
+
 O usuário cadastra contas e rendas. O app calcula sozinho: total do mês, o que já foi pago, o que falta e quanto sobra da renda.
 
 ### Princípios do projeto
+
 - **Simples primeiro:** cada etapa entrega algo que já funciona no celular.
 - **Offline de verdade:** nada de servidor, login ou internet.
 - **Dinheiro em centavos:** valores guardados como número inteiro (R$ 10,50 vira 1050). Isso evita erros de arredondamento.
@@ -19,46 +21,49 @@ O usuário cadastra contas e rendas. O app calcula sozinho: total do mês, o que
 - **Sem nuvem, com backup manual:** não há sincronização. Para não perder dados ao desinstalar ou trocar de celular, o usuário exporta um arquivo de backup (Mais > Backup dos dados) e importa quando precisar. O aviso de que os dados ficam só no celular aparece nessa tela.
 
 ### Ordem de construção
-| Etapa | Entrega |
-|---|---|
-| 0 | Projeto criado e rodando no celular |
-| 1 | Design base e menu inferior |
-| 2 | Banco de dados |
-| 3 | Cadastro de contas e cálculo do mês |
-| 4 | Rendas |
-| 5 | Calendário de vencimentos |
-| 6 | Aviso de aperto e notificações |
-| 7 | Comparação com o mês anterior e previsão |
-| 8 | Reserva de emergência |
-| 9 | Simulador de parcelas |
-| 10 | Contas compartilhadas |
-| 11 | Acabamento e qualidade |
-| 12 | APK nos celulares e portfólio |
+
+| Etapa | Entrega                                  |
+| ----- | ---------------------------------------- |
+| 0     | Projeto criado e rodando no celular      |
+| 1     | Design base e menu inferior              |
+| 2     | Banco de dados                           |
+| 3     | Cadastro de contas e cálculo do mês      |
+| 4     | Rendas                                   |
+| 5     | Calendário de vencimentos                |
+| 6     | Aviso de aperto e notificações           |
+| 7     | Comparação com o mês anterior e previsão |
+| 8     | Reserva de emergência                    |
+| 9     | Simulador de parcelas                    |
+| 10    | Contas compartilhadas                    |
+| 11    | Acabamento e qualidade                   |
+| 12    | APK nos celulares e portfólio            |
 
 ### Padrão de commits (Conventional Commits)
 
 **Formato:**
+
 ```
 tipo(escopo): descrição curta no imperativo
 ```
 
 Regras simples:
+
 - O **tipo** fica em inglês (é o padrão mundial). A **descrição** fica em português, em letra minúscula, sem ponto final, com até 72 caracteres.
 - O **escopo** é opcional e diz a área mexida: `db`, `ui`, `nav`, `tema`, `store`, `domain`, `home`, `contas`, `rendas`, `calendario`, `notificacoes`, `config`, `graficos`, `planejar`, `reserva`, `simulador`, `pessoas`, `acertos`, `onboarding`, `a11y`, `release`, `build`.
 - Escrever no imperativo: "adicionar", "corrigir", "criar" (e não "adicionei" ou "adicionando").
 - **Um commit = uma ideia.** Se a frase precisa de "e" para explicar, provavelmente são dois commits.
 
-| Tipo | Quando usar | Exemplo |
-|---|---|---|
-| `feat` | Funcionalidade nova que o usuário percebe | `feat(contas): marcar conta como paga` |
-| `fix` | Correção de erro | `fix(domain): usar último dia do mês quando vencimento é 31` |
-| `refactor` | Reorganizar código sem mudar o comportamento | `refactor(contas): extrair item da lista para componente` |
-| `test` | Criar ou ajustar testes | `test(domain): cobrir resumo do mês com renda zero` |
-| `docs` | README, plano, comentários | `docs: adicionar prints ao README` |
-| `style` | Só formatação ou visual do código, sem lógica | `style: aplicar prettier nos arquivos` |
-| `perf` | Melhorar desempenho | `perf(contas): usar FlatList com índice por mês` |
-| `chore` | Configuração, dependências, ferramentas | `chore: instalar expo-sqlite` |
-| `build` | Mudanças de build e APK | `build: adicionar perfil preview no eas.json` |
+| Tipo       | Quando usar                                   | Exemplo                                                      |
+| ---------- | --------------------------------------------- | ------------------------------------------------------------ |
+| `feat`     | Funcionalidade nova que o usuário percebe     | `feat(contas): marcar conta como paga`                       |
+| `fix`      | Correção de erro                              | `fix(domain): usar último dia do mês quando vencimento é 31` |
+| `refactor` | Reorganizar código sem mudar o comportamento  | `refactor(contas): extrair item da lista para componente`    |
+| `test`     | Criar ou ajustar testes                       | `test(domain): cobrir resumo do mês com renda zero`          |
+| `docs`     | README, plano, comentários                    | `docs: adicionar prints ao README`                           |
+| `style`    | Só formatação ou visual do código, sem lógica | `style: aplicar prettier nos arquivos`                       |
+| `perf`     | Melhorar desempenho                           | `perf(contas): usar FlatList com índice por mês`             |
+| `chore`    | Configuração, dependências, ferramentas       | `chore: instalar expo-sqlite`                                |
+| `build`    | Mudanças de build e APK                       | `build: adicionar perfil preview no eas.json`                |
 
 **Mudança que quebra o que existia** (ex.: trocar a estrutura do banco): colocar `!` depois do tipo.
 `feat(db)!: separar contas e lançamentos em tabelas distintas`
@@ -76,21 +81,25 @@ Faça commit **sempre que uma pequena parte funcionar**, e nunca com o app quebr
 7. **Não misturar** ajuste de formatação com mudança de lógica no mesmo commit.
 
 **Comandos do dia a dia:**
+
 ```bash
 git status                      # ver o que mudou
 git add src/domain/resumoDoMes.ts __tests__/resumoDoMes.test.ts
 git commit -m "feat(domain): calcular resumo do mês"
 git push
 ```
+
 Evite `git add .` sem olhar o `git status`: é assim que arquivos como a chave de assinatura (keystore) ou o `.env` vão parar no GitHub.
 
 **Branches (opcional, mas bom para portfólio):** uma branch por etapa (`etapa-3-contas`), depois unir na `main` com `git merge`. Se preferir ficar só na `main`, tudo bem para projeto individual.
 
 **Tags de versão** ao fim de marcos importantes:
+
 ```bash
 git tag -a v0.1.0 -m "Etapa 3: cadastro de contas e resumo do mês"
 git push --tags
 ```
+
 Marcos sugeridos: `v0.1.0` (Etapa 3), `v0.2.0` (Etapa 6), `v0.3.0` (Etapa 9), `v1.0.0` (Etapa 12).
 
 ---
@@ -98,23 +107,26 @@ Marcos sugeridos: `v0.1.0` (Etapa 3), `v0.2.0` (Etapa 6), `v0.3.0` (Etapa 9), `v
 ## 2. Design e experiência de uso
 
 ### 2.1 Menu inferior (Expo Router Tabs)
+
 Cinco abas, no máximo. Mais que isso fica apertado no celular.
 
-| Aba | Ícone | Conteúdo |
-|---|---|---|
-| Início | casa | Resumo do mês, gráfico, avisos |
-| Contas | lista | Todas as contas do mês, filtros |
-| Calendário | calendário | Vencimentos por dia |
-| Planejar | gráfico | Previsão, simulador, reserva |
-| Mais | três pontos | Rendas, compartilhadas, configurações |
+| Aba        | Ícone       | Conteúdo                              |
+| ---------- | ----------- | ------------------------------------- |
+| Início     | casa        | Resumo do mês, gráfico, avisos        |
+| Contas     | lista       | Todas as contas do mês, filtros       |
+| Calendário | calendário  | Vencimentos por dia                   |
+| Planejar   | gráfico     | Previsão, simulador, reserva          |
+| Mais       | três pontos | Rendas, compartilhadas, configurações |
 
 Regras do menu:
+
 - Ícones com texto embaixo (nunca só ícone).
 - Aba ativa com cor de destaque e ícone preenchido.
 - Altura mínima de 56 dp e respeitar a área segura do aparelho (`react-native-safe-area-context`).
 - **Botão flutuante "+"** (FAB) nas telas Início e Contas para cadastrar conta rápido, no canto inferior direito, acima do menu.
 
 ### 2.2 Identidade visual
+
 - **Cor principal:** um verde-azulado (ex.: `#0F766E`) para transmitir calma e dinheiro sob controle.
 - **Semântica de cores (sempre as mesmas em todo o app):**
   - Verde: pago, sobra, positivo
@@ -127,6 +139,7 @@ Regras do menu:
 - **Cantos arredondados:** cartões com raio 16, botões com raio 12.
 
 ### 2.3 Boas práticas de interação
+
 - **Alvos de toque** com no mínimo 48x48 dp.
 - **Marcar como pago com um toque** direto na lista (checkbox grande ou deslizar), com vibração leve (`expo-haptics`).
 - **Desfazer:** ao excluir ou marcar pago, mostrar aviso "Desfazer" por 5 segundos.
@@ -144,7 +157,9 @@ Regras do menu:
 - **Formatação brasileira:** `Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' })` e datas dd/mm/aaaa. Criar funções `formatarMoeda` e `formatarData` em `src/utils/`.
 
 ### 2.4 Tela Início (a mais importante)
+
 De cima para baixo:
+
 1. Seletor de mês (setas < Maio 2026 >).
 2. **Cartão grande:** "Sobra do mês" com o valor e uma barra de progresso (renda usada).
 3. **Três cartões pequenos:** Total do mês | Já pago | Falta pagar.
@@ -160,6 +175,7 @@ De cima para baixo:
 **Objetivo:** projeto vazio rodando no celular.
 
 Passos:
+
 1. Instalar Node.js (versão LTS) e Android Studio (para o `adb` e o SDK).
 2. Criar o projeto:
    ```bash
@@ -186,12 +202,12 @@ Passos:
 
 **Commits desta etapa:**
 
-| Quando | Mensagem |
-|---|---|
-| Logo após criar o projeto (passo 2), antes de mexer em qualquer coisa | `chore: criar projeto Expo com template de abas` |
-| Depois de instalar as bibliotecas (passo 5) | `chore: instalar dependências do projeto` |
+| Quando                                                                    | Mensagem                                                  |
+| ------------------------------------------------------------------------- | --------------------------------------------------------- |
+| Logo após criar o projeto (passo 2), antes de mexer em qualquer coisa     | `chore: criar projeto Expo com template de abas`          |
+| Depois de instalar as bibliotecas (passo 5)                               | `chore: instalar dependências do projeto`                 |
 | Depois de configurar TypeScript estrito, ESLint e Prettier (passos 6 e 7) | `chore: configurar typescript estrito, eslint e prettier` |
-| Depois de remover as telas de exemplo (passo 9) | `refactor: remover telas de exemplo do template` |
+| Depois de remover as telas de exemplo (passo 9)                           | `refactor: remover telas de exemplo do template`          |
 
 ---
 
@@ -200,6 +216,7 @@ Passos:
 **Objetivo:** esqueleto bonito, sem dados ainda.
 
 Passos:
+
 1. Criar a estrutura de pastas (seção 16 deste documento).
 2. Criar `src/theme/` com `colors.ts` (claro e escuro), `spacing.ts`, `typography.ts`.
 3. Criar o hook `useTema()` que devolve as cores do tema atual.
@@ -221,14 +238,14 @@ Passos:
 
 **Commits desta etapa:**
 
-| Quando | Mensagem |
-|---|---|
-| Depois de criar `colors.ts`, `spacing.ts`, `typography.ts` e o hook `useTema` (passos 2 e 3) | `feat(tema): adicionar cores, espaçamento e tipografia` |
-| Depois de carregar a fonte Inter e segurar a splash (passo 4) | `feat(tema): carregar fonte Inter e splash screen` |
-| Depois de criar as 5 abas com ícones e telas vazias (passos 5 e 6) | `feat(nav): criar menu inferior com cinco abas` |
-| Depois de `Cartao`, `Botao`, `CampoTexto`, `CampoMoeda`, `Etiqueta` | `feat(ui): criar componentes base de cartão, botão, campos e etiqueta` |
-| Depois de `EstadoVazio`, `BarraProgresso`, `Fab` | `feat(ui): criar estado vazio, barra de progresso e botão flutuante` |
-| Depois de criar a rota modal de cadastro (passo 8) | `feat(nav): criar modal de cadastro de conta` |
+| Quando                                                                                       | Mensagem                                                               |
+| -------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
+| Depois de criar `colors.ts`, `spacing.ts`, `typography.ts` e o hook `useTema` (passos 2 e 3) | `feat(tema): adicionar cores, espaçamento e tipografia`                |
+| Depois de carregar a fonte Inter e segurar a splash (passo 4)                                | `feat(tema): carregar fonte Inter e splash screen`                     |
+| Depois de criar as 5 abas com ícones e telas vazias (passos 5 e 6)                           | `feat(nav): criar menu inferior com cinco abas`                        |
+| Depois de `Cartao`, `Botao`, `CampoTexto`, `CampoMoeda`, `Etiqueta`                          | `feat(ui): criar componentes base de cartão, botão, campos e etiqueta` |
+| Depois de `EstadoVazio`, `BarraProgresso`, `Fab`                                             | `feat(ui): criar estado vazio, barra de progresso e botão flutuante`   |
+| Depois de criar a rota modal de cadastro (passo 8)                                           | `feat(nav): criar modal de cadastro de conta`                          |
 
 ---
 
@@ -282,9 +299,11 @@ divisoes
 > **Versões do banco:** a versão 1 (`user_version = 1`) já cria todas as tabelas acima, inclusive as de reserva, pessoas e divisões, para as etapas 8 e 10 não precisarem de migração. A versão 2 adiciona `rendas.mes_ref`, a restrição única em `rendas_recebidas` e a tabela `lancamentos_ignorados`. A versão 3 adiciona `contas.sem_vencimento`. Daqui em diante, **toda** mudança no banco é uma nova versão em `migrations.ts` (nunca editar o `SCHEMA_V1`, porque quem já instalou o app não roda ele de novo).
 
 ### 5.2 Por que existe a tabela `lancamentos`
+
 A **conta** é o cadastro ("Internet, R$ 100, todo dia 10"). O **lançamento** é a cobrança de um mês específico ("Internet de maio, R$ 100, não paga"). Assim cada mês tem seu valor e seu "pago", e a conta variável pode ter valor diferente a cada mês.
 
 ### 5.3 Passos
+
 1. Criar `src/db/schema.ts` com os comandos `CREATE TABLE`.
 2. Criar `src/db/migrations.ts` usando `PRAGMA user_version` para controlar a versão do banco. Cada mudança futura vira uma nova migração (importante: sem backup, **nunca** apagar e recriar o banco numa atualização do app).
 3. Abrir o banco com `SQLiteProvider` no `app/_layout.tsx` e rodar as migrações na inicialização.
@@ -297,12 +316,12 @@ A **conta** é o cadastro ("Internet, R$ 100, todo dia 10"). O **lançamento** �
 
 **Commits desta etapa:**
 
-| Quando | Mensagem |
-|---|---|
-| Depois de escrever as tabelas e a migração com `user_version` (passos 1 e 2) | `feat(db): criar schema e migrações com user_version` |
-| Depois de abrir o banco com `SQLiteProvider` e rodar as migrações (passos 3 e 4) | `feat(db): abrir banco no início do app e ativar chaves estrangeiras` |
-| Depois de cada repositório funcionando | `feat(db): criar repositório de contas`, `feat(db): criar repositório de lançamentos`, `feat(db): criar repositório de rendas` |
-| Depois de inserir as categorias padrão (passo 6) | `feat(db): inserir categorias padrão na primeira abertura` |
+| Quando                                                                           | Mensagem                                                                                                                       |
+| -------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| Depois de escrever as tabelas e a migração com `user_version` (passos 1 e 2)     | `feat(db): criar schema e migrações com user_version`                                                                          |
+| Depois de abrir o banco com `SQLiteProvider` e rodar as migrações (passos 3 e 4) | `feat(db): abrir banco no início do app e ativar chaves estrangeiras`                                                          |
+| Depois de cada repositório funcionando                                           | `feat(db): criar repositório de contas`, `feat(db): criar repositório de lançamentos`, `feat(db): criar repositório de rendas` |
+| Depois de inserir as categorias padrão (passo 6)                                 | `feat(db): inserir categorias padrão na primeira abertura`                                                                     |
 
 ---
 
@@ -312,14 +331,15 @@ A **conta** é o cadastro ("Internet, R$ 100, todo dia 10"). O **lançamento** �
 
 ### 6.1 Tipos de conta e como se comportam
 
-| Tipo | Exemplo | Regra |
-|---|---|---|
-| Única | IPVA | Gera 1 lançamento na data escolhida |
-| Fixa mensal | Aluguel | Gera 1 lançamento por mês, mesmo valor, até ser desativada |
-| Parcelada | Celular 10x | Gera N lançamentos (um por mês), com "parcela 3/10" |
-| Variável | Luz, água | Gera 1 por mês; valor sugerido pela média dos últimos meses |
+| Tipo        | Exemplo     | Regra                                                       |
+| ----------- | ----------- | ----------------------------------------------------------- |
+| Única       | IPVA        | Gera 1 lançamento na data escolhida                         |
+| Fixa mensal | Aluguel     | Gera 1 lançamento por mês, mesmo valor, até ser desativada  |
+| Parcelada   | Celular 10x | Gera N lançamentos (um por mês), com "parcela 3/10"         |
+| Variável    | Luz, água   | Gera 1 por mês; valor sugerido pela média dos últimos meses |
 
 ### 6.2 Geração dos lançamentos
+
 - Criar `src/domain/gerarLancamentos.ts` (funções puras: datas, dia 31, lista de lançamentos de uma conta nova).
 - Ao cadastrar uma conta parcelada, já gerar todas as parcelas. Salvar a conta e os lançamentos numa **transação** (ou tudo, ou nada).
 - Para fixas e variáveis, gerar o lançamento do mês **quando o mês é aberto** (função `garantirMes('2026-05')` em `lancamentosRepo`, porque ela usa o banco; chamada ao abrir o app e ao trocar de mês). Ela só cria o que ainda não existe, então pode rodar quantas vezes quiser sem duplicar.
@@ -328,11 +348,13 @@ A **conta** é o cadastro ("Internet, R$ 100, todo dia 10"). O **lançamento** �
 - **Conta sem data de vencimento** (`sem_vencimento = 1`): o lançamento fica no último dia do mês, aparece na seção "Sem vencimento" e só vira atrasada se o mês acabar sem pagar. Não gera lembrete (Etapa 6) nem pontinho no calendário.
 
 ### 6.3 Conta variável com sugestão
+
 - Criar `src/domain/sugerirValor.ts`: média (pura) dos últimos 3 meses (ou 6, configurável) dos lançamentos **pagos** daquela conta. A busca no banco fica no repositório (`lancamentosRepo.listarPagosDaConta`).
 - Ao abrir o lançamento do mês, mostrar "Sugestão: R$ 187,40 (média dos últimos 3 meses)" com um botão "Usar".
 - Se não houver histórico, pedir o valor manualmente.
 
 ### 6.4 Cálculo do mês
+
 Criar `src/domain/resumoDoMes.ts` com uma função pura:
 
 ```ts
@@ -350,6 +372,7 @@ resumoDoMes(lancamentos, rendas) => {
 Escrever **testes** para essa função. Todo o resto do app depende dela. Instalar `jest` e `jest-expo` **nesta etapa** (é a primeira que tem testes); a Etapa 11 só completa os casos de borda.
 
 ### 6.5 Telas e passos
+
 1. **Estado (Zustand):** `src/store/useMesStore.ts` guarda o mês selecionado, os lançamentos e o resumo. Ações: `trocarMes`, `carregar`, `marcarPago`, `desmarcarPago`.
 2. **Formulário** (`app/conta/nova.tsx`):
    - Escolher o tipo primeiro (4 botões grandes com ícone e explicação curta).
@@ -373,21 +396,21 @@ Escrever **testes** para essa função. Todo o resto do app depende dela. Instal
 
 **Commits desta etapa** (nesta ordem: primeiro o cálculo com teste, depois a tela):
 
-| Quando | Mensagem |
-|---|---|
-| Função `resumoDoMes` escrita | `feat(domain): calcular resumo do mês` |
-| Teste dela passando | `test(domain): cobrir resumo do mês` |
+| Quando                                                          | Mensagem                                                               |
+| --------------------------------------------------------------- | ---------------------------------------------------------------------- |
+| Função `resumoDoMes` escrita                                    | `feat(domain): calcular resumo do mês`                                 |
+| Teste dela passando                                             | `test(domain): cobrir resumo do mês`                                   |
 | `gerarLancamentos` e `garantirMes` prontos, com teste do dia 31 | `feat(domain): gerar lançamentos de contas únicas, fixas e parceladas` |
-| `sugerirValor` pronto | `feat(domain): sugerir valor de conta variável pela média` |
-| Store do mês criada | `feat(store): criar store do mês com Zustand` |
-| Formulário funcionando para os 4 tipos | `feat(contas): criar formulário de cadastro por tipo` |
-| Lista agrupada por situação, com filtros e busca | `feat(contas): listar contas agrupadas por situação` |
-| Botão de pago com vibração e "desfazer" | `feat(contas): marcar conta como paga` |
-| Editar e excluir com escolha de escopo | `feat(contas): editar e excluir conta` |
-| Detalhe da conta | `feat(contas): criar tela de detalhe da conta` |
-| Cartões do resumo na tela Início | `feat(home): mostrar resumo do mês` |
-| Algum erro achado no uso real | `fix(escopo): descrever o erro corrigido` |
-| README inicial escrito | `docs: adicionar README inicial` |
+| `sugerirValor` pronto                                           | `feat(domain): sugerir valor de conta variável pela média`             |
+| Store do mês criada                                             | `feat(store): criar store do mês com Zustand`                          |
+| Formulário funcionando para os 4 tipos                          | `feat(contas): criar formulário de cadastro por tipo`                  |
+| Lista agrupada por situação, com filtros e busca                | `feat(contas): listar contas agrupadas por situação`                   |
+| Botão de pago com vibração e "desfazer"                         | `feat(contas): marcar conta como paga`                                 |
+| Editar e excluir com escolha de escopo                          | `feat(contas): editar e excluir conta`                                 |
+| Detalhe da conta                                                | `feat(contas): criar tela de detalhe da conta`                         |
+| Cartões do resumo na tela Início                                | `feat(home): mostrar resumo do mês`                                    |
+| Algum erro achado no uso real                                   | `fix(escopo): descrever o erro corrigido`                              |
+| README inicial escrito                                          | `docs: adicionar README inicial`                                       |
 
 Ao terminar: `git tag -a v0.1.0 -m "Etapa 3: cadastro de contas e resumo do mês"`
 
@@ -400,6 +423,7 @@ Ao terminar: `git tag -a v0.1.0 -m "Etapa 3: cadastro de contas e resumo do mês
 **Objetivo:** mais de uma fonte de renda, com a data em que cai.
 
 Passos:
+
 1. Migração v2 (commit separado): `rendas.mes_ref`, `UNIQUE (renda_id, mes_ref)` em `rendas_recebidas` e a tabela `lancamentos_ignorados`.
 2. Tela "Rendas" (`app/rendas/index.tsx`), aberta pela aba Mais: lista + botão adicionar.
 3. Campos: nome (Salário, Freela...), valor, dia do recebimento, ativa/inativa.
@@ -413,15 +437,15 @@ Passos:
 
 **Commits desta etapa:**
 
-| Quando | Mensagem |
-|---|---|
-| Migração v2 (commit separado, antes das telas) | `feat(db): criar migração v2 de rendas e lançamentos ignorados` |
-| Tela de lista e formulário de rendas | `feat(rendas): cadastrar e listar rendas` |
-| Renda variável e pontual | `feat(rendas): suportar renda variável e pontual` |
-| `rendasDoMes` e resumo do mês somando só as rendas do mês (com teste) | `feat(domain): somar rendas ativas no resumo do mês` |
-| Marcar renda como recebida | `feat(rendas): marcar renda como recebida` |
-| `saldoPorDia` pronto, com teste | `feat(domain): calcular saldo por dia do mês` |
-| Linha do tempo na tela Início | `feat(home): mostrar dia de menor saldo` |
+| Quando                                                                | Mensagem                                                        |
+| --------------------------------------------------------------------- | --------------------------------------------------------------- |
+| Migração v2 (commit separado, antes das telas)                        | `feat(db): criar migração v2 de rendas e lançamentos ignorados` |
+| Tela de lista e formulário de rendas                                  | `feat(rendas): cadastrar e listar rendas`                       |
+| Renda variável e pontual                                              | `feat(rendas): suportar renda variável e pontual`               |
+| `rendasDoMes` e resumo do mês somando só as rendas do mês (com teste) | `feat(domain): somar rendas ativas no resumo do mês`            |
+| Marcar renda como recebida                                            | `feat(rendas): marcar renda como recebida`                      |
+| `saldoPorDia` pronto, com teste                                       | `feat(domain): calcular saldo por dia do mês`                   |
+| Linha do tempo na tela Início                                         | `feat(home): mostrar dia de menor saldo`                        |
 
 ---
 
@@ -430,6 +454,7 @@ Passos:
 **Objetivo:** ver o mês de relance.
 
 Passos:
+
 1. Criar o calendário em `src/components/calendario/` (grade própria, é simples e dá controle total do visual; ou usar `react-native-calendars`). O bottom sheet pode ser um `Modal` com `animationType="slide"`, sem biblioteca extra.
 2. Cada dia mostra pontinhos coloridos: vermelho (atrasada), amarelo (pendente), verde (paga), azul (renda). A montagem dos dias fica numa função pura `src/domain/montarCalendario.ts`, com teste (semana começando no domingo, dias do mês anterior em branco).
 3. Tocar em um dia abre uma lista embaixo (bottom sheet) com as contas do dia e o total.
@@ -442,19 +467,20 @@ Passos:
 
 **Commits desta etapa:**
 
-| Quando | Mensagem |
-|---|---|
-| Grade do mês com troca de mês e dia de hoje destacado | `feat(calendario): criar grade mensal` |
-| Pontinhos coloridos por situação | `feat(calendario): marcar vencimentos e rendas por cor` |
-| Lista do dia em bottom sheet | `feat(calendario): listar contas do dia em bottom sheet` |
-| Marcar pago dentro do bottom sheet | `feat(calendario): marcar conta como paga pelo dia` |
-| Botão "Hoje" e gesto de deslizar | `feat(calendario): adicionar botão hoje e troca de mês por gesto` |
+| Quando                                                | Mensagem                                                          |
+| ----------------------------------------------------- | ----------------------------------------------------------------- |
+| Grade do mês com troca de mês e dia de hoje destacado | `feat(calendario): criar grade mensal`                            |
+| Pontinhos coloridos por situação                      | `feat(calendario): marcar vencimentos e rendas por cor`           |
+| Lista do dia em bottom sheet                          | `feat(calendario): listar contas do dia em bottom sheet`          |
+| Marcar pago dentro do bottom sheet                    | `feat(calendario): marcar conta como paga pelo dia`               |
+| Botão "Hoje" e gesto de deslizar                      | `feat(calendario): adicionar botão hoje e troca de mês por gesto` |
 
 ---
 
 ## 9. Etapa 6 - Aviso de aperto e notificações
 
 ### 9.1 Aviso de aperto
+
 - Função `avaliarAperto.ts` com 3 níveis:
   - **Atenção (amarelo):** contas passam de 80% da renda.
   - **Aperto (vermelho):** contas passam da renda.
@@ -464,7 +490,9 @@ Passos:
 - Percentuais configuráveis na tela de configurações.
 
 ### 9.2 Notificações locais (`expo-notifications`)
+
 Passos:
+
 1. Pedir permissão de notificação (Android 13 ou superior exige) com uma tela explicando por que, antes do pedido do sistema.
 2. Criar o **canal** "Vencimentos" no Android.
 3. Agendar lembrete por conta: 1 dia antes e no dia, às 9h (horário configurável).
@@ -480,16 +508,16 @@ Passos:
 
 **Commits desta etapa:**
 
-| Quando | Mensagem |
-|---|---|
-| `avaliarAperto` pronto, com teste | `feat(domain): avaliar nível de aperto do mês` |
-| Faixa de aviso na tela Início | `feat(home): exibir faixa de aviso de aperto` |
-| Permissão e canal Android funcionando | `feat(notificacoes): pedir permissão e criar canal Android` |
-| Lembretes agendados (1 dia antes e no dia) | `feat(notificacoes): agendar lembretes de vencimento` |
+| Quando                                           | Mensagem                                                              |
+| ------------------------------------------------ | --------------------------------------------------------------------- |
+| `avaliarAperto` pronto, com teste                | `feat(domain): avaliar nível de aperto do mês`                        |
+| Faixa de aviso na tela Início                    | `feat(home): exibir faixa de aviso de aperto`                         |
+| Permissão e canal Android funcionando            | `feat(notificacoes): pedir permissão e criar canal Android`           |
+| Lembretes agendados (1 dia antes e no dia)       | `feat(notificacoes): agendar lembretes de vencimento`                 |
 | Cancelar e reagendar ao pagar, editar ou excluir | `feat(notificacoes): cancelar e reagendar lembretes ao alterar conta` |
-| Rotina de reagendamento ao abrir o app | `feat(notificacoes): reagendar lembretes ao abrir o app` |
-| Tocar na notificação abre o detalhe | `feat(notificacoes): abrir detalhe da conta ao tocar no lembrete` |
-| Tela de configurações | `feat(config): criar tela de configurações de avisos` |
+| Rotina de reagendamento ao abrir o app           | `feat(notificacoes): reagendar lembretes ao abrir o app`              |
+| Tocar na notificação abre o detalhe              | `feat(notificacoes): abrir detalhe da conta ao tocar no lembrete`     |
+| Tela de configurações                            | `feat(config): criar tela de configurações de avisos`                 |
 
 Ao terminar: `git tag -a v0.2.0 -m "Etapa 6: avisos e notificações"`
 
@@ -498,12 +526,14 @@ Ao terminar: `git tag -a v0.2.0 -m "Etapa 6: avisos e notificações"`
 ## 10. Etapa 7 - Comparação e previsão
 
 ### 10.1 Comparação com o mês anterior
+
 1. Criar `compararMeses.ts`: devolve, por categoria e no total, a diferença em R$ e em %.
 2. Cartão no Início: "Você gastou 12% a mais que em abril" com seta (vermelha para cima, verde para baixo).
 3. Tela com barras lado a lado por categoria (`react-native-gifted-charts`, `BarChart` com duas séries).
 4. Destacar a categoria que mais subiu.
 
 ### 10.2 Previsão do saldo
+
 1. Criar `preverSaldo.ts` para os próximos 6 meses:
    - Rendas ativas (valor esperado).
    - Contas fixas (valor cadastrado).
@@ -518,20 +548,21 @@ Ao terminar: `git tag -a v0.2.0 -m "Etapa 6: avisos e notificações"`
 
 **Commits desta etapa:**
 
-| Quando | Mensagem |
-|---|---|
-| `compararMeses` pronto, com teste | `feat(domain): comparar gastos com o mês anterior` |
-| Cartão no Início | `feat(home): mostrar comparação com o mês anterior` |
-| Barras lado a lado por categoria | `feat(graficos): comparar categorias entre dois meses` |
-| `preverSaldo` pronto, com teste | `feat(domain): prever saldo dos próximos meses` |
-| Gráfico de previsão na aba Planejar | `feat(planejar): exibir gráfico de previsão de saldo` |
-| Aviso de término de parcelamentos | `feat(planejar): mostrar quando cada parcelamento termina` |
+| Quando                              | Mensagem                                                   |
+| ----------------------------------- | ---------------------------------------------------------- |
+| `compararMeses` pronto, com teste   | `feat(domain): comparar gastos com o mês anterior`         |
+| Cartão no Início                    | `feat(home): mostrar comparação com o mês anterior`        |
+| Barras lado a lado por categoria    | `feat(graficos): comparar categorias entre dois meses`     |
+| `preverSaldo` pronto, com teste     | `feat(domain): prever saldo dos próximos meses`            |
+| Gráfico de previsão na aba Planejar | `feat(planejar): exibir gráfico de previsão de saldo`      |
+| Aviso de término de parcelamentos   | `feat(planejar): mostrar quando cada parcelamento termina` |
 
 ---
 
 ## 11. Etapa 8 - Reserva de emergência
 
 Passos:
+
 1. Tela "Reserva" na aba Planejar.
 2. Definir a **meta**: um valor fixo ou "X meses de gastos" (calculado pela média das contas mensais).
 3. Registrar **aportes** (valor, data, observação) e **retiradas**.
@@ -545,12 +576,12 @@ Passos:
 
 **Commits desta etapa:**
 
-| Quando | Mensagem |
-|---|---|
-| Definir meta (valor fixo ou meses de gastos) | `feat(reserva): definir meta da reserva` |
-| Registrar aportes e retiradas | `feat(reserva): registrar aportes e retiradas` |
-| Anel de progresso e estimativa de conclusão | `feat(reserva): mostrar progresso e estimativa de conclusão` |
-| Botão "Guardar na reserva" a partir da sobra | `feat(reserva): sugerir aporte a partir da sobra do mês` |
+| Quando                                       | Mensagem                                                     |
+| -------------------------------------------- | ------------------------------------------------------------ |
+| Definir meta (valor fixo ou meses de gastos) | `feat(reserva): definir meta da reserva`                     |
+| Registrar aportes e retiradas                | `feat(reserva): registrar aportes e retiradas`               |
+| Anel de progresso e estimativa de conclusão  | `feat(reserva): mostrar progresso e estimativa de conclusão` |
+| Botão "Guardar na reserva" a partir da sobra | `feat(reserva): sugerir aporte a partir da sobra do mês`     |
 
 ---
 
@@ -559,6 +590,7 @@ Passos:
 **Objetivo:** "e se eu comprar isso parcelado?"
 
 Passos:
+
 1. Tela com campos: valor total, número de parcelas, juros por mês (opcional, 0 por padrão), mês da primeira parcela.
 2. Calcular o valor da parcela (com e sem juros) em `simularParcelas.ts`.
 3. **Impacto nos próximos meses:** reaproveitar `preverSaldo.ts`, somando a parcela simulada em cada mês. Mostrar dois gráficos ou duas linhas: "Sem a compra" e "Com a compra".
@@ -571,13 +603,13 @@ Passos:
 
 **Commits desta etapa:**
 
-| Quando | Mensagem |
-|---|---|
-| `simularParcelas` pronto, com teste de juros zero e com juros | `feat(domain): simular parcelas com e sem juros` |
-| Tela com campos e valor da parcela | `feat(simulador): criar tela do simulador` |
-| Gráfico "sem a compra" e "com a compra" e pior mês | `feat(simulador): mostrar impacto nos próximos meses` |
-| Veredito em palavras | `feat(simulador): exibir veredito da simulação` |
-| Botão que leva ao formulário preenchido | `feat(simulador): converter simulação em conta parcelada` |
+| Quando                                                        | Mensagem                                                  |
+| ------------------------------------------------------------- | --------------------------------------------------------- |
+| `simularParcelas` pronto, com teste de juros zero e com juros | `feat(domain): simular parcelas com e sem juros`          |
+| Tela com campos e valor da parcela                            | `feat(simulador): criar tela do simulador`                |
+| Gráfico "sem a compra" e "com a compra" e pior mês            | `feat(simulador): mostrar impacto nos próximos meses`     |
+| Veredito em palavras                                          | `feat(simulador): exibir veredito da simulação`           |
+| Botão que leva ao formulário preenchido                       | `feat(simulador): converter simulação em conta parcelada` |
 
 Ao terminar: `git tag -a v0.3.0 -m "Etapa 9: previsão, reserva e simulador"`
 
@@ -586,9 +618,11 @@ Ao terminar: `git tag -a v0.3.0 -m "Etapa 9: previsão, reserva e simulador"`
 ## 13. Etapa 10 - Contas compartilhadas
 
 ### Realidade do projeto
+
 O app é offline e cada celular tem seu próprio banco. Então **não há sincronização**: a divisão é um **registro feito dentro do app**, em cada celular, não uma troca de dados entre os dois. Deixar isso claro na tela, para ninguém esperar que o outro celular atualize sozinho.
 
 Passos:
+
 1. Cadastro de **pessoas** (nome) em Mais > Pessoas. "Eu" já é criado pela migração v1 (não deixar excluir nem renomear).
 2. No formulário da conta, ligar "Conta compartilhada".
 3. Escolher a divisão: **igual**, **por porcentagem** ou **por valor**. Validar que a soma fecha 100% do valor.
@@ -602,26 +636,28 @@ Passos:
 
 **Commits desta etapa:**
 
-| Quando | Mensagem |
-|---|---|
-| Cadastro de pessoas | `feat(pessoas): cadastrar pessoas` |
-| `dividirConta` pronto, com teste (soma fecha o valor) | `feat(domain): dividir conta por igual, porcentagem ou valor` |
-| Chave "Conta compartilhada" no formulário | `feat(contas): marcar conta como compartilhada` |
-| Resumo conta só a parte do usuário | `feat(domain): considerar só a parte do usuário em contas compartilhadas` |
-| Tela de acertos | `feat(acertos): mostrar quanto cada pessoa deve` |
-| Marcar acerto como feito | `feat(acertos): marcar divisão como acertada` |
-| Compartilhar resumo por texto | `feat(acertos): compartilhar resumo pelo WhatsApp` |
+| Quando                                                | Mensagem                                                                  |
+| ----------------------------------------------------- | ------------------------------------------------------------------------- |
+| Cadastro de pessoas                                   | `feat(pessoas): cadastrar pessoas`                                        |
+| `dividirConta` pronto, com teste (soma fecha o valor) | `feat(domain): dividir conta por igual, porcentagem ou valor`             |
+| Chave "Conta compartilhada" no formulário             | `feat(contas): marcar conta como compartilhada`                           |
+| Resumo conta só a parte do usuário                    | `feat(domain): considerar só a parte do usuário em contas compartilhadas` |
+| Tela de acertos                                       | `feat(acertos): mostrar quanto cada pessoa deve`                          |
+| Marcar acerto como feito                              | `feat(acertos): marcar divisão como acertada`                             |
+| Compartilhar resumo por texto                         | `feat(acertos): compartilhar resumo pelo WhatsApp`                        |
 
 ---
 
 ## 14. Etapa 11 - Acabamento e qualidade
 
 ### 14.1 Testes
+
 - `jest` e `jest-expo` já foram instalados na Etapa 3.
 - Testar todas as funções de `src/domain/` (resumo, geração de lançamentos, média, previsão, divisão, aperto).
 - Casos de borda: mês com 28 dias, conta no dia 31, renda zero (evitar divisão por zero), parcela única, valores com centavos.
 
 ### 14.2 Qualidade de uso
+
 - Tela de **primeira abertura** (onboarding) com 3 passos: boas-vindas, cadastrar renda, cadastrar primeira conta.
 - Tela de **Configurações:** tema, notificações, limites de aviso, sugestão pela média (3 ou 6 meses).
 - Aviso permanente e honesto: "Seus dados ficam só neste celular. Se desinstalar o app, eles serão perdidos." (já está na tela de backup).
@@ -631,34 +667,37 @@ Passos:
 - Ícone do app e tela de abertura (splash) próprios, configurados no `app.json`.
 
 ### 14.3 Idioma e formato
+
 - Tudo em português do Brasil.
 - Moeda e data sempre pelas funções de formatação.
 
 **Commits desta etapa:**
 
-| Quando | Mensagem |
-|---|---|
-| Testes dos casos de borda passando | `test(domain): cobrir casos de borda de datas e valores` |
-| Onboarding de 3 passos | `feat(onboarding): criar tela de boas-vindas` |
-| Tela de configurações completa | `feat(config): adicionar tema, limites de aviso e média de meses` |
-| Aviso de que os dados ficam só no celular (já existe na tela de backup; repetir no onboarding) | `feat(config): avisar que os dados ficam só neste celular` |
-| Teste com 200 contas e ajuste de lista | `perf(contas): otimizar lista com muitos itens` |
-| Ajustes de TalkBack | `fix(a11y): adicionar rótulos de acessibilidade nos botões` |
-| Ícone e splash próprios | `chore: adicionar ícone e splash do app` |
-| Prettier em tudo, sem mudar lógica | `style: aplicar prettier nos arquivos` |
-| README final com prints e GIF | `docs: completar README com prints e decisões do projeto` |
+| Quando                                                                                         | Mensagem                                                          |
+| ---------------------------------------------------------------------------------------------- | ----------------------------------------------------------------- |
+| Testes dos casos de borda passando                                                             | `test(domain): cobrir casos de borda de datas e valores`          |
+| Onboarding de 3 passos                                                                         | `feat(onboarding): criar tela de boas-vindas`                     |
+| Tela de configurações completa                                                                 | `feat(config): adicionar tema, limites de aviso e média de meses` |
+| Aviso de que os dados ficam só no celular (já existe na tela de backup; repetir no onboarding) | `feat(config): avisar que os dados ficam só neste celular`        |
+| Teste com 200 contas e ajuste de lista                                                         | `perf(contas): otimizar lista com muitos itens`                   |
+| Ajustes de TalkBack                                                                            | `fix(a11y): adicionar rótulos de acessibilidade nos botões`       |
+| Ícone e splash próprios                                                                        | `chore: adicionar ícone e splash do app`                          |
+| Prettier em tudo, sem mudar lógica                                                             | `style: aplicar prettier nos arquivos`                            |
+| README final com prints e GIF                                                                  | `docs: completar README com prints e decisões do projeto`         |
 
 ---
 
 ## 15. Etapa 12 - Gerar o APK e instalar nos celulares
 
 ### Assinatura (já configurada)
+
 - A chave própria do app fica em `~/fluxus-chave/` (fora do repositório) e as senhas em `~/.gradle/gradle.properties`.
 - O plugin `plugins/withAssinaturaRelease.js` aplica a assinatura a cada `expo prebuild`.
 - **Fazer backup da pasta `~/fluxus-chave/`** fora do computador. Sem ela, não dá para atualizar o app sem desinstalar.
 - A cada versão nova, aumentar `android.versionCode` no `app.json`.
 
 ### Opção A: build local, direto por USB (recomendada para este projeto)
+
 1. Conferir no `app.json`: `name`, `slug`, `android.package` (já definido como `com.bernardo.fluxus`; **nunca mudar**, senão vira outro app e os dados não passam), `version`, ícone.
 2. Conectar o celular por USB com depuração ativa. Conferir com `adb devices`.
 3. Instalar a versão de produção:
@@ -669,11 +708,13 @@ Passos:
 4. Repetir para o segundo celular.
 
 ### Opção B: gerar o arquivo APK
+
 1. Criar `eas.json` com um perfil `preview` com `"android": { "buildType": "apk" }`.
 2. Rodar `eas build -p android --profile preview` (usa a nuvem da Expo, precisa de conta gratuita) e baixar o `.apk`.
 3. Instalar por USB: `adb install -r fluxus.apk`.
 
 ### Atenção ao atualizar o app
+
 - Instalar uma versão nova **por cima** (`adb install -r`) mantém os dados.
 - **Desinstalar apaga o banco.** Por isso as migrações (Etapa 2) nunca devem recriar tabelas existentes.
 - Usar sempre a **mesma chave de assinatura** nas atualizações; com uma chave diferente o Android obriga a desinstalar antes.
@@ -681,12 +722,12 @@ Passos:
 
 **Commits desta etapa:**
 
-| Quando | Mensagem |
-|---|---|
-| `app.json` com nome, pacote Android, versão e ícone | `build: configurar app.json para Android` |
-| `eas.json` com perfil `preview` (se usar a Opção B) | `build: adicionar perfil preview no eas.json` |
-| Keystore e `.env` no `.gitignore` | `chore: ignorar keystore e arquivos de ambiente` |
-| Versão final instalada nos dois celulares e funcionando | `chore(release): preparar versão 1.0.0` |
+| Quando                                                  | Mensagem                                         |
+| ------------------------------------------------------- | ------------------------------------------------ |
+| `app.json` com nome, pacote Android, versão e ícone     | `build: configurar app.json para Android`        |
+| `eas.json` com perfil `preview` (se usar a Opção B)     | `build: adicionar perfil preview no eas.json`    |
+| Keystore e `.env` no `.gitignore`                       | `chore: ignorar keystore e arquivos de ambiente` |
+| Versão final instalada nos dois celulares e funcionando | `chore(release): preparar versão 1.0.0`          |
 
 Ao terminar: `git tag -a v1.0.0 -m "Fluxus 1.0.0"`, `git push --tags` e anexar o APK na seção Releases do GitHub.
 
@@ -769,17 +810,17 @@ fluxus/
 
 ## 18. Riscos e cuidados
 
-| Risco | O que fazer |
-|---|---|
-| Perder dados ao atualizar | Migrações seguras, instalar por cima, nunca desinstalar |
-| Erro de arredondamento em dinheiro | Tudo em centavos inteiros |
-| Notificações não chegando | Development build, canal Android, reagendar ao abrir, orientar sobre bateria |
-| Contas duplicadas em fixas | `garantirMes` só cria o que não existe |
-| Mês excluído de conta fixa voltar sozinho | `garantirMes` respeita `lancamentos_ignorados` |
-| Renda pontual contando todo mês | `rendasDoMes` filtra pelo `mes_ref` da renda |
-| Dia 29, 30, 31 em meses curtos | Usar o último dia do mês |
-| Telas lentas com muitos dados | `FlatList`, consultas com índice em `mes_ref` e `conta_id` |
-| Querer fazer tudo de uma vez | Seguir as etapas; cada uma termina com algo usável |
+| Risco                                     | O que fazer                                                                  |
+| ----------------------------------------- | ---------------------------------------------------------------------------- |
+| Perder dados ao atualizar                 | Migrações seguras, instalar por cima, nunca desinstalar                      |
+| Erro de arredondamento em dinheiro        | Tudo em centavos inteiros                                                    |
+| Notificações não chegando                 | Development build, canal Android, reagendar ao abrir, orientar sobre bateria |
+| Contas duplicadas em fixas                | `garantirMes` só cria o que não existe                                       |
+| Mês excluído de conta fixa voltar sozinho | `garantirMes` respeita `lancamentos_ignorados`                               |
+| Renda pontual contando todo mês           | `rendasDoMes` filtra pelo `mes_ref` da renda                                 |
+| Dia 29, 30, 31 em meses curtos            | Usar o último dia do mês                                                     |
+| Telas lentas com muitos dados             | `FlatList`, consultas com índice em `mes_ref` e `conta_id`                   |
+| Querer fazer tudo de uma vez              | Seguir as etapas; cada uma termina com algo usável                           |
 
 ---
 

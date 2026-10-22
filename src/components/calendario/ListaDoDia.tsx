@@ -57,7 +57,8 @@ export function ListaDoDia({
           ]}>
           <View style={[styles.alca, { backgroundColor: colors.border }]} />
 
-          <View style={[styles.cabecalho, { paddingHorizontal: spacing.base, marginTop: spacing.sm }]}>
+          <View
+            style={[styles.cabecalho, { paddingHorizontal: spacing.base, marginTop: spacing.sm }]}>
             <View style={{ flex: 1 }}>
               <Text
                 style={{

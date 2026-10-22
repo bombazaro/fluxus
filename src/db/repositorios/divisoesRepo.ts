@@ -12,9 +12,7 @@ export const divisoesRepo = {
     lancamentoId: number,
     divisoes: { pessoa_id: number; valor_centavos: number }[]
   ): Promise<void> {
-    await db.runAsync('DELETE FROM divisoes WHERE lancamento_id = ?;', [
-      lancamentoId,
-    ]);
+    await db.runAsync('DELETE FROM divisoes WHERE lancamento_id = ?;', [lancamentoId]);
     for (const d of divisoes) {
       await db.runAsync(
         'INSERT INTO divisoes (lancamento_id, pessoa_id, valor_centavos, pago) VALUES (?, ?, ?, 0);',
@@ -23,10 +21,7 @@ export const divisoesRepo = {
     }
   },
 
-  async listarPorLancamento(
-    db: SQLiteDatabase,
-    lancamentoId: number
-  ): Promise<Divisao[]> {
+  async listarPorLancamento(db: SQLiteDatabase, lancamentoId: number): Promise<Divisao[]> {
     return await db.getAllAsync<Divisao>(
       `SELECT d.id, d.lancamento_id, d.pessoa_id, d.valor_centavos, d.pago, p.nome as pessoa_nome
        FROM divisoes d
@@ -37,10 +32,7 @@ export const divisoesRepo = {
     );
   },
 
-  async listarPorMes(
-    db: SQLiteDatabase,
-    mesRef: string
-  ): Promise<Divisao[]> {
+  async listarPorMes(db: SQLiteDatabase, mesRef: string): Promise<Divisao[]> {
     return await db.getAllAsync<Divisao>(
       `SELECT d.id, d.lancamento_id, d.pessoa_id, d.valor_centavos, d.pago, p.nome as pessoa_nome
        FROM divisoes d

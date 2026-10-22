@@ -57,7 +57,10 @@ export function lerConfiguracoes(linhas: { chave: string; valor: string }[]): Co
 
   return {
     tema: tema === 'claro' || tema === 'escuro' || tema === 'sistema' ? tema : CONFIG_PADRAO.tema,
-    notificacoesAtivas: lerBooleano(mapa.get('notificacoesAtivas'), CONFIG_PADRAO.notificacoesAtivas),
+    notificacoesAtivas: lerBooleano(
+      mapa.get('notificacoesAtivas'),
+      CONFIG_PADRAO.notificacoesAtivas
+    ),
     notificacaoHora: lerInteiro(mapa.get('notificacaoHora'), CONFIG_PADRAO.notificacaoHora, 0, 23),
     notificacaoDiasAntes: lerInteiro(
       mapa.get('notificacaoDiasAntes'),
@@ -72,7 +75,10 @@ export function lerConfiguracoes(linhas: { chave: string; valor: string }[]): Co
       100
     ),
     mesesMedia: lerInteiro(mapa.get('mesesMedia'), CONFIG_PADRAO.mesesMedia, 1, 12),
-    contarSoMinhaParte: lerBooleano(mapa.get('contarSoMinhaParte'), CONFIG_PADRAO.contarSoMinhaParte),
+    contarSoMinhaParte: lerBooleano(
+      mapa.get('contarSoMinhaParte'),
+      CONFIG_PADRAO.contarSoMinhaParte
+    ),
     usarSobraDoMesAnterior: lerBooleano(
       mapa.get('usarSobraDoMesAnterior'),
       CONFIG_PADRAO.usarSobraDoMesAnterior

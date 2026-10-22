@@ -26,7 +26,8 @@ export function AnelProgresso({
   const preenchido = Math.min(1, Math.max(0, progresso)) * circunferencia;
 
   return (
-    <View style={{ width: tamanho, height: tamanho, alignItems: 'center', justifyContent: 'center' }}>
+    <View
+      style={{ width: tamanho, height: tamanho, alignItems: 'center', justifyContent: 'center' }}>
       <Svg width={tamanho} height={tamanho} style={{ position: 'absolute' }}>
         <Circle
           cx={tamanho / 2}

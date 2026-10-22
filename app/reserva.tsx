@@ -133,7 +133,10 @@ export default function ReservaScreen() {
   const salvarMovimento = async () => {
     if (!movimento || !movimentoValido || !dataMovIso) return;
     if (movimento === 'retirada' && valorMov > situacao.guardadoCentavos) {
-      Alert.alert('Valor maior que o guardado', `Você tem ${formatarMoeda(situacao.guardadoCentavos)} na reserva.`);
+      Alert.alert(
+        'Valor maior que o guardado',
+        `Você tem ${formatarMoeda(situacao.guardadoCentavos)} na reserva.`
+      );
       return;
     }
     await reservaRepo.adicionarAporte(

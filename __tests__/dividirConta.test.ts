@@ -53,9 +53,9 @@ describe('montarDivisao', () => {
       valores: [6000, 4000],
       erro: null,
     });
-    expect(montarDivisao(1000, [1, 2, 3], 'porcentagem', { 1: 33.33, 2: 33.33, 3: 33.34 }).valores).toEqual([
-      333, 333, 334,
-    ]);
+    expect(
+      montarDivisao(1000, [1, 2, 3], 'porcentagem', { 1: 33.33, 2: 33.33, 3: 33.34 }).valores
+    ).toEqual([333, 333, 334]);
   });
 
   it('por porcentagem, avisa quanto falta ou passa de 100%', () => {

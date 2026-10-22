@@ -13,8 +13,19 @@ const TABELAS: { nome: string; colunas: string[]; padroes?: Record<string, Valor
   {
     nome: 'contas',
     colunas: [
-      'id', 'nome', 'categoria_id', 'tipo', 'valor_centavos', 'dia_vencimento', 'data_unica',
-      'parcelas_total', 'data_inicio', 'data_fim', 'ativa', 'compartilhada', 'sem_vencimento',
+      'id',
+      'nome',
+      'categoria_id',
+      'tipo',
+      'valor_centavos',
+      'dia_vencimento',
+      'data_unica',
+      'parcelas_total',
+      'data_inicio',
+      'data_fim',
+      'ativa',
+      'compartilhada',
+      'sem_vencimento',
       'criado_em',
     ],
     padroes: { sem_vencimento: 0 },
@@ -22,7 +33,13 @@ const TABELAS: { nome: string; colunas: string[]; padroes?: Record<string, Valor
   {
     nome: 'lancamentos',
     colunas: [
-      'id', 'conta_id', 'mes_ref', 'vencimento', 'valor_centavos', 'pago', 'pago_em',
+      'id',
+      'conta_id',
+      'mes_ref',
+      'vencimento',
+      'valor_centavos',
+      'pago',
+      'pago_em',
       'parcela_numero',
     ],
   },
@@ -34,7 +51,14 @@ const TABELAS: { nome: string; colunas: string[]; padroes?: Record<string, Valor
   {
     nome: 'rendas',
     colunas: [
-      'id', 'nome', 'valor_centavos', 'dia_recebimento', 'tipo', 'mes_ref', 'ativa', 'criado_em',
+      'id',
+      'nome',
+      'valor_centavos',
+      'dia_recebimento',
+      'tipo',
+      'mes_ref',
+      'ativa',
+      'criado_em',
     ],
   },
   {

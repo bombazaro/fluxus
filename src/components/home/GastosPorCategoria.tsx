@@ -31,8 +31,7 @@ export function GastosPorCategoria({ totais, totalContasCentavos }: GastosPorCat
       </Text>
       <Cartao>
         {totais.map((item, idx) => {
-          const percentual =
-            totalContasCentavos > 0 ? item.totalCentavos / totalContasCentavos : 0;
+          const percentual = totalContasCentavos > 0 ? item.totalCentavos / totalContasCentavos : 0;
 
           return (
             <View

@@ -15,11 +15,7 @@ export interface ItemContaProps {
   onTogglePago: () => void;
 }
 
-export function ItemConta({
-  lancamento,
-  onPress,
-  onTogglePago,
-}: ItemContaProps) {
+export function ItemConta({ lancamento, onPress, onTogglePago }: ItemContaProps) {
   const { colors, typography, spacing, radii } = useTema();
   const hojeIso = obterHojeIso();
   const situacao = classificarSituacao(
@@ -88,9 +84,7 @@ export function ItemConta({
             marginRight: spacing.md,
           },
         ]}>
-        {isPago ? (
-          <Ionicons name="checkmark" size={18} color="#FFFFFF" />
-        ) : null}
+        {isPago ? <Ionicons name="checkmark" size={18} color="#FFFFFF" /> : null}
       </Pressable>
 
       {/* Ícone da categoria */}

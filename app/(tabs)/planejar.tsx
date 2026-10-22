@@ -62,12 +62,18 @@ export default function PlanejarScreen() {
       edges={['top', 'left', 'right']}
       style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={styles.header}>
-        <Text style={[styles.title, { color: colors.text, fontFamily: typography.fontFamily.bold }]}>
+        <Text
+          style={[styles.title, { color: colors.text, fontFamily: typography.fontFamily.bold }]}>
           Planejar
         </Text>
       </View>
 
-      <ScrollView contentContainerStyle={{ padding: spacing.base, paddingTop: 0, paddingBottom: spacing.xxl }}>
+      <ScrollView
+        contentContainerStyle={{
+          padding: spacing.base,
+          paddingTop: 0,
+          paddingBottom: spacing.xxl,
+        }}>
         <Cartao>
           <View style={styles.linhaTitulo}>
             <Text
@@ -97,8 +103,8 @@ export default function PlanejarScreen() {
                       .map((m) => nomeMes(m.mesRef).split(' ')[0])
                       .join(', ')} as contas passam da renda.`
                   : 'Pelas contas e rendas cadastradas, todos os meses fecham no positivo.'}{' '}
-                Contas fixas pelo valor cadastrado, variáveis pela média e parcelas já
-                lançadas. Gastos não cadastrados não entram.
+                Contas fixas pelo valor cadastrado, variáveis pela média e parcelas já lançadas.
+                Gastos não cadastrados não entram.
               </Text>
             </>
           ) : null}

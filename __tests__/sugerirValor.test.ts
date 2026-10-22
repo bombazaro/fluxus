@@ -16,10 +16,7 @@ describe('calcularMediaLancamentos', () => {
   });
 
   it('arredonda centavos sem decimais', () => {
-    const historico = [
-      { valor_centavos: 10001 },
-      { valor_centavos: 10002 },
-    ];
+    const historico = [{ valor_centavos: 10001 }, { valor_centavos: 10002 }];
     // (10001 + 10002) / 2 = 10001.5 -> arredonda para 10002
     expect(calcularMediaLancamentos(historico, 2)).toBe(10002);
   });

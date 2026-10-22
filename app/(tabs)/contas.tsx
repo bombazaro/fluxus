@@ -126,7 +126,11 @@ export default function ContasScreen() {
       resultado.push({ titulo: 'Mais adiante', situacao: 'mais_adiante', itens: maisAdiante });
     }
     if (semVencimento.length > 0) {
-      resultado.push({ titulo: 'Sem vencimento', situacao: 'sem_vencimento', itens: semVencimento });
+      resultado.push({
+        titulo: 'Sem vencimento',
+        situacao: 'sem_vencimento',
+        itens: semVencimento,
+      });
     }
     if (pagas.length > 0) {
       resultado.push({ titulo: 'Pagas', situacao: 'paga', itens: pagas });
@@ -255,7 +259,8 @@ export default function ContasScreen() {
               style={[
                 styles.categoriaFiltroChip,
                 {
-                  backgroundColor: filtroCategoriaId === null ? colors.surfaceVariant : 'transparent',
+                  backgroundColor:
+                    filtroCategoriaId === null ? colors.surfaceVariant : 'transparent',
                   borderColor: filtroCategoriaId === null ? colors.text : colors.border,
                   borderRadius: radii.full,
                 },
@@ -353,10 +358,10 @@ export default function ContasScreen() {
                         item.secao.situacao === 'atrasada'
                           ? colors.danger
                           : item.secao.situacao === 'esta_semana'
-                          ? colors.warning
-                          : item.secao.situacao === 'paga'
-                          ? colors.success
-                          : colors.textSecondary,
+                            ? colors.warning
+                            : item.secao.situacao === 'paga'
+                              ? colors.success
+                              : colors.textSecondary,
                       fontFamily: typography.fontFamily.bold,
                     },
                   ]}>
@@ -367,9 +372,7 @@ export default function ContasScreen() {
               <ItemConta
                 lancamento={item.lancamento}
                 onPress={() => router.push(`/conta/${item.lancamento.conta_id}`)}
-                onTogglePago={() =>
-                  marcarPago(db, item.lancamento.id, item.lancamento.pago === 0)
-                }
+                onTogglePago={() => marcarPago(db, item.lancamento.id, item.lancamento.pago === 0)}
               />
             )
           }

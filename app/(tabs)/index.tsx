@@ -149,10 +149,7 @@ export default function HomeScreen() {
           onMarcarPago={(id) => marcarPago(db, id, true)}
         />
 
-        <GastosPorCategoria
-          totais={categoriasTotais}
-          totalContasCentavos={resumo.totalContas}
-        />
+        <GastosPorCategoria totais={categoriasTotais} totalContasCentavos={resumo.totalContas} />
       </ScrollView>
 
       <Fab onPress={() => router.push('/conta/nova')} />

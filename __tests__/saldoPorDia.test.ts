@@ -57,14 +57,33 @@ describe('calcularSaldoPorDia', () => {
 
   it('com a sobra do mês anterior, salário no dia 30 cobre contas do dia 10', () => {
     const conta = {
-      id: 1, conta_id: 1, mes_ref: '2026-11', vencimento: '2026-11-10', valor_centavos: 100000,
-      pago: 0, pago_em: null, parcela_numero: null, conta_nome: 'Aluguel', conta_tipo: 'fixa',
-      categoria_id: 1, categoria_nome: 'Moradia', categoria_cor: '#000', categoria_icone: 'home',
-      compartilhada: 0, sem_vencimento: 0, parcelas_total: null,
+      id: 1,
+      conta_id: 1,
+      mes_ref: '2026-11',
+      vencimento: '2026-11-10',
+      valor_centavos: 100000,
+      pago: 0,
+      pago_em: null,
+      parcela_numero: null,
+      conta_nome: 'Aluguel',
+      conta_tipo: 'fixa',
+      categoria_id: 1,
+      categoria_nome: 'Moradia',
+      categoria_cor: '#000',
+      categoria_icone: 'home',
+      compartilhada: 0,
+      sem_vencimento: 0,
+      parcelas_total: null,
     } as LancamentoComDetalhes;
     const salario: Renda = {
-      id: 1, nome: 'Salário', valor_centavos: 300000, dia_recebimento: 30, tipo: 'fixa',
-      mes_ref: null, ativa: 1, criado_em: '2026-10-01',
+      id: 1,
+      nome: 'Salário',
+      valor_centavos: 300000,
+      dia_recebimento: 30,
+      tipo: 'fixa',
+      mes_ref: null,
+      ativa: 1,
+      criado_em: '2026-10-01',
     };
 
     const semSobra = calcularSaldoPorDia('2026-11', [conta], [salario]);

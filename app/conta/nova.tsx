@@ -35,11 +35,7 @@ import {
   sugerirMesInicio,
 } from '@/src/domain/gerarLancamentos';
 import { useMesStore, obterHojeIso, obterMesAtualIso } from '@/src/store/useMesStore';
-import {
-  formatarData,
-  formatarMoeda,
-  dataBrParaIso,
-} from '@/src/utils/formatadores';
+import { formatarData, formatarMoeda, dataBrParaIso } from '@/src/utils/formatadores';
 import { ModoDivisao, montarDivisao, redistribuirDivisao } from '@/src/domain/dividirConta';
 import { SeletorCategoria } from '@/src/components/contas/SeletorCategoria';
 
@@ -135,7 +131,6 @@ export default function NovaContaModal() {
       if (listaCat.length > 0) {
         setCategoriaId((atual) => atual ?? listaCat[0].id);
       }
-
     }
     carregarDados();
   }, [db]);
@@ -171,8 +166,7 @@ export default function NovaContaModal() {
     !temVencimento || tipo === 'unica' || (!isNaN(diaNum) && diaNum >= 1 && diaNum <= 31);
   const dataUnicaIso = dataBrParaIso(dataUnica);
   const dataUnicaValida = !temVencimento || tipo !== 'unica' || dataUnicaIso !== null;
-  const parcelasValidas =
-    tipo !== 'parcelada' || (!isNaN(parcelasNum) && parcelasNum >= 2);
+  const parcelasValidas = tipo !== 'parcelada' || (!isNaN(parcelasNum) && parcelasNum >= 2);
   const nomeValido = nome.trim().length > 0;
   const valorValido = valorCentavos > 0;
   const categoriaValida = !!categoriaId;
@@ -192,7 +186,7 @@ export default function NovaContaModal() {
   const idEu = pessoas.find((p) => p.nome === 'Eu')?.id;
   const minhaParteDivisao =
     divisao?.valores && idEu !== undefined
-      ? divisao.valores[pessoasSelecionadas.indexOf(idEu)] ?? 0
+      ? (divisao.valores[pessoasSelecionadas.indexOf(idEu)] ?? 0)
       : 0;
   const divisaoValida = !compartilhada || !!divisao?.valores;
 
@@ -401,7 +395,9 @@ export default function NovaContaModal() {
             rotulo={tipo === 'variavel' ? 'Valor previsto / estimado *' : 'Valor da conta *'}
             valorCentavos={valorCentavos}
             onChangeCentavos={setValorCentavos}
-            erro={!valorValido && valorCentavos === 0 ? 'Informe um valor maior que zero' : undefined}
+            erro={
+              !valorValido && valorCentavos === 0 ? 'Informe um valor maior que zero' : undefined
+            }
             destaqueGrande
             containerStyle={{ marginTop: spacing.base }}
           />

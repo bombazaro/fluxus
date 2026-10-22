@@ -41,7 +41,10 @@ export async function importarBackup(db: SQLiteDatabase): Promise<ResultadoImpor
   try {
     conteudo = JSON.parse(await new File(escolha.assets[0].uri).text());
   } catch {
-    return { status: 'erro', mensagem: 'Não foi possível ler o arquivo. Ele é um backup do Fluxus?' };
+    return {
+      status: 'erro',
+      mensagem: 'Não foi possível ler o arquivo. Ele é um backup do Fluxus?',
+    };
   }
 
   const validacao = validarBackup(conteudo, VERSAO_BANCO);

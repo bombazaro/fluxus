@@ -45,10 +45,7 @@ export function montarCalendario(
 
     const dia = Math.min(parseInt(l.vencimento.slice(8, 10), 10), totalDias);
     const situacao = classificarSituacao(l.vencimento, l.pago, hojeIso);
-    marcar(
-      dia,
-      situacao === 'paga' ? 'paga' : situacao === 'atrasada' ? 'atrasada' : 'pendente'
-    );
+    marcar(dia, situacao === 'paga' ? 'paga' : situacao === 'atrasada' ? 'atrasada' : 'pendente');
 
     const valor =
       l.compartilhada === 1 && typeof l.minha_parte_centavos === 'number'

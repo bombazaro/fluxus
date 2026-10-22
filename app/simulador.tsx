@@ -70,7 +70,10 @@ export default function SimuladorScreen() {
   const fatia = (lista: typeof base) =>
     lista.slice(Math.max(0, inicioGrafico), Math.max(0, inicioGrafico) + MESES_NO_GRAFICO);
 
-  const vereditos: Record<Veredito, { texto: string; cor: string; fundo: string; icone: keyof typeof Ionicons.glyphMap }> = {
+  const vereditos: Record<
+    Veredito,
+    { texto: string; cor: string; fundo: string; icone: keyof typeof Ionicons.glyphMap }
+  > = {
     folga: {
       texto: 'Cabe com folga',
       cor: colors.success,
@@ -125,8 +128,8 @@ export default function SimuladorScreen() {
           keyboardShouldPersistTaps="handled"
           contentContainerStyle={{ padding: spacing.base, paddingBottom: spacing.xxl }}>
           <Text style={textoAjuda}>
-            Veja se uma compra parcelada cabe nos próximos meses. Nada é salvo até você
-            cadastrar a conta.
+            Veja se uma compra parcelada cabe nos próximos meses. Nada é salvo até você cadastrar a
+            conta.
           </Text>
 
           <CampoTexto
@@ -235,7 +238,8 @@ export default function SimuladorScreen() {
                       {impacto.piorMes ? (
                         <Text style={[textoAjuda, { color: colors.text }]}>
                           No pior mês ({formatarMesAno(impacto.piorMes.mesRef).toLowerCase()}), sua
-                          sobra {impacto.piorMes.sobraCentavos < 0 ? 'fica negativa em ' : 'cai para '}
+                          sobra{' '}
+                          {impacto.piorMes.sobraCentavos < 0 ? 'fica negativa em ' : 'cai para '}
                           {formatarMoeda(Math.abs(impacto.piorMes.sobraCentavos))}.
                         </Text>
                       ) : null}
@@ -261,7 +265,11 @@ export default function SimuladorScreen() {
                     <View
                       style={[
                         styles.marcador,
-                        { borderWidth: 1.5, borderColor: colors.textMuted, marginLeft: spacing.base },
+                        {
+                          borderWidth: 1.5,
+                          borderColor: colors.textMuted,
+                          marginLeft: spacing.base,
+                        },
                       ]}
                     />
                     <Text style={textoAjuda}>Sem a compra</Text>

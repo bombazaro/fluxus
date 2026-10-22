@@ -47,7 +47,8 @@ export default function MaisScreen() {
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={styles.header}>
-        <Text style={[styles.title, { color: colors.text, fontFamily: typography.fontFamily.bold }]}>
+        <Text
+          style={[styles.title, { color: colors.text, fontFamily: typography.fontFamily.bold }]}>
           Mais
         </Text>
       </View>

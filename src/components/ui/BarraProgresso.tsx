@@ -9,12 +9,7 @@ export interface BarraProgressoProps {
   style?: ViewStyle;
 }
 
-export function BarraProgresso({
-  progresso,
-  altura = 8,
-  corFixa,
-  style,
-}: BarraProgressoProps) {
+export function BarraProgresso({ progresso, altura = 8, corFixa, style }: BarraProgressoProps) {
   const { colors, radii } = useTema();
 
   const progressoNormalizado = Math.max(0, progresso);

@@ -11,12 +11,7 @@ export interface EtiquetaProps {
   style?: ViewStyle;
 }
 
-export function Etiqueta({
-  texto,
-  tipo = 'neutro',
-  icone,
-  style,
-}: EtiquetaProps) {
+export function Etiqueta({ texto, tipo = 'neutro', icone, style }: EtiquetaProps) {
   const { colors, radii, spacing, typography } = useTema();
 
   let bg = colors.surfaceVariant;

@@ -40,7 +40,11 @@ export function CartaoComparacao({ comparacao, mesAnterior, onPress }: CartaoCom
               width: 36,
               height: 36,
               borderRadius: 18,
-              backgroundColor: igual ? colors.surfaceVariant : subiu ? colors.dangerLight : colors.successLight,
+              backgroundColor: igual
+                ? colors.surfaceVariant
+                : subiu
+                  ? colors.dangerLight
+                  : colors.successLight,
               alignItems: 'center',
               justifyContent: 'center',
               marginRight: spacing.sm,

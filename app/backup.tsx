@@ -46,7 +46,10 @@ export default function BackupScreen() {
       }
     } catch (err) {
       console.error('Erro ao importar backup:', err);
-      Alert.alert('Erro', 'Não foi possível importar o backup. Seus dados atuais não foram alterados.');
+      Alert.alert(
+        'Erro',
+        'Não foi possível importar o backup. Seus dados atuais não foram alterados.'
+      );
     } finally {
       setImportando(false);
     }

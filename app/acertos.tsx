@@ -39,7 +39,10 @@ export default function AcertosScreen() {
       `Marca ${formatarMoeda(acerto.totalCentavos)} como recebido de ${acerto.nome}.`,
       [
         { text: 'Cancelar', style: 'cancel' },
-        { text: 'Marcar como acertado', onPress: () => marcar(acerto.itens.map((i) => i.divisao_id)) },
+        {
+          text: 'Marcar como acertado',
+          onPress: () => marcar(acerto.itens.map((i) => i.divisao_id)),
+        },
       ]
     );
   };
@@ -70,8 +73,8 @@ export default function AcertosScreen() {
       ) : (
         <ScrollView contentContainerStyle={{ padding: spacing.base, paddingBottom: spacing.xxl }}>
           <Text style={textoAjuda}>
-            Partes das contas divididas que cada pessoa ainda não te pagou, até este mês. Toque no
-            ✓ quando a pessoa acertar.
+            Partes das contas divididas que cada pessoa ainda não te pagou, até este mês. Toque no ✓
+            quando a pessoa acertar.
           </Text>
 
           {(acertos ?? []).map((acerto) => (
@@ -145,7 +148,9 @@ export default function AcertosScreen() {
                   variante="secundario"
                   tamanho="pequeno"
                   onPress={() => compartilhar(acerto)}
-                  iconeEsquerda={<Ionicons name="share-social-outline" size={16} color={colors.primary} />}
+                  iconeEsquerda={
+                    <Ionicons name="share-social-outline" size={16} color={colors.primary} />
+                  }
                   style={{ flex: 1 }}
                 />
                 <Botao

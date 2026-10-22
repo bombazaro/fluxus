@@ -18,7 +18,13 @@ describe('agruparAcertos', () => {
     const grupos = agruparAcertos([
       linha({ divisao_id: 1, pessoa_id: 2, pessoa_nome: 'Ana', valor_centavos: 50000 }),
       linha({ divisao_id: 2, pessoa_id: 3, pessoa_nome: 'Bia', valor_centavos: 90000 }),
-      linha({ divisao_id: 3, pessoa_id: 2, pessoa_nome: 'Ana', conta_nome: 'Luz', valor_centavos: 6000 }),
+      linha({
+        divisao_id: 3,
+        pessoa_id: 2,
+        pessoa_nome: 'Ana',
+        conta_nome: 'Luz',
+        valor_centavos: 6000,
+      }),
     ]);
 
     expect(grupos.map((g) => [g.nome, g.totalCentavos, g.itens.length])).toEqual([

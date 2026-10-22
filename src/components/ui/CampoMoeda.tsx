@@ -1,11 +1,5 @@
 import React from 'react';
-import {
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-  ViewStyle,
-} from 'react-native';
+import { StyleSheet, Text, TextInput, View, ViewStyle } from 'react-native';
 import { useTema } from '@/src/theme';
 import { formatarMoeda, parseMoedaParaCentavos } from '@/src/utils/formatadores';
 

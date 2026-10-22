@@ -31,9 +31,7 @@ export function rendasDoMes(
     const recebida = recebidaPorRenda.get(renda.id);
 
     const valeNoMes =
-      renda.tipo === 'pontual'
-        ? mesDaRenda(renda) === mesRef
-        : mesDaRenda(renda) <= mesRef;
+      renda.tipo === 'pontual' ? mesDaRenda(renda) === mesRef : mesDaRenda(renda) <= mesRef;
 
     if (!recebida && (renda.ativa !== 1 || !valeNoMes)) continue;
 

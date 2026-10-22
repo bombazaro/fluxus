@@ -15,11 +15,7 @@ export function obterUltimoDiaDoMes(ano: number, mes: number): number {
  * Se o dia for 31 e o mês tiver 30 dias (ou 28/29 em fevereiro), retorna o último dia do mês.
  * Retorna string no formato YYYY-MM-DD.
  */
-export function ajustarDiaDoMes(
-  ano: number,
-  mes: number,
-  diaDesejado: number
-): string {
+export function ajustarDiaDoMes(ano: number, mes: number, diaDesejado: number): string {
   const ultimoDia = obterUltimoDiaDoMes(ano, mes);
   const diaReal = Math.min(Math.max(1, diaDesejado), ultimoDia);
   const mesFormatado = String(mes).padStart(2, '0');
@@ -47,9 +43,7 @@ export function adicionarMeses(mesRef: string, quantidade: number): string {
 export const DIA_SEM_VENCIMENTO = 31;
 
 /** Dia de vencimento efetivo de uma conta recorrente (sem vencimento = último dia do mês). */
-export function diaDeVencimento(
-  conta: Pick<Conta, 'dia_vencimento' | 'sem_vencimento'>
-): number {
+export function diaDeVencimento(conta: Pick<Conta, 'dia_vencimento' | 'sem_vencimento'>): number {
   if (conta.sem_vencimento === 1) return DIA_SEM_VENCIMENTO;
   return conta.dia_vencimento || 1;
 }
@@ -60,11 +54,7 @@ export function diaDeVencimento(
  * mês seguinte se o vencimento já passou (senão a conta nasceria atrasada).
  * Conta sem vencimento (dia null) vence no último dia, então não pula.
  */
-export function sugerirMesInicio(
-  mesVisto: string,
-  dia: number | null,
-  hojeIso: string
-): string {
+export function sugerirMesInicio(mesVisto: string, dia: number | null, hojeIso: string): string {
   const mesAtual = hojeIso.slice(0, 7);
   const inicio = mesVisto < mesAtual ? mesAtual : mesVisto;
   if (dia === null) return inicio;
@@ -116,11 +106,7 @@ export function gerarLancamentosParaConta(
     for (let i = 1; i <= totalParcelas; i++) {
       const mesRef = adicionarMeses(mesInicioRef, i - 1);
       const [anoStr, mesStr] = mesRef.split('-');
-      const vencimento = ajustarDiaDoMes(
-        parseInt(anoStr, 10),
-        parseInt(mesStr, 10),
-        diaVenc
-      );
+      const vencimento = ajustarDiaDoMes(parseInt(anoStr, 10), parseInt(mesStr, 10), diaVenc);
 
       lancamentos.push({
         conta_id: contaId,
@@ -139,11 +125,7 @@ export function gerarLancamentosParaConta(
   const mesRef = conta.data_inicio.slice(0, 7);
   const [anoStr, mesStr] = mesRef.split('-');
   const diaVenc = diaDeVencimento(conta);
-  const vencimento = ajustarDiaDoMes(
-    parseInt(anoStr, 10),
-    parseInt(mesStr, 10),
-    diaVenc
-  );
+  const vencimento = ajustarDiaDoMes(parseInt(anoStr, 10), parseInt(mesStr, 10), diaVenc);
 
   lancamentos.push({
     conta_id: contaId,

@@ -3,10 +3,7 @@ import { Conta } from '@/src/types';
 import { adicionarMeses, ajustarDiaDoMes } from '@/src/domain/gerarLancamentos';
 
 export const contasRepo = {
-  async criar(
-    db: SQLiteDatabase,
-    conta: Omit<Conta, 'id' | 'criado_em'>
-  ): Promise<number> {
+  async criar(db: SQLiteDatabase, conta: Omit<Conta, 'id' | 'criado_em'>): Promise<number> {
     const criadoEm = new Date().toISOString();
     const result = await db.runAsync(
       `INSERT INTO contas (
@@ -34,23 +31,16 @@ export const contasRepo = {
   },
 
   async buscarPorId(db: SQLiteDatabase, id: number): Promise<Conta | null> {
-    const row = await db.getFirstAsync<Conta>(
-      'SELECT * FROM contas WHERE id = ?;',
-      [id]
-    );
+    const row = await db.getFirstAsync<Conta>('SELECT * FROM contas WHERE id = ?;', [id]);
     return row || null;
   },
 
   async listarAtivas(db: SQLiteDatabase): Promise<Conta[]> {
-    return await db.getAllAsync<Conta>(
-      'SELECT * FROM contas WHERE ativa = 1 ORDER BY nome ASC;'
-    );
+    return await db.getAllAsync<Conta>('SELECT * FROM contas WHERE ativa = 1 ORDER BY nome ASC;');
   },
 
   async listarTodas(db: SQLiteDatabase): Promise<Conta[]> {
-    return await db.getAllAsync<Conta>(
-      'SELECT * FROM contas ORDER BY ativa DESC, nome ASC;'
-    );
+    return await db.getAllAsync<Conta>('SELECT * FROM contas ORDER BY ativa DESC, nome ASC;');
   },
 
   async atualizar(
@@ -66,7 +56,7 @@ export const contasRepo = {
 
     await db.runAsync(
       `UPDATE contas SET ${setClauses} WHERE id = ?;`,
-      ...[...valores, id] as (string | number | null)[]
+      ...([...valores, id] as (string | number | null)[])
     );
   },
 
@@ -83,11 +73,7 @@ export const contasRepo = {
    * do mês e encerra a conta no mês anterior. O histórico pago é mantido para os
    * meses passados não mudarem. Se não sobrar nenhum lançamento, apaga a conta.
    */
-  async encerrarAPartirDe(
-    db: SQLiteDatabase,
-    id: number,
-    mesRef: string
-  ): Promise<void> {
+  async encerrarAPartirDe(db: SQLiteDatabase, id: number, mesRef: string): Promise<void> {
     await db.withTransactionAsync(async () => {
       await db.runAsync(
         'DELETE FROM lancamentos WHERE conta_id = ? AND mes_ref >= ? AND pago = 0;',

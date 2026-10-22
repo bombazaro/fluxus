@@ -74,9 +74,7 @@ export default function RootLayout() {
   }
 
   return (
-    <SQLiteProvider
-      databaseName="fluxus.db"
-      onInit={executarMigracoes}>
+    <SQLiteProvider databaseName="fluxus.db" onInit={executarMigracoes}>
       <Inicializacao />
       <Stack>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
@@ -108,10 +106,7 @@ export default function RootLayout() {
         <Stack.Screen name="simulador" options={{ headerShown: false }} />
         <Stack.Screen name="pessoas" options={{ headerShown: false }} />
         <Stack.Screen name="acertos" options={{ headerShown: false }} />
-        <Stack.Screen
-          name="boas-vindas"
-          options={{ headerShown: false, gestureEnabled: false }}
-        />
+        <Stack.Screen name="boas-vindas" options={{ headerShown: false, gestureEnabled: false }} />
         <Stack.Screen
           name="backup"
           options={{

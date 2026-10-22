@@ -51,7 +51,11 @@ describe('valores no limite', () => {
 
   it('simulação com parcelas zero ou valor zero não quebra', () => {
     expect(simularParcelas(10000, 0, 0).parcelaCentavos).toBe(10000);
-    expect(simularParcelas(0, 3, 2)).toEqual({ parcelaCentavos: 0, totalCentavos: 0, jurosCentavos: 0 });
+    expect(simularParcelas(0, 3, 2)).toEqual({
+      parcelaCentavos: 0,
+      totalCentavos: 0,
+      jurosCentavos: 0,
+    });
   });
 
   it('sem renda, qualquer compra não cabe', () => {

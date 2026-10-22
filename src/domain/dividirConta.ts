@@ -6,10 +6,7 @@ import { formatarMoeda } from '../utils/formatadores';
  * entre as primeiras pessoas para que a soma seja EXATAMENTE igual ao total.
  * Ex: 1000 centavos / 3 pessoas -> [334, 333, 333] (soma = 1000).
  */
-export function dividirContaPorIgual(
-  totalCentavos: number,
-  qtdPessoas: number
-): number[] {
+export function dividirContaPorIgual(totalCentavos: number, qtdPessoas: number): number[] {
   if (qtdPessoas <= 0) return [];
   if (qtdPessoas === 1) return [totalCentavos];
 

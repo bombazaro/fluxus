@@ -12,9 +12,7 @@ export interface BackupFluxus {
   tabelas: Record<string, LinhaBackup[]>;
 }
 
-export type ResultadoValidacao =
-  | { ok: true; backup: BackupFluxus }
-  | { ok: false; erro: string };
+export type ResultadoValidacao = { ok: true; backup: BackupFluxus } | { ok: false; erro: string };
 
 function ehObjeto(valor: unknown): valor is Record<string, unknown> {
   return typeof valor === 'object' && valor !== null && !Array.isArray(valor);

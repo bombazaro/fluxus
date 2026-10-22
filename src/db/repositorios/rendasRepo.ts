@@ -2,10 +2,7 @@ import { SQLiteDatabase } from 'expo-sqlite';
 import { Renda, RendaRecebida } from '@/src/types';
 
 export const rendasRepo = {
-  async criar(
-    db: SQLiteDatabase,
-    renda: Omit<Renda, 'id' | 'criado_em'>
-  ): Promise<number> {
+  async criar(db: SQLiteDatabase, renda: Omit<Renda, 'id' | 'criado_em'>): Promise<number> {
     const criadoEm = new Date().toISOString();
     const result = await db.runAsync(
       `INSERT INTO rendas (
@@ -25,10 +22,7 @@ export const rendasRepo = {
   },
 
   async buscarPorId(db: SQLiteDatabase, id: number): Promise<Renda | null> {
-    const row = await db.getFirstAsync<Renda>(
-      'SELECT * FROM rendas WHERE id = ?;',
-      [id]
-    );
+    const row = await db.getFirstAsync<Renda>('SELECT * FROM rendas WHERE id = ?;', [id]);
     return row || null;
   },
 
@@ -57,7 +51,7 @@ export const rendasRepo = {
 
     await db.runAsync(
       `UPDATE rendas SET ${setClauses} WHERE id = ?;`,
-      ...[...valores, id] as (string | number | null)[]
+      ...([...valores, id] as (string | number | null)[])
     );
   },
 
@@ -84,21 +78,14 @@ export const rendasRepo = {
     );
   },
 
-  async desmarcarRecebida(
-    db: SQLiteDatabase,
-    rendaId: number,
-    mesRef: string
-  ): Promise<void> {
-    await db.runAsync(
-      'DELETE FROM rendas_recebidas WHERE renda_id = ? AND mes_ref = ?;',
-      [rendaId, mesRef]
-    );
+  async desmarcarRecebida(db: SQLiteDatabase, rendaId: number, mesRef: string): Promise<void> {
+    await db.runAsync('DELETE FROM rendas_recebidas WHERE renda_id = ? AND mes_ref = ?;', [
+      rendaId,
+      mesRef,
+    ]);
   },
 
-  async listarRecebidasDoMes(
-    db: SQLiteDatabase,
-    mesRef: string
-  ): Promise<RendaRecebida[]> {
+  async listarRecebidasDoMes(db: SQLiteDatabase, mesRef: string): Promise<RendaRecebida[]> {
     return await db.getAllAsync<RendaRecebida>(
       'SELECT * FROM rendas_recebidas WHERE mes_ref = ?;',
       [mesRef]
