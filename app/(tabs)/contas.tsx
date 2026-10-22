@@ -184,6 +184,8 @@ export default function ContasScreen() {
             return (
               <Pressable
                 key={sit}
+                accessibilityRole="button"
+                accessibilityState={{ selected: ativa }}
                 onPress={() => setFiltroSituacao(sit)}
                 style={[
                   styles.filtroPill,
@@ -247,6 +249,8 @@ export default function ContasScreen() {
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={[styles.categoriasScroll, { paddingVertical: spacing.xs }]}>
             <Pressable
+              accessibilityRole="button"
+              accessibilityState={{ selected: filtroCategoriaId === null }}
               onPress={() => setFiltroCategoriaId(null)}
               style={[
                 styles.categoriaFiltroChip,
@@ -270,6 +274,8 @@ export default function ContasScreen() {
               return (
                 <Pressable
                   key={cat.id}
+                  accessibilityRole="button"
+                  accessibilityState={{ selected: ativo }}
                   onPress={() => setFiltroCategoriaId(ativo ? null : cat.id)}
                   style={[
                     styles.categoriaFiltroChip,
@@ -390,7 +396,11 @@ export default function ContasScreen() {
             ]}>
             Status de pagamento alterado.
           </Text>
-          <Pressable onPress={() => desfazerUltimoPago(db)} style={styles.desfazerBtn}>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Desfazer pagamento"
+            onPress={() => desfazerUltimoPago(db)}
+            style={styles.desfazerBtn}>
             <Text
               style={[
                 styles.desfazerBtnTexto,

@@ -341,6 +341,8 @@ export default function NovaContaModal() {
               return (
                 <Pressable
                   key={item.tipo}
+                  accessibilityRole="radio"
+                  accessibilityState={{ selected: ativo }}
                   onPress={() => setTipo(item.tipo)}
                   style={[
                     styles.tipoCard,
@@ -537,6 +539,8 @@ export default function NovaContaModal() {
           {/* Conta compartilhada */}
           <Cartao style={{ marginTop: spacing.xl }}>
             <Pressable
+              accessibilityRole="switch"
+              accessibilityState={{ checked: compartilhada }}
               onPress={() => setCompartilhada(!compartilhada)}
               style={styles.compartilhadaRow}>
               <View style={{ flex: 1 }}>
@@ -581,6 +585,8 @@ export default function NovaContaModal() {
                     return (
                       <Pressable
                         key={p.id}
+                        accessibilityRole="checkbox"
+                        accessibilityState={{ checked: ativa }}
                         onPress={() => togglePessoa(p.id)}
                         style={[
                           styles.pessoaChip,

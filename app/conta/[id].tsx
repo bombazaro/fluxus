@@ -304,6 +304,8 @@ export default function DetalheContaScreen() {
           Detalhes da Conta
         </Text>
         <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={editando ? 'Cancelar edição' : 'Editar conta'}
           onPress={() => setEditando(!editando)}
           hitSlop={12}
           style={styles.btnEditar}>

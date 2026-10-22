@@ -361,12 +361,16 @@ export default function RendasScreen() {
                     { borderTopColor: colors.border, borderTopWidth: 1, marginTop: spacing.sm, paddingTop: spacing.xs },
                   ]}>
                   <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel={`Editar ${r.nome}`}
                     onPress={() => abrirModalEditar(r)}
                     style={styles.acaoBtn}>
                     <Ionicons name="create-outline" size={18} color={colors.primary} />
                     <Text style={[styles.acaoTexto, { color: colors.primary }]}>Editar</Text>
                   </Pressable>
                   <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel={`Excluir ${r.nome}`}
                     onPress={() => handleExcluir(r)}
                     style={styles.acaoBtn}>
                     <Ionicons name="trash-outline" size={18} color={colors.danger} />
@@ -403,7 +407,11 @@ export default function RendasScreen() {
                 ]}>
                 {rendaEditandoId ? 'Editar Renda' : 'Nova Renda'}
               </Text>
-              <Pressable onPress={() => setModalVisivel(false)} hitSlop={12}>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Fechar"
+                onPress={() => setModalVisivel(false)}
+                hitSlop={12}>
                 <Ionicons name="close" size={24} color={colors.text} />
               </Pressable>
             </View>
@@ -452,6 +460,8 @@ export default function RendasScreen() {
                 return (
                   <Pressable
                     key={t.tipo}
+                    accessibilityRole="radio"
+                    accessibilityState={{ selected: ativo }}
                     onPress={() => setTipo(t.tipo)}
                     style={[
                       styles.tipoChip,
