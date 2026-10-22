@@ -113,7 +113,12 @@ export default function HomeScreen() {
           }}
         />
 
-        <CartaoSobra resumo={resumo} />
+        <CartaoSobra
+          resumo={resumo}
+          onGuardarNaReserva={() =>
+            router.push({ pathname: '/reserva', params: { aporte: String(resumo.sobra) } })
+          }
+        />
 
         <ResumoTotais resumo={resumo} />
 

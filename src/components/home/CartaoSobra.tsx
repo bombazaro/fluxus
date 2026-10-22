@@ -1,12 +1,19 @@
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { useTema } from '@/src/theme';
-import { BarraProgresso, Cartao } from '@/src/components/ui';
+import { Ionicons } from '@expo/vector-icons';
+import { BarraProgresso, Botao, Cartao } from '@/src/components/ui';
 import { ResumoMes } from '@/src/domain/resumoDoMes';
 import { formatarMoeda } from '@/src/utils/formatadores';
 
+export interface CartaoSobraProps {
+  resumo: ResumoMes;
+  /** Leva a sobra para a reserva de emergência (só aparece se sobrar dinheiro). */
+  onGuardarNaReserva?: () => void;
+}
+
 /** Cartão grande do Início: sobra do mês, quanto tem em mãos e renda comprometida. */
-export function CartaoSobra({ resumo }: { resumo: ResumoMes }) {
+export function CartaoSobra({ resumo, onGuardarNaReserva }: CartaoSobraProps) {
   const { colors, typography, spacing } = useTema();
 
   const percentualUsadoFormatado = Math.round(resumo.percentualUsado * 100);
@@ -77,6 +84,17 @@ export function CartaoSobra({ resumo }: { resumo: ResumoMes }) {
         </View>
         <BarraProgresso progresso={resumo.percentualUsado} altura={10} />
       </View>
+
+      {onGuardarNaReserva && resumo.sobra > 0 ? (
+        <Botao
+          titulo="Guardar a sobra na reserva"
+          variante="fantasma"
+          tamanho="pequeno"
+          onPress={onGuardarNaReserva}
+          iconeEsquerda={<Ionicons name="shield-checkmark-outline" size={16} color={colors.primary} />}
+          style={{ marginTop: spacing.sm, alignSelf: 'flex-start' }}
+        />
+      ) : null}
     </Cartao>
   );
 }
