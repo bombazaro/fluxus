@@ -151,6 +151,10 @@ export function ItemConta({ lancamento, onPress, onTogglePago }: ItemContaProps)
               : 'Sem data de vencimento'
             : `Venc. ${formatarData(lancamento.vencimento)}`}
         </Text>
+
+        <View style={{ marginTop: 4, alignSelf: 'flex-start' }}>
+          <Etiqueta texto={etiquetaTexto} tipo={etiquetaTipo} />
+        </View>
       </View>
 
       {/* Valor e Etiqueta à direita */}
@@ -180,10 +184,6 @@ export function ItemConta({ lancamento, onPress, onTogglePago }: ItemContaProps)
             sua parte · de {formatarMoeda(lancamento.valor_centavos)}
           </Text>
         )}
-
-        <View style={{ marginTop: 4 }}>
-          <Etiqueta texto={etiquetaTexto} tipo={etiquetaTipo} />
-        </View>
       </View>
     </Pressable>
   );
