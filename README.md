@@ -6,6 +6,34 @@ App Android de controle de contas a pagar. Você cadastra contas e rendas e o ap
 
 **100% offline:** sem servidor, sem login e sem internet. Os dados ficam no próprio celular (SQLite).
 
+## Telas
+
+<table>
+<tr>
+  <th>Início</th>
+  <th>Contas</th>
+  <th>Planejar</th>
+  <th>Calendário</th>
+  <th>Mais</th>
+</tr>
+<tr>
+  <td><img src="docs/telas/inicio-claro.jpg" width="160" alt="Tela Início no modo claro" /></td>
+  <td><img src="docs/telas/contas-claro.jpg" width="160" alt="Tela Contas no modo claro" /></td>
+  <td><img src="docs/telas/planejar-claro.jpg" width="160" alt="Tela Planejar no modo claro" /></td>
+  <td><img src="docs/telas/calendario-claro.jpg" width="160" alt="Tela Calendário no modo claro" /></td>
+  <td><img src="docs/telas/mais-claro.jpg" width="160" alt="Tela Mais no modo claro" /></td>
+</tr>
+<tr>
+  <td><img src="docs/telas/inicio-escuro.jpg" width="160" alt="Tela Início no modo escuro" /></td>
+  <td><img src="docs/telas/contas-escuro.jpg" width="160" alt="Tela Contas no modo escuro" /></td>
+  <td><img src="docs/telas/planejar-escuro.jpg" width="160" alt="Tela Planejar no modo escuro" /></td>
+  <td><img src="docs/telas/calendario-escuro.jpg" width="160" alt="Tela Calendário no modo escuro" /></td>
+  <td><img src="docs/telas/mais-escuro.jpg" width="160" alt="Tela Mais no modo escuro" /></td>
+</tr>
+</table>
+
+[**Baixar o APK**](https://github.com/bombazaro/fluxus/releases/latest) (Android 7 ou mais novo)
+
 ## Funcionalidades
 
 - **Contas de 4 tipos:** única (IPVA), fixa mensal (aluguel), parcelada (celular 10x) e variável (luz, água), com sugestão de valor pela média dos últimos meses.
@@ -112,4 +140,4 @@ O plano completo está em [`plano.md`](plano.md).
 - [x] Etapas 8 a 10: reserva de emergência, simulador de parcelas, contas compartilhadas completas
 - [x] Etapa 11: acabamento (configurações, boas-vindas, ícone, acessibilidade, testes de borda)
 - [x] Etapa 12: APK de produção assinado e instalado no celular
-- [ ] Portfólio: prints, GIF de uso e APK na seção Releases do GitHub
+- [x] Portfólio: prints das telas e APK na seção Releases do GitHub

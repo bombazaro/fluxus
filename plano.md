@@ -801,11 +801,11 @@ fluxus/
 
 - [ ] README com: o que é, prints das telas, stack, como rodar, decisões (por que offline, por que centavos).
 - [ ] GIF ou vídeo curto de uso (cadastrar conta, marcar pago, ver o resumo).
-- [ ] Prints em modo claro e escuro.
+- [x] Prints em modo claro e escuro.
 - [ ] Seção "Desafios e aprendizados" (ex.: contas recorrentes, dia 31, notificações no Android).
 - [ ] Diagrama simples do banco de dados.
 - [x] Testes rodando (`npm test`) e mencionados no README, com GitHub Actions.
-- [ ] APK publicado na seção Releases do GitHub.
+- [x] APK publicado na seção Releases do GitHub.
 - [ ] Histórico de commits seguindo Conventional Commits (tipo, escopo, descrição), com tags de versão (`v0.1.0` até `v1.0.0`).
 
 ---
