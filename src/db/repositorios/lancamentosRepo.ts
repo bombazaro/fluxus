@@ -4,6 +4,31 @@ import { ajustarDiaDoMes, diaDeVencimento } from '@/src/domain/gerarLancamentos'
 import { redistribuirDivisao } from '@/src/domain/dividirConta';
 import { LancamentoParaLembrete } from '@/src/domain/planejarLembretes';
 
+/**
+ * Depois de mudar o valor de um lançamento dividido, refaz a divisão na mesma
+ * proporção (a última pessoa fecha os centavos). Sem divisões, não faz nada.
+ */
+async function redistribuirDivisoes(
+  db: SQLiteDatabase,
+  lancamentoId: number,
+  novoValorCentavos: number
+): Promise<void> {
+  const divisoes = await db.getAllAsync<{ id: number; valor_centavos: number }>(
+    'SELECT id, valor_centavos FROM divisoes WHERE lancamento_id = ? ORDER BY id ASC;',
+    [lancamentoId]
+  );
+  const novos = redistribuirDivisao(
+    divisoes.map((d) => d.valor_centavos),
+    novoValorCentavos
+  );
+  for (let i = 0; i < divisoes.length; i++) {
+    await db.runAsync('UPDATE divisoes SET valor_centavos = ? WHERE id = ?;', [
+      novos[i],
+      divisoes[i].id,
+    ]);
+  }
+}
+
 export const lancamentosRepo = {
   async criar(
     db: SQLiteDatabase,
@@ -124,6 +149,7 @@ export const lancamentosRepo = {
       'UPDATE lancamentos SET valor_centavos = ? WHERE id = ?;',
       [valorCentavos, id]
     );
+    await redistribuirDivisoes(db, id, valorCentavos);
   },
 
   async atualizarVencimento(
@@ -167,10 +193,17 @@ export const lancamentosRepo = {
     mesRefApartirDe: string,
     valorCentavos: number
   ): Promise<void> {
+    const afetados = await db.getAllAsync<{ id: number }>(
+      'SELECT id FROM lancamentos WHERE conta_id = ? AND mes_ref >= ? AND pago = 0;',
+      [contaId, mesRefApartirDe]
+    );
     await db.runAsync(
       'UPDATE lancamentos SET valor_centavos = ? WHERE conta_id = ? AND mes_ref >= ? AND pago = 0;',
       [valorCentavos, contaId, mesRefApartirDe]
     );
+    for (const { id } of afetados) {
+      await redistribuirDivisoes(db, id, valorCentavos);
+    }
   },
 
   async excluirFuturosDaConta(
