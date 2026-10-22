@@ -1,6 +1,7 @@
 import React from 'react';
 import { Linking, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { Ionicons } from '@expo/vector-icons';
 import { useTema } from '@/src/theme';
@@ -25,6 +26,7 @@ import {
 import { pedirPermissaoComExplicacao } from '@/src/services/permissaoLembretes';
 
 export default function ConfiguracoesScreen() {
+  const router = useRouter();
   const db = useSQLiteContext();
   const { colors, typography, spacing } = useTema();
   const config = useConfigStore((s) => s.config);
@@ -192,6 +194,13 @@ export default function ConfiguracoesScreen() {
             </Text>
           </View>
         </Cartao>
+
+        <Botao
+          titulo="Rever as boas-vindas"
+          variante="fantasma"
+          onPress={() => router.push('/boas-vindas')}
+          style={{ marginTop: spacing.base }}
+        />
       </ScrollView>
     </SafeAreaView>
   );

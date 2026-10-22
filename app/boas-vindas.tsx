@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Alert,
   KeyboardAvoidingView,
@@ -91,9 +91,21 @@ export default function BoasVindasScreen() {
   // Se a pessoa voltar e mudar a renda, atualiza a mesma em vez de criar outra
   const [rendaId, setRendaId] = useState<number | null>(null);
   const [salvando, setSalvando] = useState(false);
+  // Aberta de novo pelas Configurações: no fim, volta para lá
+  const [revendo] = useState(() => useConfigStore.getState().config.onboardingConcluido);
+  // Quem já tem renda não responde a pergunta de novo (senão duplicaria o salário)
+  const [temRenda, setTemRenda] = useState(false);
 
-  const atual = PASSOS[indice];
-  const ultimo = indice === PASSOS.length - 1;
+  useEffect(() => {
+    rendasRepo
+      .listarAtivas(db)
+      .then((rendas) => setTemRenda(rendas.length > 0))
+      .catch(() => {});
+  }, [db]);
+
+  const passos = temRenda ? PASSOS.filter((p) => p.id !== 'renda') : PASSOS;
+  const atual = passos[Math.min(indice, passos.length - 1)];
+  const ultimo = indice >= passos.length - 1;
 
   const salvarRenda = async (): Promise<boolean> => {
     const { renda, erro } = validarRendaInicial({
@@ -129,7 +141,8 @@ export default function BoasVindasScreen() {
   const concluir = async (depois?: () => void) => {
     await atualizar(db, { onboardingConcluido: true });
     await carregarMes(db);
-    router.replace('/(tabs)');
+    if (revendo) router.back();
+    else router.replace('/(tabs)');
     depois?.();
   };
 
@@ -341,8 +354,8 @@ export default function BoasVindasScreen() {
         <View style={{ paddingHorizontal: spacing.xl, paddingBottom: spacing.base }}>
           <View
             style={styles.pontos}
-            accessibilityLabel={`Passo ${indice + 1} de ${PASSOS.length}`}>
-            {PASSOS.map((p, i) => (
+            accessibilityLabel={`Passo ${indice + 1} de ${passos.length}`}>
+            {passos.map((p, i) => (
               <View
                 key={p.id}
                 style={[
