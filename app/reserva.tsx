@@ -18,6 +18,7 @@ import { useTema } from '@/src/theme';
 import {
   Botao,
   CabecalhoTela,
+  CampoData,
   CampoMoeda,
   CampoTexto,
   Cartao,
@@ -31,7 +32,7 @@ import { adicionarMeses } from '@/src/domain/gerarLancamentos';
 import { obterHojeIso, obterMesAtualIso } from '@/src/store/useMesStore';
 import { ReservaAporte, ReservaMeta } from '@/src/types';
 import {
-  ehDataIsoValida,
+  dataBrParaIso,
   formatarData,
   formatarMesAno,
   formatarMoeda,
@@ -63,7 +64,8 @@ export default function ReservaScreen() {
   // Formulário de aporte/retirada
   const [movimento, setMovimento] = useState<Movimento | null>(temSugestao ? 'aporte' : null);
   const [valorMov, setValorMov] = useState(temSugestao ? aporteSugerido : 0);
-  const [dataMov, setDataMov] = useState(obterHojeIso());
+  // DD/MM/AAAA, como a pessoa digita
+  const [dataMov, setDataMov] = useState(() => formatarData(obterHojeIso()));
   const [obsMov, setObsMov] = useState(temSugestao ? 'Sobra do mês' : '');
 
   const carregar = useCallback(async () => {
@@ -102,7 +104,7 @@ export default function ReservaScreen() {
   const abrirMovimento = (tipo: Movimento) => {
     setMovimento(tipo);
     setValorMov(0);
-    setDataMov(obterHojeIso());
+    setDataMov(formatarData(obterHojeIso()));
     setObsMov('');
   };
 
@@ -126,9 +128,10 @@ export default function ReservaScreen() {
     await carregar();
   };
 
-  const movimentoValido = valorMov > 0 && ehDataIsoValida(dataMov);
+  const dataMovIso = dataBrParaIso(dataMov);
+  const movimentoValido = valorMov > 0 && dataMovIso !== null;
   const salvarMovimento = async () => {
-    if (!movimento || !movimentoValido) return;
+    if (!movimento || !movimentoValido || !dataMovIso) return;
     if (movimento === 'retirada' && valorMov > situacao.guardadoCentavos) {
       Alert.alert('Valor maior que o guardado', `Você tem ${formatarMoeda(situacao.guardadoCentavos)} na reserva.`);
       return;
@@ -136,7 +139,7 @@ export default function ReservaScreen() {
     await reservaRepo.adicionarAporte(
       db,
       movimento === 'aporte' ? valorMov : -valorMov,
-      dataMov,
+      dataMovIso,
       obsMov.trim() || null
     );
     setMovimento(null);
@@ -430,11 +433,10 @@ export default function ReservaScreen() {
               destaqueGrande
               containerStyle={{ marginTop: spacing.base }}
             />
-            <CampoTexto
-              rotulo="Data (AAAA-MM-DD)"
-              value={dataMov}
-              onChangeText={setDataMov}
-              erro={!ehDataIsoValida(dataMov) ? 'Informe uma data válida, ex: 2026-10-22' : undefined}
+            <CampoData
+              rotulo="Data"
+              valor={dataMov}
+              onMudar={setDataMov}
               containerStyle={{ marginTop: spacing.base }}
             />
             <CampoTexto

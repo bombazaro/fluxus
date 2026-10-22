@@ -12,3 +12,4 @@ export * from './GrupoOpcoes';
 export * from './LinhaSwitch';
 export * from './TituloSecao';
 export * from './SeletorMesCompacto';
+export * from './CampoData';

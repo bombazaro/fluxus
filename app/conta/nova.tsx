@@ -18,6 +18,7 @@ import {
   Botao,
   CampoMoeda,
   CampoTexto,
+  CampoData,
   Cartao,
   SeletorMesCompacto,
 } from '@/src/components/ui';
@@ -36,7 +37,7 @@ import { useMesStore, obterHojeIso, obterMesAtualIso } from '@/src/store/useMesS
 import {
   formatarData,
   formatarMoeda,
-  ehDataIsoValida,
+  dataBrParaIso,
 } from '@/src/utils/formatadores';
 import { dividirContaPorIgual } from '@/src/domain/dividirConta';
 import { SeletorCategoria } from '@/src/components/contas/SeletorCategoria';
@@ -106,7 +107,8 @@ export default function NovaContaModal() {
     return Number.isInteger(valor) && valor > 0 ? valor : 0;
   });
   const [diaVencimento, setDiaVencimento] = useState('10');
-  const [dataUnica, setDataUnica] = useState(() => dataPadraoNoMes(mesVisto));
+  // Como a pessoa digita (DD/MM/AAAA); dataUnicaIso é o que vai para o banco
+  const [dataUnica, setDataUnica] = useState(() => formatarData(dataPadraoNoMes(mesVisto)));
   const [temVencimento, setTemVencimento] = useState(true);
   const [parcelasTotal, setParcelasTotal] = useState(preenchido.parcelas ?? '2');
   const [categoriaId, setCategoriaId] = useState<number | null>(null);
@@ -154,7 +156,8 @@ export default function NovaContaModal() {
 
   const diaValido =
     !temVencimento || tipo === 'unica' || (!isNaN(diaNum) && diaNum >= 1 && diaNum <= 31);
-  const dataUnicaValida = !temVencimento || tipo !== 'unica' || ehDataIsoValida(dataUnica);
+  const dataUnicaIso = dataBrParaIso(dataUnica);
+  const dataUnicaValida = !temVencimento || tipo !== 'unica' || dataUnicaIso !== null;
   const parcelasValidas =
     tipo !== 'parcelada' || (!isNaN(parcelasNum) && parcelasNum >= 2);
   const nomeValido = nome.trim().length > 0;
@@ -188,10 +191,10 @@ export default function NovaContaModal() {
       const dataInicio = !temVencimento
         ? `${mesInicio}-01`
         : tipo === 'unica'
-          ? dataUnica
+          ? (dataUnicaIso as string)
           : `${mesInicio}-${String(diaNum).padStart(2, '0')}`;
       const diaVencimentoConta = tipo === 'unica' || !temVencimento ? null : diaNum;
-      const dataUnicaConta = tipo === 'unica' && temVencimento ? dataUnica : null;
+      const dataUnicaConta = tipo === 'unica' && temVencimento ? dataUnicaIso : null;
 
       // Conta, lançamentos e divisões juntos: ou salva tudo, ou nada
       await db.withTransactionAsync(async () => {
@@ -431,14 +434,11 @@ export default function NovaContaModal() {
               )}
             </View>
           ) : !temVencimento ? null : tipo === 'unica' ? (
-            <CampoTexto
-              rotulo="Data de vencimento (AAAA-MM-DD) *"
-              placeholder="Ex: 2026-05-15"
-              value={dataUnica}
-              onChangeText={setDataUnica}
-              erro={!dataUnicaValida ? 'Informe uma data válida, ex: 2026-05-15' : undefined}
+            <CampoData
+              rotulo="Data de vencimento *"
+              valor={dataUnica}
+              onMudar={setDataUnica}
               containerStyle={{ marginTop: spacing.base }}
-              ajuda="Data no formato AAAA-MM-DD"
             />
           ) : (
             <CampoTexto

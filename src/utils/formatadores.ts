@@ -129,3 +129,25 @@ export function formatarMoedaCurta(centavos: number): string {
   const mil = (reais / 1000).toFixed(reais < 10000 ? 1 : 0).replace('.', ',').replace(/,0$/, '');
   return `${sinal}R$ ${mil} mil`;
 }
+
+/**
+ * Máscara de data enquanto a pessoa digita: só números, com as barras no lugar.
+ * Ex: "2210" -> "22/10", "22102026" -> "22/10/2026".
+ */
+export function mascararData(texto: string): string {
+  const digitos = texto.replace(/\D/g, '').slice(0, 8);
+  if (digitos.length <= 2) return digitos;
+  if (digitos.length <= 4) return `${digitos.slice(0, 2)}/${digitos.slice(2)}`;
+  return `${digitos.slice(0, 2)}/${digitos.slice(2, 4)}/${digitos.slice(4)}`;
+}
+
+/**
+ * Converte a data digitada (DD/MM/AAAA) para o formato do banco (AAAA-MM-DD).
+ * Devolve null se a data não existir (ex: 30/02/2026) ou estiver incompleta.
+ */
+export function dataBrParaIso(texto: string): string | null {
+  const partes = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(texto.trim());
+  if (!partes) return null;
+  const iso = `${partes[3]}-${partes[2]}-${partes[1]}`;
+  return ehDataIsoValida(iso) ? iso : null;
+}
