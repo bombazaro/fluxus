@@ -1,5 +1,5 @@
 import React from 'react';
-import { Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Linking, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useSQLiteContext } from 'expo-sqlite';
 import { Ionicons } from '@expo/vector-icons';
@@ -10,6 +10,7 @@ import {
   Cartao,
   GrupoOpcoes,
   LinhaSwitch,
+  SeletorHora,
   TituloSecao,
 } from '@/src/components/ui';
 import { useConfigStore } from '@/src/store/useConfigStore';
@@ -22,10 +23,6 @@ import {
   TemaPreferido,
 } from '@/src/domain/configuracoes';
 import { pedirPermissaoComExplicacao } from '@/src/services/permissaoLembretes';
-
-function formatarHora(hora: number): string {
-  return `${String(hora).padStart(2, '0')}:00`;
-}
 
 export default function ConfiguracoesScreen() {
   const db = useSQLiteContext();
@@ -110,34 +107,10 @@ export default function ConfiguracoesScreen() {
               />
 
               <Text style={[rotulo, { marginTop: spacing.base }]}>Horário</Text>
-              <View style={styles.linhaHora}>
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityLabel="Uma hora mais cedo"
-                  onPress={() => mudar({ notificacaoHora: (config.notificacaoHora + 23) % 24 })}
-                  hitSlop={8}
-                  style={[styles.botaoHora, { backgroundColor: colors.surfaceVariant }]}>
-                  <Ionicons name="remove" size={22} color={colors.text} />
-                </Pressable>
-                <Text
-                  accessibilityLabel={`Horário do lembrete: ${formatarHora(config.notificacaoHora)}`}
-                  style={{
-                    color: colors.text,
-                    fontFamily: typography.fontFamily.bold,
-                    fontSize: typography.fontSize.title,
-                    marginHorizontal: spacing.lg,
-                  }}>
-                  {formatarHora(config.notificacaoHora)}
-                </Text>
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityLabel="Uma hora mais tarde"
-                  onPress={() => mudar({ notificacaoHora: (config.notificacaoHora + 1) % 24 })}
-                  hitSlop={8}
-                  style={[styles.botaoHora, { backgroundColor: colors.surfaceVariant }]}>
-                  <Ionicons name="add" size={22} color={colors.text} />
-                </Pressable>
-              </View>
+              <SeletorHora
+                hora={config.notificacaoHora}
+                onMudar={(notificacaoHora) => mudar({ notificacaoHora })}
+              />
 
               <View
                 style={[
@@ -227,18 +200,6 @@ export default function ConfiguracoesScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-  },
-  linhaHora: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  botaoHora: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   dica: {
     borderRadius: 12,

@@ -13,3 +13,4 @@ export * from './LinhaSwitch';
 export * from './TituloSecao';
 export * from './SeletorMesCompacto';
 export * from './CampoData';
+export * from './SeletorHora';
