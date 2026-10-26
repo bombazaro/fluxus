@@ -106,6 +106,7 @@ export default function RootLayout() {
         <Stack.Screen name="simulador" options={{ headerShown: false }} />
         <Stack.Screen name="pessoas" options={{ headerShown: false }} />
         <Stack.Screen name="acertos" options={{ headerShown: false }} />
+        <Stack.Screen name="gasto-rapido" options={{ headerShown: false }} />
         <Stack.Screen name="boas-vindas" options={{ headerShown: false, gestureEnabled: false }} />
         <Stack.Screen
           name="backup"

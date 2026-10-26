@@ -23,6 +23,7 @@ import { totaisPorCategoria } from '@/src/domain/totaisPorCategoria';
 import { adicionarMeses } from '@/src/domain/gerarLancamentos';
 import { useConfigStore } from '@/src/store/useConfigStore';
 import { ModalValorRecebido } from '@/src/components/rendas/ModalValorRecebido';
+import { MenuAdicionar } from '@/src/components/home/MenuAdicionar';
 import { rendasRepo } from '@/src/db/repositorios/rendasRepo';
 import { RendaDoMes } from '@/src/types';
 
@@ -54,6 +55,7 @@ export default function HomeScreen() {
 
   // Renda variável pergunta quanto caiu; fixa e pontual marcam com o valor cadastrado
   const [rendaRecebendo, setRendaRecebendo] = useState<RendaDoMes | null>(null);
+  const [menuAberto, setMenuAberto] = useState(false);
 
   const marcarRecebida = async (renda: RendaDoMes) => {
     if (renda.tipo === 'variavel') {
@@ -197,7 +199,14 @@ export default function HomeScreen() {
         <GastosPorCategoria totais={categoriasTotais} totalContasCentavos={resumo.totalContas} />
       </ScrollView>
 
-      <Fab onPress={() => router.push('/conta/nova')} />
+      <Fab accessibilityLabel="Adicionar gasto ou conta" onPress={() => setMenuAberto(true)} />
+
+      <MenuAdicionar
+        visivel={menuAberto}
+        onFechar={() => setMenuAberto(false)}
+        onGastoRapido={() => router.push('/gasto-rapido')}
+        onNovaConta={() => router.push('/conta/nova')}
+      />
 
       <ModalValorRecebido
         renda={rendaRecebendo}

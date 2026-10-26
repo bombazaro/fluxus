@@ -1,6 +1,7 @@
 import { SQLiteDatabase } from 'expo-sqlite';
-import { Conta } from '@/src/types';
+import { Conta, Lancamento } from '@/src/types';
 import { adicionarMeses, ajustarDiaDoMes } from '@/src/domain/gerarLancamentos';
+import { lancamentosRepo } from './lancamentosRepo';
 
 export const contasRepo = {
   async criar(db: SQLiteDatabase, conta: Omit<Conta, 'id' | 'criado_em'>): Promise<number> {
@@ -28,6 +29,20 @@ export const contasRepo = {
       ]
     );
     return result.lastInsertRowId;
+  },
+
+  /** Grava um gasto rápido: a conta única e o lançamento já pago, juntos. */
+  async registrarGastoRapido(
+    db: SQLiteDatabase,
+    conta: Omit<Conta, 'id' | 'criado_em'>,
+    lancamento: Omit<Lancamento, 'id' | 'conta_id'>
+  ): Promise<number> {
+    let contaId = 0;
+    await db.withTransactionAsync(async () => {
+      contaId = await contasRepo.criar(db, conta);
+      await lancamentosRepo.criar(db, { ...lancamento, conta_id: contaId });
+    });
+    return contaId;
   },
 
   async buscarPorId(db: SQLiteDatabase, id: number): Promise<Conta | null> {
