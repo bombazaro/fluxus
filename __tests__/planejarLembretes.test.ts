@@ -1,5 +1,10 @@
-import { planejarLembretes, LancamentoParaLembrete } from '../src/domain/planejarLembretes';
+import {
+  planejarAvisosRenda,
+  planejarLembretes,
+  LancamentoParaLembrete,
+} from '../src/domain/planejarLembretes';
 import { formatarMoeda } from '../src/utils/formatadores';
+import { RendaDoMes } from '../src/types';
 
 function lancamento(extra: Partial<LancamentoParaLembrete> = {}): LancamentoParaLembrete {
   return {
@@ -94,5 +99,64 @@ describe('planejarLembretes', () => {
       'lancamento-1-dia',
       'lancamento-2-antes',
     ]);
+  });
+});
+
+describe('planejarAvisosRenda', () => {
+  const renda = (extra: Partial<RendaDoMes> = {}): RendaDoMes => ({
+    id: 3,
+    nome: 'Salário',
+    valor_centavos: 300000,
+    valor_previsto_centavos: 300000,
+    dia_recebimento: 30,
+    tipo: 'fixa',
+    mes_ref: null,
+    ativa: 1,
+    criado_em: '2026-01-01',
+    recebida: false,
+    ...extra,
+  });
+
+  it('avisa no dia da renda, no horário dos lembretes, com o botão Recebi', () => {
+    const [aviso] = planejarAvisosRenda([{ mesRef: '2026-10', rendas: [renda()] }], 9, AGORA);
+    expect(aviso).toEqual({
+      identificador: 'renda-3-2026-10',
+      quando: new Date(2026, 9, 30, 9, 0),
+      titulo: 'Salário caiu?',
+      corpo: `${formatarMoeda(300000)} era para cair hoje. Toque em Recebi para marcar.`,
+      rendaId: 3,
+      mesRef: '2026-10',
+      comBotaoRecebi: true,
+    });
+  });
+
+  it('dia 30 em fevereiro avisa no último dia', () => {
+    const [aviso] = planejarAvisosRenda([{ mesRef: '2027-02', rendas: [renda()] }], 9, AGORA);
+    expect(aviso.quando).toEqual(new Date(2027, 1, 28, 9, 0));
+  });
+
+  it('renda variável pede para informar o valor, sem o botão', () => {
+    const [aviso] = planejarAvisosRenda(
+      [{ mesRef: '2026-10', rendas: [renda({ tipo: 'variavel' })] }],
+      9,
+      AGORA
+    );
+    expect(aviso.comBotaoRecebi).toBe(false);
+    expect(aviso.corpo).toBe('Toque para informar quanto caiu este mês.');
+  });
+
+  it('ignora renda já recebida e dia que já passou', () => {
+    const avisos = planejarAvisosRenda(
+      [
+        {
+          mesRef: '2026-10',
+          rendas: [renda({ recebida: true }), renda({ id: 4, dia_recebimento: 5 })],
+        },
+        { mesRef: '2026-11', rendas: [renda({ id: 4, dia_recebimento: 5 })] },
+      ],
+      9,
+      AGORA
+    );
+    expect(avisos.map((a) => a.identificador)).toEqual(['renda-4-2026-11']);
   });
 });

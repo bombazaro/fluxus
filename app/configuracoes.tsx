@@ -114,7 +114,7 @@ export default function ConfiguracoesScreen() {
         <Cartao>
           <LinhaSwitch
             titulo="Lembrar dos vencimentos"
-            descricao="Notificação antes e no dia em que cada conta vence"
+            descricao="Notificação antes e no dia em que cada conta vence, e no dia do salário"
             valor={config.notificacoesAtivas}
             onMudar={ligarLembretes}
           />

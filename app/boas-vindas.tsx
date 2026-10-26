@@ -275,7 +275,7 @@ export default function BoasVindasScreen() {
               <Cartao>
                 <LinhaSwitch
                   titulo="Lembrar dos vencimentos"
-                  descricao="Uma notificação antes e outra no dia em que a conta vence"
+                  descricao="Avisa antes e no dia em que cada conta vence, e pergunta se o salário caiu"
                   valor={config.notificacoesAtivas}
                   onMudar={ligarLembretes}
                 />

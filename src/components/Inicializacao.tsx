@@ -9,7 +9,9 @@ import {
   configurarNotificacoes,
   contaDaNotificacao,
   reagendarLembretes,
+  rendaDaNotificacao,
 } from '@/src/services/notificacoes';
+import { rendasRepo } from '@/src/db/repositorios/rendasRepo';
 
 configurarNotificacoes();
 
@@ -21,7 +23,8 @@ const ESPERA_REAGENDAR_MS = 1500;
  * - lê as configurações e aplica o tema escolhido;
  * - leva para as boas-vindas na primeira abertura;
  * - mantém os lembretes em dia (ao abrir, ao voltar para o app e quando as contas mudam);
- * - abre a conta ao tocar em um lembrete.
+ * - abre a conta ao tocar em um lembrete;
+ * - no aviso do salário, o botão "Recebi" já marca a renda como recebida.
  */
 export function Inicializacao() {
   const db = useSQLiteContext();
@@ -35,6 +38,8 @@ export function Inicializacao() {
   const notificacaoDiasAntes = useConfigStore((s) => s.config.notificacaoDiasAntes);
   // Muda quando uma conta é criada, paga, editada ou excluída
   const lancamentos = useMesStore((s) => s.lancamentos);
+  // Muda quando uma renda é marcada como recebida (o aviso dela não precisa mais tocar)
+  const rendas = useMesStore((s) => s.rendas);
 
   useEffect(() => {
     useConfigStore.getState().carregar(db);
@@ -62,7 +67,15 @@ export function Inicializacao() {
       );
     }, ESPERA_REAGENDAR_MS);
     return () => clearTimeout(timer);
-  }, [db, carregada, notificacoesAtivas, notificacaoHora, notificacaoDiasAntes, lancamentos]);
+  }, [
+    db,
+    carregada,
+    notificacoesAtivas,
+    notificacaoHora,
+    notificacaoDiasAntes,
+    lancamentos,
+    rendas,
+  ]);
 
   // ...e ao voltar para o app (o Android pode ter apagado algum agendamento)
   useEffect(() => {
@@ -80,13 +93,40 @@ export function Inicializacao() {
   // A última resposta continua a mesma depois de tratada: não abrir duas vezes
   const respostaTratada = useRef<string | null>(null);
   useEffect(() => {
-    const contaId = contaDaNotificacao(resposta);
-    if (!resposta || contaId === null || !navegacaoPronta || !carregada) return;
-    const chave = `${resposta.notification.request.identifier}-${resposta.notification.date}`;
+    if (!resposta || !navegacaoPronta || !carregada) return;
+    const chave = `${resposta.notification.request.identifier}-${resposta.notification.date}-${resposta.actionIdentifier}`;
     if (respostaTratada.current === chave) return;
+
+    const contaId = contaDaNotificacao(resposta);
+    if (contaId !== null) {
+      respostaTratada.current = chave;
+      router.push(`/conta/${contaId}`);
+      return;
+    }
+
+    // Aviso de renda: "Recebi" marca com o valor cadastrado; tocar no aviso abre a Início
+    const renda = rendaDaNotificacao(resposta);
+    if (!renda) return;
     respostaTratada.current = chave;
-    router.push(`/conta/${contaId}`);
-  }, [resposta, navegacaoPronta, carregada]);
+    Notifications.dismissNotificationAsync(resposta.notification.request.identifier).catch(
+      () => {}
+    );
+    (async () => {
+      if (renda.recebi) {
+        const cadastrada = await rendasRepo.buscarPorId(db, renda.rendaId);
+        if (cadastrada) {
+          await rendasRepo.marcarRecebida(
+            db,
+            renda.rendaId,
+            renda.mesRef,
+            cadastrada.valor_centavos
+          );
+        }
+      }
+      router.navigate('/(tabs)');
+      await useMesStore.getState().carregarMes(db, renda.mesRef);
+    })().catch((err) => console.warn('Não foi possível marcar a renda:', err));
+  }, [db, resposta, navegacaoPronta, carregada]);
 
   return null;
 }

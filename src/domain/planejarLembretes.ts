@@ -1,4 +1,6 @@
 import { formatarDataCurta, formatarMoeda } from '../utils/formatadores';
+import { RendaDoMes } from '../types';
+import { ajustarDiaDoMes } from './gerarLancamentos';
 
 export interface LancamentoParaLembrete {
   id: number;
@@ -76,4 +78,49 @@ export function planejarLembretes(
     .filter((l) => l.quando.getTime() > agora.getTime())
     .sort((a, b) => a.quando.getTime() - b.quando.getTime())
     .slice(0, limite);
+}
+
+export interface AvisoRenda {
+  /** Fixo por renda e mês: reagendar substitui em vez de duplicar. */
+  identificador: string;
+  quando: Date;
+  titulo: string;
+  corpo: string;
+  rendaId: number;
+  mesRef: string;
+  /** Renda variável não tem o botão "Recebi": precisa informar quanto caiu. */
+  comBotaoRecebi: boolean;
+}
+
+/**
+ * Um aviso no dia em que cada renda deve cair, no horário dos lembretes,
+ * perguntando se ela já caiu. Rendas já marcadas como recebidas ficam de fora.
+ */
+export function planejarAvisosRenda(
+  meses: { mesRef: string; rendas: RendaDoMes[] }[],
+  hora: number,
+  agora: Date
+): AvisoRenda[] {
+  const avisos: AvisoRenda[] = [];
+  for (const { mesRef, rendas } of meses) {
+    const [ano, mes] = mesRef.split('-').map(Number);
+    for (const r of rendas) {
+      if (r.recebida) continue;
+      const variavel = r.tipo === 'variavel';
+      avisos.push({
+        identificador: `renda-${r.id}-${mesRef}`,
+        quando: dataNoHorario(ajustarDiaDoMes(ano, mes, r.dia_recebimento), hora),
+        titulo: `${r.nome} caiu?`,
+        corpo: variavel
+          ? 'Toque para informar quanto caiu este mês.'
+          : `${formatarMoeda(r.valor_centavos)} era para cair hoje. Toque em Recebi para marcar.`,
+        rendaId: r.id,
+        mesRef,
+        comBotaoRecebi: !variavel,
+      });
+    }
+  }
+  return avisos
+    .filter((a) => a.quando.getTime() > agora.getTime())
+    .sort((a, b) => a.quando.getTime() - b.quando.getTime());
 }

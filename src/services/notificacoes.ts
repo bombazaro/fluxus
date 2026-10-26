@@ -3,12 +3,22 @@ import * as Notifications from 'expo-notifications';
 import { AndroidImportance } from 'expo-notifications';
 import { SQLiteDatabase } from 'expo-sqlite';
 import { Configuracoes } from '@/src/domain/configuracoes';
-import { planejarLembretes } from '@/src/domain/planejarLembretes';
+import {
+  LIMITE_LEMBRETES,
+  planejarAvisosRenda,
+  planejarLembretes,
+} from '@/src/domain/planejarLembretes';
+import { rendasDoMes } from '@/src/domain/rendasDoMes';
+import { rendasRepo } from '@/src/db/repositorios/rendasRepo';
 import { adicionarMeses } from '@/src/domain/gerarLancamentos';
 import { lancamentosRepo } from '@/src/db/repositorios/lancamentosRepo';
 import { obterHojeIso } from '@/src/store/useMesStore';
 
 export const CANAL_VENCIMENTOS = 'vencimentos';
+
+/** Categoria dos avisos de renda que têm o botão "Recebi". */
+const CATEGORIA_RENDA = 'renda';
+export const ACAO_RECEBI = 'recebi';
 
 /** Quantos dias à frente procurar contas para lembrar. */
 const JANELA_DIAS = 45;
@@ -28,6 +38,9 @@ export function configurarNotificacoes(): void {
 /** No Android 13+, o canal precisa existir antes de pedir a permissão. */
 async function criarCanal(): Promise<void> {
   if (Platform.OS !== 'android') return;
+  await Notifications.setNotificationCategoryAsync(CATEGORIA_RENDA, [
+    { identifier: ACAO_RECEBI, buttonTitle: 'Recebi', options: { opensAppToForeground: true } },
+  ]);
   await Notifications.setNotificationChannelAsync(CANAL_VENCIMENTOS, {
     name: 'Vencimentos',
     description: 'Lembretes de contas que vão vencer',
@@ -84,7 +97,35 @@ export async function reagendarLembretes(
     somarDias(hoje, JANELA_DIAS)
   );
 
-  for (const lembrete of planejarLembretes(pendentes, config, new Date())) {
+  // Avisos do dia do salário (e das outras rendas) deste mês e do próximo
+  const todasRendas = await rendasRepo.listarTodas(db);
+  const meses = await Promise.all(
+    [mesAtual, adicionarMeses(mesAtual, 1)].map(async (mesRef) => ({
+      mesRef,
+      rendas: rendasDoMes(todasRendas, await rendasRepo.listarRecebidasDoMes(db, mesRef), mesRef),
+    }))
+  );
+  const avisosRenda = planejarAvisosRenda(meses, config.notificacaoHora, new Date());
+
+  for (const aviso of avisosRenda) {
+    await Notifications.scheduleNotificationAsync({
+      identifier: aviso.identificador,
+      content: {
+        title: aviso.titulo,
+        body: aviso.corpo,
+        data: { rendaId: aviso.rendaId, mesRef: aviso.mesRef },
+        categoryIdentifier: aviso.comBotaoRecebi ? CATEGORIA_RENDA : undefined,
+      },
+      trigger: {
+        type: Notifications.SchedulableTriggerInputTypes.DATE,
+        date: aviso.quando,
+        channelId: CANAL_VENCIMENTOS,
+      },
+    });
+  }
+
+  const limiteContas = Math.max(0, LIMITE_LEMBRETES - avisosRenda.length);
+  for (const lembrete of planejarLembretes(pendentes, config, new Date(), limiteContas)) {
     await Notifications.scheduleNotificationAsync({
       identifier: lembrete.identificador,
       content: {
@@ -110,4 +151,17 @@ export function contaDaNotificacao(
   }
   const contaId = resposta.notification.request.content.data?.contaId;
   return typeof contaId === 'number' ? contaId : null;
+}
+
+/**
+ * Aviso de renda tocado: qual renda e mês, e se foi no botão "Recebi"
+ * (ou null se não for um aviso de renda).
+ */
+export function rendaDaNotificacao(
+  resposta: Notifications.NotificationResponse | null | undefined
+): { rendaId: number; mesRef: string; recebi: boolean } | null {
+  if (!resposta) return null;
+  const { rendaId, mesRef } = resposta.notification.request.content.data ?? {};
+  if (typeof rendaId !== 'number' || typeof mesRef !== 'string') return null;
+  return { rendaId, mesRef, recebi: resposta.actionIdentifier === ACAO_RECEBI };
 }
