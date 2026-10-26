@@ -1,4 +1,5 @@
 import { Renda, RendaDoMes, RendaRecebida } from '../types';
+import { ajustarDiaDoMes } from './gerarLancamentos';
 
 /**
  * Mês em que a renda passa a valer. Pontual vale só no seu mes_ref;
@@ -45,4 +46,17 @@ export function rendasDoMes(
   }
 
   return resultado.sort((a, b) => a.dia_recebimento - b.dia_recebimento);
+}
+
+/**
+ * A renda já devia ter caído e ainda não foi marcada como recebida? Serve para
+ * destacar o "Recebi" na tela Início. Dia 31 em mês curto conta o último dia.
+ */
+export function aguardandoConfirmacao(renda: RendaDoMes, mesRef: string, hojeIso: string): boolean {
+  if (renda.recebida) return false;
+  const mesAtual = hojeIso.slice(0, 7);
+  if (mesRef !== mesAtual) return mesRef < mesAtual;
+
+  const [ano, mes] = mesRef.split('-').map(Number);
+  return ajustarDiaDoMes(ano, mes, renda.dia_recebimento) <= hojeIso;
 }

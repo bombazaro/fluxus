@@ -1,10 +1,10 @@
-import React, { useEffect, useMemo } from 'react';
-import { RefreshControl, ScrollView, StyleSheet } from 'react-native';
+import React, { useEffect, useMemo, useState } from 'react';
+import { Alert, RefreshControl, ScrollView, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useTema } from '@/src/theme';
-import { useMesStore } from '@/src/store/useMesStore';
+import { obterHojeIso, useMesStore } from '@/src/store/useMesStore';
 import { Fab, SeletorMes } from '@/src/components/ui';
 import { AvisoErroCarregar } from '@/src/components/home/AvisoErroCarregar';
 import { AvisoAperto } from '@/src/components/home/AvisoAperto';
@@ -21,6 +21,9 @@ import { calcularSaldoPorDia } from '@/src/domain/saldoPorDia';
 import { totaisPorCategoria } from '@/src/domain/totaisPorCategoria';
 import { adicionarMeses } from '@/src/domain/gerarLancamentos';
 import { useConfigStore } from '@/src/store/useConfigStore';
+import { ModalValorRecebido } from '@/src/components/rendas/ModalValorRecebido';
+import { rendasRepo } from '@/src/db/repositorios/rendasRepo';
+import { RendaDoMes } from '@/src/types';
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -46,6 +49,31 @@ export default function HomeScreen() {
   useEffect(() => {
     carregarMes(db);
   }, [db, carregarMes]);
+
+  // Renda variável pergunta quanto caiu; fixa e pontual marcam com o valor cadastrado
+  const [rendaRecebendo, setRendaRecebendo] = useState<RendaDoMes | null>(null);
+
+  const marcarRecebida = async (renda: RendaDoMes) => {
+    if (renda.tipo === 'variavel') {
+      setRendaRecebendo(renda);
+      return;
+    }
+    await rendasRepo.marcarRecebida(db, renda.id, mesRef, renda.valor_centavos);
+    await carregarMes(db);
+  };
+
+  const desmarcarRecebida = (renda: RendaDoMes) => {
+    Alert.alert(`Desmarcar ${renda.nome}?`, 'Ela volta a contar como ainda não recebida.', [
+      { text: 'Cancelar', style: 'cancel' },
+      {
+        text: 'Desmarcar',
+        onPress: async () => {
+          await rendasRepo.desmarcarRecebida(db, renda.id, mesRef);
+          await carregarMes(db);
+        },
+      },
+    ]);
+  };
 
   // Próximos vencimentos (até 4 contas não pagas, ordenadas por vencimento)
   const proximosVencimentos = useMemo(() => {
@@ -120,6 +148,16 @@ export default function HomeScreen() {
           }
         />
 
+        <EntradasDoMes
+          rendas={rendas}
+          rendaTotalCentavos={resumo.rendaTotal}
+          mesRef={mesRef}
+          hojeIso={obterHojeIso()}
+          onGerenciar={() => router.push('/rendas')}
+          onMarcarRecebida={marcarRecebida}
+          onDesmarcarRecebida={desmarcarRecebida}
+        />
+
         <ResumoTotais resumo={resumo} />
 
         {rendas.length > 0 || saldoInicial > 0 ? (
@@ -136,12 +174,6 @@ export default function HomeScreen() {
           onPress={() => router.push('/comparacao')}
         />
 
-        <EntradasDoMes
-          rendas={rendas}
-          rendaTotalCentavos={resumo.rendaTotal}
-          onGerenciar={() => router.push('/rendas')}
-        />
-
         <ProximosVencimentos
           lancamentos={proximosVencimentos}
           onVerTodas={() => router.push('/(tabs)/contas')}
@@ -153,6 +185,18 @@ export default function HomeScreen() {
       </ScrollView>
 
       <Fab onPress={() => router.push('/conta/nova')} />
+
+      <ModalValorRecebido
+        renda={rendaRecebendo}
+        mesRef={mesRef}
+        onConfirmar={async (valor) => {
+          if (!rendaRecebendo) return;
+          await rendasRepo.marcarRecebida(db, rendaRecebendo.id, mesRef, valor);
+          setRendaRecebendo(null);
+          await carregarMes(db);
+        }}
+        onFechar={() => setRendaRecebendo(null)}
+      />
     </SafeAreaView>
   );
 }

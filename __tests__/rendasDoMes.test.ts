@@ -1,6 +1,6 @@
-import { rendasDoMes } from '../src/domain/rendasDoMes';
+import { aguardandoConfirmacao, rendasDoMes } from '../src/domain/rendasDoMes';
 import { resumoDoMes } from '../src/domain/resumoDoMes';
-import { Renda, RendaRecebida } from '../src/types';
+import { Renda, RendaDoMes, RendaRecebida } from '../src/types';
 
 describe('rendasDoMes', () => {
   const criarRenda = (id: number, extra?: Partial<Renda>): Renda => ({
@@ -71,5 +71,41 @@ describe('rendasDoMes', () => {
 
     expect(resumoDoMes([], rendasDoMes(rendas, [], '2026-11')).rendaTotal).toBe(300000);
     expect(resumoDoMes([], rendasDoMes(rendas, [], '2026-12')).rendaTotal).toBe(450000);
+  });
+});
+
+describe('aguardandoConfirmacao', () => {
+  const renda = (extra: Partial<RendaDoMes> = {}): RendaDoMes => ({
+    id: 1,
+    nome: 'Salário',
+    valor_centavos: 300000,
+    valor_previsto_centavos: 300000,
+    dia_recebimento: 5,
+    tipo: 'fixa',
+    mes_ref: null,
+    ativa: 1,
+    criado_em: '2026-01-01',
+    recebida: false,
+    ...extra,
+  });
+
+  it('no mês atual, espera a confirmação a partir do dia em que cai', () => {
+    expect(aguardandoConfirmacao(renda(), '2026-10', '2026-10-04')).toBe(false);
+    expect(aguardandoConfirmacao(renda(), '2026-10', '2026-10-05')).toBe(true);
+  });
+
+  it('já marcada como recebida, não espera mais nada', () => {
+    expect(aguardandoConfirmacao(renda({ recebida: true }), '2026-10', '2026-10-20')).toBe(false);
+  });
+
+  it('mês passado sem marcar ainda espera; mês futuro não', () => {
+    expect(aguardandoConfirmacao(renda(), '2026-09', '2026-10-01')).toBe(true);
+    expect(aguardandoConfirmacao(renda(), '2026-11', '2026-10-30')).toBe(false);
+  });
+
+  it('dia 31 em mês curto vale no último dia', () => {
+    expect(aguardandoConfirmacao(renda({ dia_recebimento: 31 }), '2026-11', '2026-11-30')).toBe(
+      true
+    );
   });
 });
