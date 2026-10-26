@@ -1,13 +1,13 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Linking, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { Ionicons } from '@expo/vector-icons';
 import { useTema } from '@/src/theme';
 import {
   Botao,
   CabecalhoTela,
+  CampoTexto,
   Cartao,
   GrupoOpcoes,
   LinhaSwitch,
@@ -18,15 +18,16 @@ import { useConfigStore } from '@/src/store/useConfigStore';
 import { useMesStore } from '@/src/store/useMesStore';
 import {
   Configuracoes,
+  NOME_MAXIMO,
   OPCOES_DIAS_ANTES,
   OPCOES_LIMITE_ATENCAO,
   OPCOES_MESES_MEDIA,
   TemaPreferido,
 } from '@/src/domain/configuracoes';
+import { EscolhaQuandoRecebe } from '@/src/components/config/EscolhaQuandoRecebe';
 import { pedirPermissaoComExplicacao } from '@/src/services/permissaoLembretes';
 
 export default function ConfiguracoesScreen() {
-  const router = useRouter();
   const db = useSQLiteContext();
   const { colors, typography, spacing } = useTema();
   const config = useConfigStore((s) => s.config);
@@ -34,6 +35,13 @@ export default function ConfiguracoesScreen() {
   const carregarMes = useMesStore((s) => s.carregarMes);
 
   const mudar = (parcial: Partial<Configuracoes>) => atualizar(db, parcial);
+
+  const [nome, setNome] = useState(config.nome);
+  const salvarNome = () => {
+    const limpo = nome.trim();
+    setNome(limpo);
+    if (limpo !== config.nome) mudar({ nome: limpo });
+  };
 
   // Mudanças que alteram os números do mês: recalcular
   const mudarCalculo = async (parcial: Partial<Configuracoes>) => {
@@ -71,7 +79,23 @@ export default function ConfiguracoesScreen() {
       <CabecalhoTela titulo="Configurações" />
 
       <ScrollView contentContainerStyle={{ padding: spacing.base, paddingBottom: spacing.xxl }}>
-        <TituloSecao style={{ marginTop: 0 }}>Aparência</TituloSecao>
+        <TituloSecao style={{ marginTop: 0 }}>Você</TituloSecao>
+        <Cartao>
+          <CampoTexto
+            rotulo="Como quer ser chamado"
+            placeholder="Seu nome"
+            value={nome}
+            onChangeText={setNome}
+            onBlur={salvarNome}
+            onSubmitEditing={salvarNome}
+            maxLength={NOME_MAXIMO}
+            autoCapitalize="words"
+            returnKeyType="done"
+            ajuda="Aparece na saudação da tela Início."
+          />
+        </Cartao>
+
+        <TituloSecao>Aparência</TituloSecao>
         <Cartao>
           <Text style={rotulo}>Tema</Text>
           <GrupoOpcoes<TemaPreferido>
@@ -160,10 +184,9 @@ export default function ConfiguracoesScreen() {
 
         <TituloSecao>Cálculos</TituloSecao>
         <Cartao>
-          <LinhaSwitch
-            titulo="Começar com a sobra do mês anterior"
-            descricao="Útil para quem recebe no fim do mês e paga as contas no começo do seguinte"
-            valor={config.usarSobraDoMesAnterior}
+          <Text style={rotulo}>Seu salário cai antes ou depois das contas?</Text>
+          <EscolhaQuandoRecebe
+            usarSobra={config.usarSobraDoMesAnterior}
             onMudar={(usarSobraDoMesAnterior) => mudarCalculo({ usarSobraDoMesAnterior })}
           />
           <LinhaSwitch
@@ -171,7 +194,7 @@ export default function ConfiguracoesScreen() {
             descricao="Desligado, o resumo conta o valor inteiro das contas compartilhadas"
             valor={config.contarSoMinhaParte}
             onMudar={(contarSoMinhaParte) => mudarCalculo({ contarSoMinhaParte })}
-            style={{ marginTop: spacing.sm }}
+            style={{ marginTop: spacing.base }}
           />
           <Text style={[rotulo, { marginTop: spacing.base }]}>
             Sugestão das contas variáveis pela média de
@@ -194,13 +217,6 @@ export default function ConfiguracoesScreen() {
             </Text>
           </View>
         </Cartao>
-
-        <Botao
-          titulo="Rever as boas-vindas"
-          variante="fantasma"
-          onPress={() => router.push('/boas-vindas')}
-          style={{ marginTop: spacing.base }}
-        />
       </ScrollView>
     </SafeAreaView>
   );

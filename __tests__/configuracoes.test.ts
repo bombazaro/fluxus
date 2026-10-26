@@ -2,6 +2,7 @@ import {
   CONFIG_PADRAO,
   lerConfiguracoes,
   serializarConfiguracoes,
+  sugerirUsarSobra,
 } from '../src/domain/configuracoes';
 import { configuracoesRepo } from '../src/db/repositorios/configuracoesRepo';
 import { backupRepo } from '../src/db/repositorios/backupRepo';
@@ -37,6 +38,11 @@ describe('lerConfiguracoes', () => {
       { chave: 'outraCoisa', valor: '1' },
     ]);
     expect(config).toEqual(CONFIG_PADRAO);
+  });
+
+  it('lê o nome sem espaços nas pontas e corta nomes longos demais', () => {
+    expect(lerConfiguracoes([{ chave: 'nome', valor: '  Ana  ' }]).nome).toBe('Ana');
+    expect(lerConfiguracoes([{ chave: 'nome', valor: 'a'.repeat(50) }]).nome).toHaveLength(30);
   });
 
   it('serializa booleanos como 0/1 e números como texto', () => {
@@ -81,5 +87,17 @@ describe('configuracoesRepo', () => {
     await backupRepo.importarTudo(destino, backup);
 
     expect((await configuracoesRepo.obter(destino)).tema).toBe('escuro');
+  });
+});
+
+describe('sugerirUsarSobra', () => {
+  it('salário na primeira metade do mês paga o próprio mês', () => {
+    expect(sugerirUsarSobra(1)).toBe(false);
+    expect(sugerirUsarSobra(15)).toBe(false);
+  });
+
+  it('salário na segunda metade paga as contas do mês seguinte', () => {
+    expect(sugerirUsarSobra(16)).toBe(true);
+    expect(sugerirUsarSobra(30)).toBe(true);
   });
 });

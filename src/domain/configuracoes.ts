@@ -3,6 +3,8 @@ export type TemaPreferido = 'sistema' | 'claro' | 'escuro';
 /** Preferências do app. Ficam na tabela configuracoes como chave/valor em texto. */
 export interface Configuracoes {
   tema: TemaPreferido;
+  /** Como a pessoa quer ser chamada na saudação ('' = sem nome). */
+  nome: string;
   notificacoesAtivas: boolean;
   /** Hora do lembrete (0 a 23). */
   notificacaoHora: number;
@@ -21,6 +23,7 @@ export interface Configuracoes {
 
 export const CONFIG_PADRAO: Configuracoes = {
   tema: 'sistema',
+  nome: '',
   notificacoesAtivas: false,
   notificacaoHora: 9,
   notificacaoDiasAntes: 1,
@@ -30,6 +33,9 @@ export const CONFIG_PADRAO: Configuracoes = {
   usarSobraDoMesAnterior: true,
   onboardingConcluido: false,
 };
+
+/** Tamanho máximo do nome na saudação. */
+export const NOME_MAXIMO = 30;
 
 export const OPCOES_DIAS_ANTES = [0, 1, 2, 3];
 export const OPCOES_MESES_MEDIA = [3, 6];
@@ -57,6 +63,7 @@ export function lerConfiguracoes(linhas: { chave: string; valor: string }[]): Co
 
   return {
     tema: tema === 'claro' || tema === 'escuro' || tema === 'sistema' ? tema : CONFIG_PADRAO.tema,
+    nome: (mapa.get('nome') ?? CONFIG_PADRAO.nome).trim().slice(0, NOME_MAXIMO),
     notificacoesAtivas: lerBooleano(
       mapa.get('notificacoesAtivas'),
       CONFIG_PADRAO.notificacoesAtivas
@@ -98,4 +105,12 @@ export function serializarConfiguracoes(
     chave,
     valor: typeof valor === 'boolean' ? (valor ? '1' : '0') : String(valor),
   }));
+}
+
+/**
+ * Sugere começar o mês com a sobra do anterior quando o salário cai na segunda
+ * metade do mês: aí ele costuma pagar as contas do começo do mês seguinte.
+ */
+export function sugerirUsarSobra(diaRecebimento: number): boolean {
+  return diaRecebimento > 15;
 }

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import {
   Alert,
   KeyboardAvoidingView,
@@ -27,10 +27,13 @@ import { rendasRepo } from '@/src/db/repositorios/rendasRepo';
 import { useConfigStore } from '@/src/store/useConfigStore';
 import { useMesStore } from '@/src/store/useMesStore';
 import {
+  NOME_MAXIMO,
   OPCOES_DIAS_ANTES,
   OPCOES_LIMITE_ATENCAO,
+  sugerirUsarSobra,
   TemaPreferido,
 } from '@/src/domain/configuracoes';
+import { EscolhaQuandoRecebe } from '@/src/components/config/EscolhaQuandoRecebe';
 import { validarRendaInicial } from '@/src/domain/rendaInicial';
 import { pedirPermissaoComExplicacao } from '@/src/services/permissaoLembretes';
 
@@ -65,7 +68,7 @@ const PASSOS: { id: Passo; icone: IconeIonicons; titulo: string; texto: string }
     id: 'mes',
     icone: 'calendar-outline',
     titulo: 'Como é o seu mês?',
-    texto: 'Duas escolhas que mudam as contas do resumo. Dá para trocar depois em Configurações.',
+    texto: 'Duas escolhas que mudam o resumo do mês. Dá para trocar depois em Configurações.',
   },
   {
     id: 'aparencia',
@@ -91,21 +94,10 @@ export default function BoasVindasScreen() {
   // Se a pessoa voltar e mudar a renda, atualiza a mesma em vez de criar outra
   const [rendaId, setRendaId] = useState<number | null>(null);
   const [salvando, setSalvando] = useState(false);
-  // Aberta de novo pelas Configurações: no fim, volta para lá
-  const [revendo] = useState(() => useConfigStore.getState().config.onboardingConcluido);
-  // Quem já tem renda não responde a pergunta de novo (senão duplicaria o salário)
-  const [temRenda, setTemRenda] = useState(false);
+  const [nome, setNome] = useState(config.nome);
 
-  useEffect(() => {
-    rendasRepo
-      .listarAtivas(db)
-      .then((rendas) => setTemRenda(rendas.length > 0))
-      .catch(() => {});
-  }, [db]);
-
-  const passos = temRenda ? PASSOS.filter((p) => p.id !== 'renda') : PASSOS;
-  const atual = passos[Math.min(indice, passos.length - 1)];
-  const ultimo = indice >= passos.length - 1;
+  const atual = PASSOS[indice];
+  const ultimo = indice === PASSOS.length - 1;
 
   const salvarRenda = async (): Promise<boolean> => {
     const { renda, erro } = validarRendaInicial({
@@ -122,6 +114,8 @@ export default function BoasVindasScreen() {
     } else {
       setRendaId(await rendasRepo.criar(db, { ...renda, tipo: 'fixa', mes_ref: null, ativa: 1 }));
     }
+    // Já deixa marcada a opção da sobra que combina com o dia do salário
+    await atualizar(db, { usarSobraDoMesAnterior: sugerirUsarSobra(renda.dia_recebimento) });
     return true;
   };
 
@@ -129,10 +123,13 @@ export default function BoasVindasScreen() {
     if (salvando) return;
     setSalvando(true);
     try {
+      if (atual.id === 'inicio' && nome.trim() !== config.nome) {
+        await atualizar(db, { nome: nome.trim() });
+      }
       if (atual.id === 'renda' && !(await salvarRenda())) return;
       setIndice(indice + 1);
     } catch {
-      Alert.alert('Erro', 'Não foi possível salvar a renda. Tente de novo.');
+      Alert.alert('Erro', 'Não foi possível salvar. Tente de novo.');
     } finally {
       setSalvando(false);
     }
@@ -141,8 +138,7 @@ export default function BoasVindasScreen() {
   const concluir = async (depois?: () => void) => {
     await atualizar(db, { onboardingConcluido: true });
     await carregarMes(db);
-    if (revendo) router.back();
-    else router.replace('/(tabs)');
+    router.replace('/(tabs)');
     depois?.();
   };
 
@@ -209,6 +205,20 @@ export default function BoasVindasScreen() {
           </Text>
 
           <View style={[styles.corpo, { marginTop: spacing.xl }]}>
+            {atual.id === 'inicio' ? (
+              <Cartao style={{ marginBottom: spacing.base }}>
+                <CampoTexto
+                  rotulo="Como quer ser chamado?"
+                  placeholder="Seu nome"
+                  value={nome}
+                  onChangeText={setNome}
+                  maxLength={NOME_MAXIMO}
+                  autoCapitalize="words"
+                  returnKeyType="done"
+                />
+              </Cartao>
+            ) : null}
+
             {atual.id === 'inicio' ? (
               <Cartao destaque>
                 <View style={styles.linha}>
@@ -305,14 +315,11 @@ export default function BoasVindasScreen() {
 
             {atual.id === 'mes' ? (
               <>
-                <Cartao>
-                  <LinhaSwitch
-                    titulo="Começar com a sobra do mês anterior"
-                    descricao="Ex.: você recebe dia 30 e as contas vencem dia 10. O que sobrou do mês passado paga essas contas, então o app não mostra o mês no vermelho à toa."
-                    valor={config.usarSobraDoMesAnterior}
-                    onMudar={(usarSobraDoMesAnterior) => atualizar(db, { usarSobraDoMesAnterior })}
-                  />
-                </Cartao>
+                <Text style={rotulo}>Seu salário cai antes ou depois das contas?</Text>
+                <EscolhaQuandoRecebe
+                  usarSobra={config.usarSobraDoMesAnterior}
+                  onMudar={(usarSobraDoMesAnterior) => atualizar(db, { usarSobraDoMesAnterior })}
+                />
                 <Cartao style={{ marginTop: spacing.base }}>
                   <Text style={rotulo}>
                     Avisar que o mês está apertado quando as contas passam de
@@ -354,8 +361,8 @@ export default function BoasVindasScreen() {
         <View style={{ paddingHorizontal: spacing.xl, paddingBottom: spacing.base }}>
           <View
             style={styles.pontos}
-            accessibilityLabel={`Passo ${indice + 1} de ${passos.length}`}>
-            {passos.map((p, i) => (
+            accessibilityLabel={`Passo ${indice + 1} de ${PASSOS.length}`}>
+            {PASSOS.map((p, i) => (
               <View
                 key={p.id}
                 style={[

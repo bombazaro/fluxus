@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Alert, RefreshControl, ScrollView, StyleSheet } from 'react-native';
+import { Alert, RefreshControl, ScrollView, StyleSheet, Text } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
@@ -16,6 +16,7 @@ import { ProximosVencimentos } from '@/src/components/home/ProximosVencimentos';
 import { GastosPorCategoria } from '@/src/components/home/GastosPorCategoria';
 import { CartaoComparacao } from '@/src/components/home/CartaoComparacao';
 import { compararMeses } from '@/src/domain/compararMeses';
+import { saudacao } from '@/src/domain/saudacao';
 import { avaliarAperto } from '@/src/domain/avaliarAperto';
 import { calcularSaldoPorDia } from '@/src/domain/saldoPorDia';
 import { totaisPorCategoria } from '@/src/domain/totaisPorCategoria';
@@ -28,7 +29,8 @@ import { RendaDoMes } from '@/src/types';
 export default function HomeScreen() {
   const router = useRouter();
   const db = useSQLiteContext();
-  const { colors, spacing } = useTema();
+  const { colors, spacing, typography } = useTema();
+  const nome = useConfigStore((s) => s.config.nome);
 
   const {
     mesRef,
@@ -131,6 +133,17 @@ export default function HomeScreen() {
             colors={[colors.primary]}
           />
         }>
+        <Text
+          accessibilityRole="header"
+          style={{
+            color: colors.text,
+            fontFamily: typography.fontFamily.bold,
+            fontSize: typography.fontSize.subtitle,
+            marginBottom: spacing.md,
+          }}>
+          {saudacao(new Date().getHours(), nome)}
+        </Text>
+
         {erro ? <AvisoErroCarregar /> : null}
 
         <AvisoAperto
