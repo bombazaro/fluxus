@@ -263,6 +263,14 @@ export default function DetalheContaScreen() {
     ]);
   };
 
+  const criarCategoria = async (nome: string): Promise<string | null> => {
+    const { id, erro } = await categoriasRepo.criarPeloNome(db, nome);
+    if (erro || id === null) return erro;
+    setCategorias(await categoriasRepo.listarTodas(db));
+    setCategoriaEditadaId(id);
+    return null;
+  };
+
   return (
     <SafeAreaView
       edges={['top', 'left', 'right', 'bottom']}
@@ -407,6 +415,7 @@ export default function DetalheContaScreen() {
                     categorias={categorias}
                     categoriaId={categoriaEditadaId}
                     onSelecionar={setCategoriaEditadaId}
+                    onCriarCategoria={criarCategoria}
                   />
                 </View>
                 <Botao

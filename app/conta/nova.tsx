@@ -280,6 +280,14 @@ export default function NovaContaModal() {
     }
   };
 
+  const criarCategoria = async (nome: string): Promise<string | null> => {
+    const { id, erro } = await categoriasRepo.criarPeloNome(db, nome);
+    if (erro || id === null) return erro;
+    setCategorias(await categoriasRepo.listarTodas(db));
+    setCategoriaId(id);
+    return null;
+  };
+
   return (
     <SafeAreaView
       edges={['top', 'left', 'right', 'bottom']}
@@ -530,6 +538,7 @@ export default function NovaContaModal() {
             categorias={categorias}
             categoriaId={categoriaId}
             onSelecionar={setCategoriaId}
+            onCriarCategoria={criarCategoria}
           />
 
           {/* Conta compartilhada */}

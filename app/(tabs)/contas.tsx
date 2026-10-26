@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   FlatList,
   Pressable,
@@ -9,7 +9,7 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { Ionicons } from '@expo/vector-icons';
 import { useTema } from '@/src/theme';
@@ -59,8 +59,17 @@ export default function ContasScreen() {
 
   useEffect(() => {
     carregarMes(db);
-    categoriasRepo.listarTodas(db).then(setCategorias);
   }, [db, carregarMes]);
+
+  // Recarrega ao voltar para a aba: a pessoa pode ter criado uma categoria nova
+  useFocusEffect(
+    useCallback(() => {
+      categoriasRepo
+        .listarTodas(db)
+        .then(setCategorias)
+        .catch(() => {});
+    }, [db])
+  );
 
   // Temporizador para esconder o aviso de desfazer após 5 segundos
   useEffect(() => {
