@@ -9,6 +9,7 @@ import { Botao, CampoMoeda, CampoTexto, Cartao, EstadoVazio, Etiqueta } from '@/
 import { Renda, RendaRecebida, TipoRenda } from '@/src/types';
 import { rendasRepo } from '@/src/db/repositorios/rendasRepo';
 import { useMesStore } from '@/src/store/useMesStore';
+import { ModalValorRecebido } from '@/src/components/rendas/ModalValorRecebido';
 import { formatarMesAno, formatarMoeda } from '@/src/utils/formatadores';
 
 const TIPOS_RENDA: { tipo: TipoRenda; label: string }[] = [
@@ -42,7 +43,6 @@ export default function RendasScreen() {
 
   // Recebimento de renda variável: pergunta quanto caiu de verdade
   const [rendaRecebendo, setRendaRecebendo] = useState<Renda | null>(null);
-  const [valorRecebidoCentavos, setValorRecebidoCentavos] = useState(0);
 
   const carregarRendas = useCallback(async () => {
     const [todas, rec] = await Promise.all([
@@ -139,7 +139,6 @@ export default function RendasScreen() {
     if (jaRecebida) {
       await rendasRepo.desmarcarRecebida(db, renda.id, mesRef);
     } else if (renda.tipo === 'variavel') {
-      setValorRecebidoCentavos(renda.valor_centavos);
       setRendaRecebendo(renda);
       return;
     } else {
@@ -149,7 +148,7 @@ export default function RendasScreen() {
     await carregarMes(db);
   };
 
-  const handleConfirmarRecebimento = async () => {
+  const handleConfirmarRecebimento = async (valorRecebidoCentavos: number) => {
     if (!rendaRecebendo || valorRecebidoCentavos <= 0) return;
     await rendasRepo.marcarRecebida(db, rendaRecebendo.id, mesRef, valorRecebidoCentavos);
     setRendaRecebendo(null);
@@ -507,51 +506,12 @@ export default function RendasScreen() {
         </View>
       </Modal>
 
-      {/* Modal de recebimento de renda variável */}
-      <Modal
-        visible={rendaRecebendo !== null}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setRendaRecebendo(null)}>
-        <View style={styles.modalOverlay}>
-          <View
-            style={[
-              styles.modalCard,
-              {
-                backgroundColor: colors.surface,
-                borderRadius: radii.card,
-                padding: spacing.base,
-              },
-            ]}>
-            <Text
-              style={[
-                styles.modalTitulo,
-                { color: colors.text, fontFamily: typography.fontFamily.bold },
-              ]}>
-              Quanto caiu de {rendaRecebendo?.nome}?
-            </Text>
-            <CampoMoeda
-              rotulo={`Valor recebido em ${formatarMesAno(mesRef)}`}
-              valorCentavos={valorRecebidoCentavos}
-              onChangeCentavos={setValorRecebidoCentavos}
-              erro={valorRecebidoCentavos <= 0 ? 'Informe um valor maior que zero' : undefined}
-              containerStyle={{ marginTop: spacing.base }}
-            />
-            <View style={{ marginTop: spacing.xl, gap: spacing.sm }}>
-              <Botao
-                titulo="Marcar como recebida"
-                onPress={handleConfirmarRecebimento}
-                desativado={valorRecebidoCentavos <= 0}
-              />
-              <Botao
-                titulo="Cancelar"
-                onPress={() => setRendaRecebendo(null)}
-                variante="secundario"
-              />
-            </View>
-          </View>
-        </View>
-      </Modal>
+      <ModalValorRecebido
+        renda={rendaRecebendo}
+        mesRef={mesRef}
+        onConfirmar={handleConfirmarRecebimento}
+        onFechar={() => setRendaRecebendo(null)}
+      />
     </SafeAreaView>
   );
 }
