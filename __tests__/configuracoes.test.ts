@@ -69,6 +69,14 @@ describe('configuracoesRepo', () => {
     });
   });
 
+  it('guarda o nome da pessoa', async () => {
+    const db = await criarBanco();
+    await configuracoesRepo.salvar(db, { nome: 'Bernardo' });
+    expect((await configuracoesRepo.obter(db)).nome).toBe('Bernardo');
+    await configuracoesRepo.salvar(db, { nome: '' });
+    expect((await configuracoesRepo.obter(db)).nome).toBe('');
+  });
+
   it('sabe se já há contas ou rendas cadastradas', async () => {
     const db = await criarBanco();
     expect(await configuracoesRepo.temDados(db)).toBe(false);

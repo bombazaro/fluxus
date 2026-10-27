@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Linking, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useSQLiteContext } from 'expo-sqlite';
@@ -27,6 +27,8 @@ import {
 import { EscolhaQuandoRecebe } from '@/src/components/config/EscolhaQuandoRecebe';
 import { pedirPermissaoComExplicacao } from '@/src/services/permissaoLembretes';
 
+const ESPERA_SALVAR_NOME_MS = 600;
+
 export default function ConfiguracoesScreen() {
   const db = useSQLiteContext();
   const { colors, typography, spacing } = useTema();
@@ -36,12 +38,35 @@ export default function ConfiguracoesScreen() {
 
   const mudar = (parcial: Partial<Configuracoes>) => atualizar(db, parcial);
 
+  // Salva enquanto a pessoa digita: no Android, fechar o teclado pelo "voltar"
+  // não tira o foco do campo, então esperar o onBlur perdia o nome
   const [nome, setNome] = useState(config.nome);
-  const salvarNome = () => {
+  const nomePendente = useRef<string | null>(null);
+
+  const salvarNome = useCallback(
+    (valor: string) => {
+      nomePendente.current = null;
+      if (valor !== useConfigStore.getState().config.nome) {
+        useConfigStore.getState().atualizar(db, { nome: valor });
+      }
+    },
+    [db]
+  );
+
+  useEffect(() => {
     const limpo = nome.trim();
-    setNome(limpo);
-    if (limpo !== config.nome) mudar({ nome: limpo });
-  };
+    nomePendente.current = limpo;
+    const timer = setTimeout(() => salvarNome(limpo), ESPERA_SALVAR_NOME_MS);
+    return () => clearTimeout(timer);
+  }, [nome, salvarNome]);
+
+  // Saindo da tela antes do tempo, salva na hora
+  useEffect(
+    () => () => {
+      if (nomePendente.current !== null) salvarNome(nomePendente.current);
+    },
+    [salvarNome]
+  );
 
   // Mudanças que alteram os números do mês: recalcular
   const mudarCalculo = async (parcial: Partial<Configuracoes>) => {
@@ -86,8 +111,6 @@ export default function ConfiguracoesScreen() {
             placeholder="Seu nome"
             value={nome}
             onChangeText={setNome}
-            onBlur={salvarNome}
-            onSubmitEditing={salvarNome}
             maxLength={NOME_MAXIMO}
             autoCapitalize="words"
             returnKeyType="done"
