@@ -1,6 +1,11 @@
 import { SQLiteDatabase } from 'expo-sqlite';
 import { Categoria } from '@/src/types';
-import { NOME_OUTROS, novaCategoria } from '@/src/domain/categorias';
+import {
+  ehCategoriaPadrao,
+  NOME_OUTROS,
+  novaCategoria,
+  validarRenomear,
+} from '@/src/domain/categorias';
 
 export const categoriasRepo = {
   async listarTodas(db: SQLiteDatabase): Promise<Categoria[]> {
@@ -50,5 +55,46 @@ export const categoriasRepo = {
     const escolhida = await categoriasRepo.buscarPorId(db, categoriaId);
     if (escolhida?.nome !== NOME_OUTROS) return { id: categoriaId, erro: null };
     return categoriasRepo.criarPeloNome(db, nomePendente);
+  },
+
+  /** Quantas contas usam a categoria (para avisar antes de excluir). */
+  async contarContas(db: SQLiteDatabase, id: number): Promise<number> {
+    const row = await db.getFirstAsync<{ total: number }>(
+      'SELECT COUNT(*) AS total FROM contas WHERE categoria_id = ?;',
+      [id]
+    );
+    return row?.total ?? 0;
+  },
+
+  /** Renomeia uma categoria criada pela pessoa. As que vêm com o app ficam como estão. */
+  async renomear(db: SQLiteDatabase, id: number, nome: string): Promise<string | null> {
+    const todas = await categoriasRepo.listarTodas(db);
+    const atual = todas.find((c) => c.id === id);
+    if (!atual || ehCategoriaPadrao(atual)) return 'Essa categoria não pode ser renomeada';
+    const resultado = validarRenomear(id, nome, todas);
+    if (resultado.erro) return resultado.erro;
+    await db.runAsync('UPDATE categorias SET nome = ? WHERE id = ?;', [resultado.nome, id]);
+    return null;
+  },
+
+  /**
+   * Exclui uma categoria criada pela pessoa. As contas dela passam para a
+   * categoria de destino, então nenhuma conta fica sem categoria.
+   */
+  async excluir(db: SQLiteDatabase, id: number, destinoId: number): Promise<string | null> {
+    const todas = await categoriasRepo.listarTodas(db);
+    const atual = todas.find((c) => c.id === id);
+    if (!atual || ehCategoriaPadrao(atual)) return 'Essa categoria não pode ser excluída';
+    if (destinoId === id || !todas.some((c) => c.id === destinoId)) {
+      return 'Escolha para qual categoria as contas vão';
+    }
+    await db.withTransactionAsync(async () => {
+      await db.runAsync('UPDATE contas SET categoria_id = ? WHERE categoria_id = ?;', [
+        destinoId,
+        id,
+      ]);
+      await db.runAsync('DELETE FROM categorias WHERE id = ?;', [id]);
+    });
+    return null;
   },
 };

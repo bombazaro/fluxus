@@ -15,6 +15,12 @@ const ITENS: { titulo: string; descricao: string; icone: IconeIonicons; rota: Hr
     rota: '/rendas',
   },
   {
+    titulo: 'Categorias',
+    descricao: 'Criar, renomear e excluir as suas categorias',
+    icone: 'pricetags-outline',
+    rota: '/categorias',
+  },
+  {
     titulo: 'Pessoas',
     descricao: 'Quem divide contas com você',
     icone: 'people-outline',

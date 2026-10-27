@@ -1,4 +1,5 @@
 import { Categoria } from '../types';
+import { CATEGORIAS_PADRAO } from '../db/schema';
 
 /** Nome da categoria que abre a opção de criar uma nova. */
 export const NOME_OUTROS = 'Outros';
@@ -55,4 +56,24 @@ export function novaCategoria(nome: string, existentes: Categoria[]): ResultadoN
     existenteId: null,
     erro: null,
   };
+}
+
+/** As categorias que vêm com o app não podem ser renomeadas nem excluídas. */
+export function ehCategoriaPadrao(categoria: Pick<Categoria, 'nome'>): boolean {
+  return CATEGORIAS_PADRAO.some((p) => p.nome === categoria.nome);
+}
+
+/** Valida o novo nome de uma categoria criada pela pessoa (sem repetir o de outra). */
+export function validarRenomear(
+  id: number,
+  nome: string,
+  existentes: Categoria[]
+): { nome: string | null; erro: string | null } {
+  const { categoria, existenteId, erro } = novaCategoria(
+    nome,
+    existentes.filter((c) => c.id !== id)
+  );
+  if (erro) return { nome: null, erro };
+  if (existenteId !== null) return { nome: null, erro: 'Já existe uma categoria com esse nome' };
+  return { nome: categoria!.nome, erro: null };
 }

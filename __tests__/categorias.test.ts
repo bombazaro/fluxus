@@ -1,4 +1,4 @@
-import { CORES_NOVAS_CATEGORIAS, novaCategoria } from '../src/domain/categorias';
+import { CORES_NOVAS_CATEGORIAS, ehCategoriaPadrao, novaCategoria } from '../src/domain/categorias';
 import { categoriasRepo } from '../src/db/repositorios/categoriasRepo';
 import { Categoria } from '../src/types';
 import { criarBanco } from './helpers/bancoEmMemoria';
@@ -71,5 +71,60 @@ describe('categoriasRepo.resolverEscolha', () => {
       id: primeira.id,
       erro: null,
     });
+  });
+});
+
+describe('editar e excluir categorias', () => {
+  async function bancoComPets() {
+    const db = await criarBanco();
+    const { id } = await categoriasRepo.criarPeloNome(db, 'Pets');
+    const moradia = (await categoriasRepo.listarTodas(db)).find((c) => c.nome === 'Moradia')!;
+    return { db, petsId: id!, moradiaId: moradia.id };
+  }
+
+  async function criarConta(db: Awaited<ReturnType<typeof criarBanco>>, categoriaId: number) {
+    await db.runAsync(
+      `INSERT INTO contas (nome, categoria_id, tipo, valor_centavos, data_inicio, ativa, criado_em)
+       VALUES ('Ração', ?, 'fixa', 10000, '2026-10-01', 1, '2026-10-01');`,
+      [categoriaId]
+    );
+  }
+
+  it('só as categorias criadas pela pessoa podem ser mudadas', () => {
+    expect(ehCategoriaPadrao({ nome: 'Moradia' })).toBe(true);
+    expect(ehCategoriaPadrao({ nome: 'Outros' })).toBe(true);
+    expect(ehCategoriaPadrao({ nome: 'Pets' })).toBe(false);
+  });
+
+  it('renomeia, sem repetir o nome de outra categoria', async () => {
+    const { db, petsId, moradiaId } = await bancoComPets();
+    expect(await categoriasRepo.renomear(db, petsId, 'bichos')).toBeNull();
+    expect((await categoriasRepo.buscarPorId(db, petsId))?.nome).toBe('Bichos');
+    expect(await categoriasRepo.renomear(db, petsId, 'moradia')).toBe(
+      'Já existe uma categoria com esse nome'
+    );
+    expect(await categoriasRepo.renomear(db, moradiaId, 'Casa')).toBe(
+      'Essa categoria não pode ser renomeada'
+    );
+  });
+
+  it('exclui e passa as contas para a categoria escolhida', async () => {
+    const { db, petsId, moradiaId } = await bancoComPets();
+    await criarConta(db, petsId);
+    expect(await categoriasRepo.contarContas(db, petsId)).toBe(1);
+
+    expect(await categoriasRepo.excluir(db, petsId, moradiaId)).toBeNull();
+    expect(await categoriasRepo.buscarPorId(db, petsId)).toBeNull();
+    expect(await categoriasRepo.contarContas(db, moradiaId)).toBe(1);
+  });
+
+  it('não exclui as categorias do app nem manda as contas para ela mesma', async () => {
+    const { db, petsId, moradiaId } = await bancoComPets();
+    expect(await categoriasRepo.excluir(db, moradiaId, petsId)).toBe(
+      'Essa categoria não pode ser excluída'
+    );
+    expect(await categoriasRepo.excluir(db, petsId, petsId)).toBe(
+      'Escolha para qual categoria as contas vão'
+    );
   });
 });
