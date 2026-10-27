@@ -16,6 +16,7 @@ import { useTema } from '@/src/theme';
 import { useMesStore, FiltroSituacao, obterHojeIso } from '@/src/store/useMesStore';
 import { ItemConta } from '@/src/components/contas/ItemConta';
 import { CampoTexto, EstadoVazio, Fab, SeletorMes } from '@/src/components/ui';
+import { MenuAdicionar } from '@/src/components/home/MenuAdicionar';
 import { classificarSituacao } from '@/src/domain/classificarSituacao';
 import { Categoria, LancamentoComDetalhes, SituacaoConta } from '@/src/types';
 import { categoriasRepo } from '@/src/db/repositorios/categoriasRepo';
@@ -56,6 +57,7 @@ export default function ContasScreen() {
   } = useMesStore();
 
   const [categorias, setCategorias] = useState<Categoria[]>([]);
+  const [menuAberto, setMenuAberto] = useState(false);
 
   useEffect(() => {
     carregarMes(db);
@@ -425,7 +427,14 @@ export default function ContasScreen() {
       ) : null}
 
       {/* FAB "+" */}
-      <Fab onPress={() => router.push('/conta/nova')} />
+      <Fab accessibilityLabel="Adicionar gasto ou conta" onPress={() => setMenuAberto(true)} />
+
+      <MenuAdicionar
+        visivel={menuAberto}
+        onFechar={() => setMenuAberto(false)}
+        onGastoRapido={() => router.push('/gasto-rapido')}
+        onNovaConta={() => router.push('/conta/nova')}
+      />
     </SafeAreaView>
   );
 }
