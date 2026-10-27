@@ -1,6 +1,6 @@
 import { SQLiteDatabase } from 'expo-sqlite';
 import { Categoria } from '@/src/types';
-import { novaCategoria } from '@/src/domain/categorias';
+import { NOME_OUTROS, novaCategoria } from '@/src/domain/categorias';
 
 export const categoriasRepo = {
   async listarTodas(db: SQLiteDatabase): Promise<Categoria[]> {
@@ -34,5 +34,21 @@ export const categoriasRepo = {
     if (erro) return { id: null, erro };
     if (existenteId !== null) return { id: existenteId, erro: null };
     return { id: await categoriasRepo.criar(db, categoria!), erro: null };
+  },
+
+  /**
+   * Categoria a gravar na conta. Com "Outros" escolhida e um nome digitado no
+   * campo de categoria nova, cria (ou reaproveita) essa categoria, mesmo que a
+   * pessoa não tenha tocado em "Criar categoria".
+   */
+  async resolverEscolha(
+    db: SQLiteDatabase,
+    categoriaId: number | null,
+    nomePendente: string
+  ): Promise<{ id: number | null; erro: string | null }> {
+    if (categoriaId === null || !nomePendente.trim()) return { id: categoriaId, erro: null };
+    const escolhida = await categoriasRepo.buscarPorId(db, categoriaId);
+    if (escolhida?.nome !== NOME_OUTROS) return { id: categoriaId, erro: null };
+    return categoriasRepo.criarPeloNome(db, nomePendente);
   },
 };

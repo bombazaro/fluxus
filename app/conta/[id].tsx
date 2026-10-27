@@ -51,6 +51,7 @@ export default function DetalheContaScreen() {
   const [diaEditado, setDiaEditado] = useState('');
   const [temVencimentoEditado, setTemVencimentoEditado] = useState(true);
   const [categoriaEditadaId, setCategoriaEditadaId] = useState<number | null>(null);
+  const [categoriaPendente, setCategoriaPendente] = useState('');
   const [categorias, setCategorias] = useState<Categoria[]>([]);
   const [salvando, setSalvando] = useState(false);
 
@@ -115,9 +116,19 @@ export default function DetalheContaScreen() {
   const aplicarEdicao = async (valorNosProximos: boolean) => {
     setSalvando(true);
     try {
+      const categoriaFinal = await categoriasRepo.resolverEscolha(
+        db,
+        categoriaEditadaId ?? conta.categoria_id,
+        categoriaPendente
+      );
+      if (categoriaFinal.erro || categoriaFinal.id === null) {
+        Alert.alert('Categoria', categoriaFinal.erro ?? 'Escolha a categoria');
+        setSalvando(false);
+        return;
+      }
       const dados: Partial<Omit<Conta, 'id' | 'criado_em'>> = {
         nome: nomeEditado.trim(),
-        categoria_id: categoriaEditadaId ?? conta.categoria_id,
+        categoria_id: categoriaFinal.id,
       };
       if (vencimentoMudou) {
         dados.sem_vencimento = semVencimentoEditado ? 1 : 0;
@@ -150,7 +161,9 @@ export default function DetalheContaScreen() {
       }
 
       setConta({ ...conta, ...dados });
-      setCategoria(categorias.find((c) => c.id === dados.categoria_id) ?? categoria);
+      setCategoria((await categoriasRepo.buscarPorId(db, categoriaFinal.id)) ?? categoria);
+      setCategorias(await categoriasRepo.listarTodas(db));
+      setCategoriaPendente('');
       setLancamentoDoMes(await lancamentosRepo.buscarPorContaEMes(db, conta.id, mesRef));
       setHistorico(await lancamentosRepo.listarPorConta(db, conta.id));
       await carregarMes(db);
@@ -416,6 +429,7 @@ export default function DetalheContaScreen() {
                     categoriaId={categoriaEditadaId}
                     onSelecionar={setCategoriaEditadaId}
                     onCriarCategoria={criarCategoria}
+                    onNomePendente={setCategoriaPendente}
                   />
                 </View>
                 <Botao

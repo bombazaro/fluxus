@@ -15,6 +15,8 @@ export interface SeletorCategoriaProps {
    * Devolve a mensagem de erro, ou null se criou (e já escolheu) a categoria.
    */
   onCriarCategoria?: (nome: string) => Promise<string | null>;
+  /** Nome digitado e ainda não criado: o pai cria ao salvar, se a pessoa esquecer do botão. */
+  onNomePendente?: (nome: string) => void;
 }
 
 /** Lista horizontal de chips coloridos para escolher a categoria da conta. */
@@ -23,6 +25,7 @@ export function SeletorCategoria({
   categoriaId,
   onSelecionar,
   onCriarCategoria,
+  onNomePendente,
 }: SeletorCategoriaProps) {
   const { colors, typography, spacing, radii } = useTema();
   const [nomeNova, setNomeNova] = useState('');
@@ -38,7 +41,10 @@ export function SeletorCategoria({
     try {
       const msg = await onCriarCategoria(nomeNova);
       setErro(msg);
-      if (!msg) setNomeNova('');
+      if (!msg) {
+        setNomeNova('');
+        onNomePendente?.('');
+      }
     } finally {
       setCriando(false);
     }
@@ -113,6 +119,7 @@ export function SeletorCategoria({
             onChangeText={(t) => {
               setNomeNova(t);
               setErro(null);
+              onNomePendente?.(t);
             }}
             onSubmitEditing={criar}
             maxLength={NOME_CATEGORIA_MAXIMO}

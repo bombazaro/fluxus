@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import {
+  Alert,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -109,6 +110,7 @@ export default function NovaContaModal() {
   const [temVencimento, setTemVencimento] = useState(true);
   const [parcelasTotal, setParcelasTotal] = useState(preenchido.parcelas ?? '2');
   const [categoriaId, setCategoriaId] = useState<number | null>(null);
+  const [categoriaPendente, setCategoriaPendente] = useState('');
   const [compartilhada, setCompartilhada] = useState(false);
 
   const [categorias, setCategorias] = useState<Categoria[]>([]);
@@ -214,6 +216,18 @@ export default function NovaContaModal() {
     setSalvando(true);
 
     try {
+      const categoriaFinal = await categoriasRepo.resolverEscolha(
+        db,
+        categoriaId,
+        categoriaPendente
+      );
+      if (categoriaFinal.erro || categoriaFinal.id === null) {
+        Alert.alert('Categoria', categoriaFinal.erro ?? 'Escolha a categoria');
+        setSalvando(false);
+        return;
+      }
+      const categoriaFinalId = categoriaFinal.id;
+
       // Sem vencimento: a conta começa no mês escolhido, sem dia certo
       const dataInicio = !temVencimento
         ? `${mesInicio}-01`
@@ -227,7 +241,7 @@ export default function NovaContaModal() {
       await db.withTransactionAsync(async () => {
         const idConta = await contasRepo.criar(db, {
           nome: nome.trim(),
-          categoria_id: categoriaId,
+          categoria_id: categoriaFinalId,
           tipo,
           valor_centavos: valorCentavos,
           dia_vencimento: diaVencimentoConta,
@@ -244,7 +258,7 @@ export default function NovaContaModal() {
         const lancamentosPrevistos = gerarLancamentosParaConta({
           id: idConta,
           nome: nome.trim(),
-          categoria_id: categoriaId,
+          categoria_id: categoriaFinalId,
           tipo,
           valor_centavos: valorCentavos,
           dia_vencimento: diaVencimentoConta,
@@ -539,6 +553,7 @@ export default function NovaContaModal() {
             categoriaId={categoriaId}
             onSelecionar={setCategoriaId}
             onCriarCategoria={criarCategoria}
+            onNomePendente={setCategoriaPendente}
           />
 
           {/* Conta compartilhada */}

@@ -42,6 +42,7 @@ export default function GastoRapidoScreen() {
   const [descricao, setDescricao] = useState('');
   const [categorias, setCategorias] = useState<Categoria[]>([]);
   const [categoriaId, setCategoriaId] = useState<number | null>(null);
+  const [categoriaPendente, setCategoriaPendente] = useState('');
   const [data, setData] = useState(() => formatarData(obterHojeIso()));
   const [salvando, setSalvando] = useState(false);
 
@@ -68,10 +69,17 @@ export default function GastoRapidoScreen() {
 
   const salvar = async () => {
     if (salvando) return;
+    const categoriaFinal = await categoriasRepo.resolverEscolha(db, categoriaId, categoriaPendente);
+    if (categoriaFinal.erro) {
+      Alert.alert('Categoria', categoriaFinal.erro);
+      return;
+    }
+    const categoria =
+      categoriaFinal.id === null ? null : await categoriasRepo.buscarPorId(db, categoriaFinal.id);
     const gasto = montarGastoRapido({
       descricao,
       valorCentavos,
-      categoria: categorias.find((c) => c.id === categoriaId) ?? null,
+      categoria,
       dataIso: dataBrParaIso(data),
       agoraIso: new Date().toISOString(),
     });
@@ -154,6 +162,7 @@ export default function GastoRapidoScreen() {
             categoriaId={categoriaId}
             onSelecionar={setCategoriaId}
             onCriarCategoria={criarCategoria}
+            onNomePendente={setCategoriaPendente}
           />
 
           <View style={{ marginTop: spacing.xl }}>

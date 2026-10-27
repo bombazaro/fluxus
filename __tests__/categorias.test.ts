@@ -47,3 +47,29 @@ describe('categoriasRepo', () => {
     expect(nomes.indexOf('Moradia')).toBeLessThan(nomes.indexOf('Pets'));
   });
 });
+
+describe('categoriasRepo.resolverEscolha', () => {
+  it('com Outros e um nome digitado, cria a categoria e usa ela', async () => {
+    const db = await criarBanco();
+    const outros = (await categoriasRepo.listarTodas(db)).find((c) => c.nome === 'Outros')!;
+
+    const { id, erro } = await categoriasRepo.resolverEscolha(db, outros.id, 'academia');
+    expect(erro).toBeNull();
+    expect((await categoriasRepo.buscarPorId(db, id!))?.nome).toBe('Academia');
+  });
+
+  it('sem nome digitado, ou com outra categoria escolhida, mantém a escolha', async () => {
+    const db = await criarBanco();
+    const [primeira] = await categoriasRepo.listarTodas(db);
+    const outros = (await categoriasRepo.listarTodas(db)).find((c) => c.nome === 'Outros')!;
+
+    expect(await categoriasRepo.resolverEscolha(db, outros.id, '  ')).toEqual({
+      id: outros.id,
+      erro: null,
+    });
+    expect(await categoriasRepo.resolverEscolha(db, primeira.id, 'Academia')).toEqual({
+      id: primeira.id,
+      erro: null,
+    });
+  });
+});
