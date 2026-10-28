@@ -40,20 +40,23 @@ App Android de controle de contas a pagar. Você cadastra contas e rendas e o ap
 - **Resumo do mês:** sobra estimada, quanto tem em mãos, renda comprometida, total, pago e a pagar.
 - **Lista de contas** agrupada em atrasadas, esta semana, mais adiante e pagas, com filtros e busca. Marca como paga com um toque e permite desfazer.
 - **Conta sem data de vencimento** (ex.: mercado do mês): só fica atrasada se o mês acabar sem pagar.
+- **Gasto rápido:** lança em poucos toques algo que já foi pago (mercado, lanche, farmácia), que entra no resumo e deixa a sobra mais perto da real.
+- **Categorias próprias:** crie a sua escolhendo "Outros" ao cadastrar uma conta, ou em Mais › Categorias, onde também dá para renomear e excluir (escolhendo para qual categoria vão as contas).
 - **Editar e excluir com escopo:** "só este mês" ou "este e os próximos", sem mexer no histórico já pago.
-- **Rendas** fixas, variáveis (informa quanto caiu de verdade) e pontuais (13º, bônus).
+- **Rendas** fixas, variáveis (informa quanto caiu de verdade) e pontuais (13º, bônus), com o botão "Recebi" direto na tela Início.
 - **Saldo ao longo do mês:** mostra o dia em que o saldo fica mais baixo (ex.: o aluguel vence dia 5 e o salário só cai dia 10).
 - **Calendário** de vencimentos com cores por situação, lista do dia e troca de mês deslizando.
-- **Sobra do mês anterior:** o que sobrou entra como saldo inicial, então quem recebe dia 30 e paga dia 10 não vê o mês "no vermelho" à toa.
+- **Sobra do mês anterior:** para quem recebe depois das contas vencerem (ex.: salário dia 30, contas dia 10), o que sobrou entra como saldo inicial e o mês não aparece "no vermelho" à toa.
 - **Aviso de aperto:** avisa quando as contas passam do dinheiro do mês, quando o saldo fica negativo em algum dia ou quando passam do limite escolhido (80% por padrão).
 - **Lembretes de vencimento:** notificação alguns dias antes e no dia, no horário escolhido. Tocar no lembrete abre a conta.
+- **Aviso do salário:** no dia em que a renda deve cair, pergunta se ela caiu, com o botão "Recebi" na própria notificação.
 - **Comparação com o mês anterior:** quanto gastou a mais ou a menos, por categoria, e qual subiu mais.
 - **Previsão dos próximos 6 meses** e quando cada parcelamento termina.
 - **Reserva de emergência:** meta em meses de gasto ou valor fixo, aportes e retiradas, e em quanto tempo chega na meta.
 - **Simulador de parcelas:** mostra se a compra cabe nos próximos meses, com ou sem juros, sem gravar nada.
 - **Contas compartilhadas:** divide por igual, por porcentagem ou por valor; o resumo conta só a sua parte, e a tela Acertos mostra quanto cada pessoa deve, com resumo para mandar no WhatsApp.
 - **Backup:** exporta todos os dados em um arquivo e importa de volta. Também serve para passar os dados para outro celular.
-- **Configurações:** tema, lembretes, limite do aviso, meses da média e o que entra no resumo. Na primeira vez, uma tela de boas-vindas explica o app.
+- **Configurações:** nome, tema, lembretes, limite do aviso, meses da média e o que entra no resumo. Na primeira vez, as boas-vindas perguntam o nome, a renda, os lembretes e como é o mês, e a tela Início cumprimenta pelo nome.
 - Datas no formato brasileiro (DD/MM/AAAA), modo claro e escuro e rótulos para leitor de tela.
 
 ## Como instalar no celular
