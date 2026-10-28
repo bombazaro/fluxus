@@ -2,7 +2,7 @@
   "expo": {
     "name": "Fluxus",
     "slug": "fluxus",
-    "version": "1.0.0",
+    "version": "1.1.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "fluxus",
@@ -19,7 +19,7 @@
       },
       "predictiveBackGestureEnabled": false,
       "package": "com.bernardo.fluxus",
-      "versionCode": 8
+      "versionCode": 9
     },
     "web": {
       "bundler": "metro",
