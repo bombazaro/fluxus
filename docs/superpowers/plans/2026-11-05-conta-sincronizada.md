@@ -115,7 +115,7 @@ Entrega: o app roda no navegador com tudo que já funciona no celular, menos lem
 **Files:**
 - Create: `public/_headers` (ou equivalente do host), `docs/web.md`
 
-- [ ] **Passo 1:** escolher o host (recomendado: Cloudflare Pages, grátis, aceita `_headers`) e configurar build `npx expo export -p web`, saída `dist`.
+- [ ] **Passo 1:** escolher o host (decidido: Netlify, grátis; lê `public/_headers` e `public/_redirects`, e o build está no `netlify.toml`) e configurar build `npx expo export -p web`, saída `dist`.
 - [ ] **Passo 2:** `_headers` com `COOP: same-origin` e `COEP: require-corp` para `/*`.
 - [ ] **Passo 3:** verificação: abrir a URL publicada e confirmar que o SQLite abre e os dados persistem após recarregar.
 - [ ] **Passo 4:** documentar no `docs/web.md` e no README. Commit `docs: como publicar a versão web`.

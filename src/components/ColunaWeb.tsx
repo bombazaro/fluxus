@@ -1,22 +1,28 @@
 import React from 'react';
 import { Platform, StyleSheet, View } from 'react-native';
 import { useTema } from '@/src/theme';
+import { LARGURA_MAXIMA } from '@/src/domain/tamanhoDaTela';
+import { useTamanhoDaTela } from '@/src/hooks/useTamanhoDaTela';
 
-/** Largura máxima do app no navegador: telas de celular esticadas ficam feias no desktop. */
-export const LARGURA_MAXIMA_WEB = 480;
-
-/** No celular não faz nada; na web centraliza o app numa coluna de largura limitada. */
+/** No celular não faz nada; na web centraliza o app numa coluna que cresce com a janela. */
 export function ColunaWeb({ children }: { children: React.ReactNode }) {
   const { colors } = useTema();
+  const tamanho = useTamanhoDaTela();
   if (Platform.OS !== 'web') return <>{children}</>;
   return (
     <View style={[styles.fundo, { backgroundColor: colors.surfaceVariant }]}>
-      <View style={[styles.coluna, { backgroundColor: colors.background }]}>{children}</View>
+      <View
+        style={[
+          styles.coluna,
+          { backgroundColor: colors.background, maxWidth: LARGURA_MAXIMA[tamanho] },
+        ]}>
+        {children}
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   fundo: { flex: 1, alignItems: 'center' },
-  coluna: { flex: 1, width: '100%', maxWidth: LARGURA_MAXIMA_WEB },
+  coluna: { flex: 1, width: '100%' },
 });

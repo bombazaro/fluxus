@@ -1,0 +1,7 @@
+# Publicação da versão web no Netlify
+[build]
+  command = "npx expo export -p web"
+  publish = "dist"
+
+[build.environment]
+  NODE_VERSION = "22"

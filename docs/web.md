@@ -14,11 +14,12 @@ npx expo start --web      # desenvolvimento
 npx expo export -p web    # gera a pasta dist/ (site estático)
 ```
 
-## Publicar (Cloudflare Pages, grátis)
+## Publicar (Netlify, grátis)
 
-1. Crie um projeto em Cloudflare Pages ligado ao repositório `bombazaro/fluxus`.
-2. Comando de build: `npx expo export -p web` · Pasta de saída: `dist`.
-3. Pronto: o arquivo `public/_headers` já é copiado para `dist/` e manda os cabeçalhos abaixo.
+1. No Netlify, escolha "Add new site" › "Import an existing project" e ligue o repositório
+   `bombazaro/fluxus`.
+2. O `netlify.toml` já define o build (`npx expo export -p web`) e a pasta de saída (`dist`).
+3. Pronto: `public/_headers` e `public/_redirects` são copiados para `dist/` e o Netlify os lê.
 
 Os cabeçalhos são obrigatórios. Sem eles o SQLite do navegador não abre:
 
@@ -28,7 +29,7 @@ Cross-Origin-Embedder-Policy: require-corp
 ```
 
 `public/_redirects` manda qualquer endereço para o `index.html` (o app é de página única).
-O mesmo funciona no Netlify. Em outro host, configure os dois cabeçalhos e o redirecionamento.
+Em outro host (Cloudflare Pages usa os mesmos arquivos; Vercel usa `vercel.json`), configure os dois cabeçalhos e o redirecionamento.
 
 ## Como conferir depois de publicar
 
