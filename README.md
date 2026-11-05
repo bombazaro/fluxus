@@ -74,6 +74,12 @@ O Fluxus não está na Play Store: ele é instalado pelo arquivo APK. Funciona e
 > - **Para atualizar**, baixe o APK da versão nova e instale por cima. Os dados continuam no app.
 > - Os dados ficam só no celular. Antes de trocar de celular ou desinstalar, faça um backup em **Mais › Backup dos dados**.
 
+## Versão web
+
+O app também roda no navegador (`npx expo start --web`). Os dados ficam no próprio navegador, sem
+ligação com o celular, e não há lembretes de vencimento. Backup e restauração funcionam por
+download e envio de arquivo. Como publicar: [docs/web.md](docs/web.md).
+
 ## Stack
 
 Expo (development build) · TypeScript estrito · Expo Router · expo-sqlite · Zustand · expo-notifications · react-native-svg · Jest
