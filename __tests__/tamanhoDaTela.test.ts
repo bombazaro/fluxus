@@ -14,6 +14,7 @@ describe('tamanhoDaTela', () => {
   });
 
   it('tem uma largura máxima por tamanho', () => {
-    expect(LARGURA_MAXIMA).toEqual({ compacto: 480, medio: 720, largo: 1100 });
+    // no desktop o app ocupa a janela toda (null = sem limite)
+    expect(LARGURA_MAXIMA).toEqual({ compacto: 480, medio: 720, largo: null });
   });
 });
