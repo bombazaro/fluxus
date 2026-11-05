@@ -3,11 +3,11 @@ import { Pessoa } from '@/src/types';
 
 export const pessoasRepo = {
   async listarTodas(db: SQLiteDatabase): Promise<Pessoa[]> {
-    return await db.getAllAsync<Pessoa>('SELECT * FROM pessoas ORDER BY id ASC;');
+    return await db.getAllAsync<Pessoa>('SELECT id, nome FROM pessoas ORDER BY id ASC;');
   },
 
   async buscarPorId(db: SQLiteDatabase, id: number): Promise<Pessoa | null> {
-    const row = await db.getFirstAsync<Pessoa>('SELECT * FROM pessoas WHERE id = ?;', [id]);
+    const row = await db.getFirstAsync<Pessoa>('SELECT id, nome FROM pessoas WHERE id = ?;', [id]);
     return row || null;
   },
 

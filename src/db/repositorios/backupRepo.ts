@@ -1,4 +1,5 @@
 import { SQLiteDatabase } from 'expo-sqlite';
+import { atribuirUidsFixos } from '@/src/db/rastreioDeMudancas';
 import { BackupFluxus, LinhaBackup, ValorColuna } from '@/src/domain/backup';
 
 /**
@@ -105,6 +106,8 @@ export const backupRepo = {
           await db.runAsync(sql, valores);
         }
       }
+      // as linhas voltaram com uid novo: refaz a identidade fixa das de fábrica
+      await atribuirUidsFixos(db);
     });
   },
 };
