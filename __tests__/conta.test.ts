@@ -76,6 +76,16 @@ describe('confirmarCodigo', () => {
     expect(a.verifyOtp).not.toHaveBeenCalled();
   });
 
+  it('código de 8 dígitos (tamanho atual do servidor) é aceito', async () => {
+    const a = auth();
+    await confirmarCodigo(a, 'ana@x.com', '12345678');
+    expect(a.verifyOtp).toHaveBeenCalledWith({
+      email: 'ana@x.com',
+      token: '12345678',
+      type: 'email',
+    });
+  });
+
   it('código certo devolve o usuário', async () => {
     const a = auth();
     await expect(confirmarCodigo(a, 'Ana@x.com', ' 123456 ')).resolves.toEqual({

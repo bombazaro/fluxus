@@ -33,7 +33,7 @@ export function validarEmail(email: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email.trim());
 }
 
-/** Envia por e-mail um código de 6 dígitos. Cria a conta se for a primeira vez. */
+/** Envia por e-mail um código numérico (o servidor define o tamanho, hoje 8 dígitos). Cria a conta se for a primeira vez. */
 export async function entrarComEmail(auth: ClienteAuth, email: string): Promise<void> {
   if (!validarEmail(email)) throw new Error('Digite um e-mail válido.');
   let erro: ErroAuth;
@@ -60,7 +60,7 @@ export async function confirmarCodigo(
   codigo: string
 ): Promise<Usuario> {
   const token = codigo.trim();
-  if (!/^\d{6}$/.test(token)) throw new Error('Código incorreto');
+  if (!/^\d{6,10}$/.test(token)) throw new Error('Código incorreto');
   let resposta;
   try {
     resposta = await auth.verifyOtp({ email: normalizarEmail(email), token, type: 'email' });

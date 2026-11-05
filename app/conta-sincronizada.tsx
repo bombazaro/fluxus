@@ -257,15 +257,15 @@ export default function ContaSincronizadaScreen() {
                 />
                 {codigoEnviado ? (
                   <CampoTexto
-                    rotulo="Código de 6 dígitos (veja seu e-mail)"
-                    placeholder="123456"
+                    rotulo="Código recebido por e-mail"
+                    placeholder="Só números"
                     value={codigo}
                     onChangeText={(t) => {
-                      setCodigo(t.replace(/\D/g, '').slice(0, 6));
+                      setCodigo(t.replace(/\D/g, '').slice(0, 10));
                       setErro(null);
                     }}
                     keyboardType="number-pad"
-                    maxLength={6}
+                    maxLength={10}
                     erro={erro ?? undefined}
                     containerStyle={{ marginTop: spacing.base }}
                   />
@@ -277,7 +277,7 @@ export default function ContaSincronizadaScreen() {
                         titulo="Entrar"
                         onPress={entrar}
                         carregando={ocupado}
-                        desativado={codigo.length !== 6}
+                        desativado={codigo.length < 6}
                       />
                       <Botao
                         titulo="Usar outro e-mail"
