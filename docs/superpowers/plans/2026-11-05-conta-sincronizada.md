@@ -228,19 +228,22 @@ Só `pessoasRepo` passou a listar `id, nome` em vez de `SELECT *`, para não vaz
 
 ## Fase 2 — Servidor (Supabase)
 
-### Tarefa 2.1: Projeto, tabela e regras de acesso
+### Tarefa 2.1: Projeto, tabela e regras de acesso — **feita**
 
-**Files:**
-- Create: `supabase/schema.sql`, `supabase/README.md`
+**Files:** `supabase/schema.sql`, `supabase/teste_isolamento.sql`, `supabase/README.md`, `.env.example`.
 
-**Interfaces:**
-- Produces: tabela `registros(usuario_id uuid, tabela text, uid text, dados jsonb, atualizado_em timestamptz, excluido_em timestamptz, PRIMARY KEY(usuario_id, tabela, uid))`, índice `(usuario_id, atualizado_em)`, RLS ligado com política `usuario_id = auth.uid()` para select/insert/update, nenhuma de delete. RPC `enviar_registros(lote jsonb) returns timestamptz` que grava o lote e devolve o `now()` do servidor. RPC `buscar_registros(desde timestamptz, limite int)` que devolve linhas com `atualizado_em > desde`, ordenadas por `atualizado_em, tabela, uid`.
+> **Ajuste em relação ao desenho anterior (ruling):** cada linha tem **duas horas**: `atualizado_em` (quando a pessoa mexeu, hora do aparelho limitada à hora do servidor; decide quem vence) e `recebido_em` (hora do servidor; é o marcador de novidades). Uma só hora não resolvia: usar a do servidor para decidir quem vence faria um aparelho offline por dias sobrescrever edições mais novas só por sincronizar depois. O relógio adiantado de um aparelho continua coberto, porque `atualizado_em` nunca passa de `now()`.
 
-- [ ] **Passo 1:** o usuário cria o projeto Supabase (plano grátis) e passa a URL e a `anon key`. Eu não crio contas nem guardo senhas por ele.
-- [ ] **Passo 2:** aplicar `schema.sql`. Verificação: com dois usuários de teste, o usuário B não consegue ler nem escrever nas linhas do A (consulta direta retorna 0 linhas / erro de política).
-- [ ] **Passo 3:** o `atualizado_em` gravado é sempre o do servidor (`now()` dentro da RPC), nunca o enviado pelo aparelho — cobre o relógio errado do Review Focus 4.
-- [ ] **Passo 4:** habilitar Auth por e-mail OTP e Google; registrar as URLs de redirecionamento do app (esquema do app + URL da web).
-- [ ] **Passo 5:** commit `feat(sync): schema do servidor`.
+**Interfaces (o que a Fase 3 consome):**
+- Tabela `registros(usuario_id, tabela, uid, dados jsonb, atualizado_em, excluido_em, recebido_em)`; só leitura das próprias linhas, nenhuma escrita direta.
+- `enviar_registros(lote jsonb) returns jsonb` com `{ recebido_em, aplicados }`. Lote de até 500 itens `{ tabela, uid, dados | null, atualizado_em, excluido_em | null }`; só vale quando é mais novo que o do servidor.
+- `buscar_registros(desde timestamptz, desde_tabela text, desde_uid text, limite int) returns setof registros`, em ordem `(recebido_em, tabela, uid)`; o marcador é a trinca da última linha recebida. O aparelho volta alguns segundos antes do marcador ao buscar (a mescla é idempotente).
+- `excluir_meus_dados() returns integer`.
+
+- [x] **Passo 1:** projeto criado pelo usuário (`skccrxynthlvdeuaomch`, São Paulo, plano grátis).
+- [x] **Passo 2:** o usuário aplicou `schema.sql` e `teste_isolamento.sql` (resultado `OK`). Conferido também de fora, com a chave pública e sem login: ler e gravar a tabela e chamar as duas funções retornam `permission denied`.
+- [ ] **Passo 3:** Auth por e-mail (código) e URLs de redirecionamento (`https://fluxus-financas.netlify.app`); Google fica para depois.
+- [x] **Passo 4:** commit `feat(sync): schema do servidor`.
 
 ---
 
