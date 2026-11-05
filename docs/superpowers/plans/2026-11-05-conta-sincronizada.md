@@ -196,39 +196,22 @@ Entrega: no navegador o app se adapta à largura da janela, em vez de uma coluna
 
 ## Fase 1 — Dados prontos para sincronizar
 
-Entrega: toda linha tem identidade global e data de mudança, e nada é apagado de verdade. Sem rede, sem Supabase ainda.
+Entrega: toda linha tem identidade global e data de mudança, e o banco registra sozinho o que mudou e o que foi excluído. Sem rede, sem Supabase ainda. **Feita no branch `feat/sync-fase-1`.**
 
-### Tarefa 1.1: Migração v5
+> **Mudança em relação ao plano original (ruling):** em vez de trocar todo `DELETE` por exclusão lógica (`excluido_em`) em 7 repositórios e filtrar dezenas de consultas, a migração 5 usa **gatilhos do SQLite**. Eles preenchem `uid` e `atualizado_em`, anotam a linha em `sync_pendencias` e, ao excluir, gravam `sync_exclusoes(tabela, uid, excluido_em)` (inclusive nas exclusões em cascata). Os repositórios não mudam. Custo se estiver errado: o motor da Fase 3 lê a tabela de exclusões em vez de uma coluna.
 
-**Files:**
-- Modify: `src/db/migrations.ts`, `src/db/schema.ts`
-- Test: `src/db/migrations.test.ts`
+### Regras que a Fase 3 deve respeitar
+- **Linha aplicada pelo sync** deve ser gravada já com `uid` e `atualizado_em` (no `INSERT`) ou alterando `atualizado_em` no mesmo `UPDATE`. Assim os gatilhos não a marcam como pendência.
+- **`configuracoes`** não tem `uid`: a chave identifica a linha. As chaves `notificacoesAtivas`, `notificacaoHora` e `notificacaoDiasAntes` são do aparelho e nunca sincronizam (`CONFIGURACOES_DO_APARELHO`).
+- **Categorias de fábrica e a pessoa "Eu"** têm `uid` fixo (`padrao:categoria:<nome>`, `padrao:pessoa:eu`), para não duplicarem ao juntar aparelhos. A Tarefa 4.2(d) não precisa casar por nome.
+- Dentro de gatilhos não se usa `OR REPLACE`/`OR IGNORE`: o SQLite os ignora quando a instrução que dispara tem o próprio tratamento de conflito (upsert). Usar `ON CONFLICT ... DO NOTHING/UPDATE`.
+- **Importar backup** apaga tudo e reinsere: as linhas antigas viram exclusões e as novas ganham `uid` novo e entram como pendências.
 
-**Interfaces:**
-- Produces: nas tabelas `categorias`, `contas`, `lancamentos`, `rendas`, `rendas_recebidas`, `reserva_meta`, `reserva_aportes`, `pessoas`, `divisoes`, `lancamentos_ignorados`, `configuracoes` as colunas `uid TEXT`, `atualizado_em TEXT` (ISO UTC), `excluido_em TEXT NULL`. Tabelas novas: `sync_estado(chave TEXT PRIMARY KEY, valor TEXT)` e `sync_pendencias(tabela TEXT, uid TEXT, PRIMARY KEY(tabela, uid))`.
-- `configuracoes` só sincroniza as chaves de dados da pessoa (nome, renda inicial, usar sobra, tema). Nunca sincronizar chaves do aparelho (horário de lembrete, permissão de notificação).
+### Tarefa 1.1: Migração v5 com rastreio por gatilhos — **feita**
+`src/db/rastreioDeMudancas.ts` (`aplicarRastreioDeMudancas`, `TABELAS_COM_UID`, `CONFIGURACOES_DO_APARELHO`), `src/db/migrations.ts` (`VERSAO_BANCO = 5`), testes em `__tests__/rastreioDeMudancas.test.ts` (12 casos).
 
-- [ ] **Passo 1: teste:** partir de um banco v4 com uma conta, um lançamento e uma categoria; rodar as migrações; esperado: `user_version = 5`, cada linha existente com `uid` não nulo e único, `atualizado_em` preenchido, `excluido_em` nulo, e os totais do mês idênticos aos de antes.
-- [ ] **Passo 2:** rodar, esperar FALHA.
-- [ ] **Passo 3:** implementar a migração; `uid` gerado com `lower(hex(randomblob(16)))`. Índice único em `uid` por tabela.
-- [ ] **Passo 4:** rodar, esperar PASSA. Commit `feat(db): migração 5 com identidade e data de mudança`.
-
-### Tarefa 1.2: Repositórios gravam metadados e excluem logicamente
-
-**Files:**
-- Modify: todos os `src/db/repositorios/*Repo.ts` exceto `backupRepo.ts` e `index.ts`
-- Create: `src/db/repositorios/marcarMudanca.ts`
-- Test: um teste por repo existente, estendido
-
-**Interfaces:**
-- Produces: `marcarMudanca(db: SQLiteDatabase, tabela: string, uid: string): Promise<void>` (atualiza `atualizado_em` e insere em `sync_pendencias`). Todo `INSERT`/`UPDATE` de repo a chama; todo `DELETE` vira `UPDATE ... SET excluido_em = ?` seguido de `marcarMudanca`. Toda leitura ganha `AND excluido_em IS NULL`.
-
-- [ ] **Passo 1: testes (por repo):** criar → linha entra em `sync_pendencias`; editar → `atualizado_em` avança; excluir → some das listagens, continua no banco com `excluido_em`, e a exclusão de uma conta mantém a regra atual sobre seus lançamentos.
-- [ ] **Passo 2:** rodar, esperar FALHA.
-- [ ] **Passo 3:** implementar repo a repo, na ordem: categorias, contas, lancamentos, rendas, pessoas/divisões, reserva, configurações.
-- [ ] **Passo 4:** `npx jest` inteiro passa (os testes antigos não podem mudar de resultado). Rodar a limpeza de pendências ao fim do repo para não vazar.
-- [ ] **Passo 5:** `backupRepo`: exportar inclui as colunas novas; importar de backup antigo (v4) preenche `uid`/`atualizado_em`. Teste: restaurar um backup v4 real do usuário e conferir os totais.
-- [ ] **Passo 6:** commit `feat(db): exclusão lógica e rastreio de mudanças`.
+### Tarefa 1.2: Repositórios — **não precisou**
+Só `pessoasRepo` passou a listar `id, nome` em vez de `SELECT *`, para não vazar as colunas novas.
 
 ---
 
