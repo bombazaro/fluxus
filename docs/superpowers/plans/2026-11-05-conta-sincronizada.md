@@ -52,6 +52,7 @@
 | `src/services/conta.ts` (novo) | login, logout, sessão, primeira ligação |
 | `src/store/useContaStore.ts` (novo) | estado: deslogado / logado / sincronizando / erro |
 | `app/conta.tsx` (novo) | tela de login e da conta |
+| `src/domain/tamanhoDaTela.ts` + `src/hooks/useTamanhoDaTela.ts` (novos) | compacto / médio / largo por largura da janela (só web) |
 | `src/components/ui/Dialogo.tsx` + `src/utils/avisar.ts` (novos) | substituto de `Alert.alert` que funciona na web |
 | `supabase/` (novo) | SQL da tabela `registros`, RLS e instruções de setup |
 | `metro.config.js` (manter) | suporte ao `.wasm` na web |
@@ -118,6 +119,78 @@ Entrega: o app roda no navegador com tudo que já funciona no celular, menos lem
 - [ ] **Passo 2:** `_headers` com `COOP: same-origin` e `COEP: require-corp` para `/*`.
 - [ ] **Passo 3:** verificação: abrir a URL publicada e confirmar que o SQLite abre e os dados persistem após recarregar.
 - [ ] **Passo 4:** documentar no `docs/web.md` e no README. Commit `docs: como publicar a versão web`.
+
+---
+
+## Fase 0.5 — Layout para tablet e desktop (só web)
+
+Entrega: no navegador o app se adapta à largura da janela, em vez de uma coluna fixa de 480 px. O celular (app e navegador) continua exatamente como está.
+
+**Decisões desta fase**
+- Três tamanhos, por largura da janela: `compacto` (< 600 px, celular), `medio` (600–1023 px, tablet) e `largo` (≥ 1024 px, desktop).
+- `compacto`: igual a hoje, com abas embaixo.
+- `medio`: abas embaixo, conteúdo centralizado com largura máxima de 720 px e cartões de resumo em grade.
+- `largo`: menu lateral à esquerda no lugar das abas, conteúdo com largura máxima de 1100 px e Início e Contas em duas colunas.
+- O app nativo (Android) nunca entra nos modos `medio` e `largo`: o tamanho só é calculado quando `Platform.OS === 'web'`.
+
+### Tarefa 0.5.1: Tamanho da tela e contêiner responsivo
+
+**Files:**
+- Create: `src/domain/tamanhoDaTela.ts`, `src/hooks/useTamanhoDaTela.ts`, `__tests__/tamanhoDaTela.test.ts`
+- Modify: `src/components/ColunaWeb.tsx` (passa a usar o tamanho, sem o 480 fixo)
+
+**Interfaces:**
+- Produces: `type TamanhoDaTela = 'compacto' | 'medio' | 'largo'`, `tamanhoDaTela(largura: number): TamanhoDaTela` e `LARGURA_MAXIMA: Record<TamanhoDaTela, number>` (`compacto: 480`, `medio: 720`, `largo: 1100`). `useTamanhoDaTela(): TamanhoDaTela` devolve sempre `'compacto'` fora da web.
+
+- [ ] **Passo 1: teste:** `tamanhoDaTela(599)` → `'compacto'`; `tamanhoDaTela(600)` → `'medio'`; `tamanhoDaTela(1023)` → `'medio'`; `tamanhoDaTela(1024)` → `'largo'`; largura 0 ou negativa → `'compacto'`.
+- [ ] **Passo 2:** `npx jest __tests__/tamanhoDaTela.test.ts`, esperar FALHA.
+- [ ] **Passo 3:** implementar a função pura e o hook (`useWindowDimensions().width`, só na web). `ColunaWeb` usa `LARGURA_MAXIMA[tamanho]` e mantém o fundo cinza dos lados.
+- [ ] **Passo 4:** esperar PASSA. Commit `feat(web): tamanho da tela e contêiner responsivo`.
+
+### Tarefa 0.5.2: Menu lateral no desktop
+
+**Files:**
+- Modify: `app/(tabs)/_layout.tsx`
+- Test: verificação visual (Tarefa 0.5.5)
+
+**Interfaces:**
+- Consumes: `useTamanhoDaTela(): TamanhoDaTela`.
+
+- [ ] **Passo 1:** em `largo`, as abas passam para a esquerda (`tabBarPosition: 'left'` do React Navigation, conferir na versão instalada; se não existir, rodapé vira barra lateral própria com os mesmos 5 itens e os mesmos ícones). Em `compacto` e `medio` nada muda.
+- [ ] **Passo 2:** o menu lateral mostra ícone e nome de cada aba, destaca a ativa e tem largura fixa de 200 px; a largura do conteúdo (1100 px) é calculada descontando o menu.
+- [ ] **Passo 3:** `npx tsc --noEmit && npx jest` passam. Commit `feat(web): menu lateral no desktop`.
+
+### Tarefa 0.5.3: Início e Contas em várias colunas
+
+**Files:**
+- Modify: `app/(tabs)/index.tsx`, `app/(tabs)/contas.tsx` (e os componentes de `src/components/home/` que o precisarem)
+- Create: `src/components/ui/DuasColunas.tsx`
+
+**Interfaces:**
+- Consumes: `useTamanhoDaTela`.
+- Produces: `DuasColunas({ esquerda: ReactNode; direita: ReactNode }): JSX.Element` — em `largo` põe as duas lado a lado (esquerda 40%, direita 60%); em `compacto` e `medio` empilha, esquerda primeiro.
+
+- [ ] **Passo 1:** Início: resumo do mês, entradas e totais na coluna esquerda; próximos vencimentos e gastos por categoria na direita. Em `medio`, os três cartões (Total mês, Já pago, Falta pagar) ficam em linha, como já estão.
+- [ ] **Passo 2:** Contas: filtros e busca na esquerda, lista na direita (em `largo`); lista cheia em `medio`.
+- [ ] **Passo 3:** o botão flutuante "+" fica dentro da área do conteúdo, não colado na borda da janela.
+- [ ] **Passo 4:** `npx tsc --noEmit && npx jest` passam. Commit `feat(web): Início e Contas em duas colunas no desktop`.
+
+### Tarefa 0.5.4: Demais telas, formulários e janelas
+
+**Files:**
+- Modify: `app/(tabs)/calendario.tsx`, `app/(tabs)/planejar.tsx`, `app/(tabs)/mais.tsx`, `src/components/ui/Dialogo.tsx`, os modais de `app/categorias.tsx`, `app/rendas/index.tsx` e `src/components/home/MenuAdicionar.tsx`
+
+- [ ] **Passo 1:** Calendário e Planejar: usam a largura disponível (calendário com células maiores em `largo`; gráfico de Planejar sem esticar demais, máximo 720 px).
+- [ ] **Passo 2:** telas de formulário (nova conta, gasto rápido, rendas, categorias, configurações, backup, boas-vindas): conteúdo com largura máxima de 560 px, centralizado, mesmo em `largo`.
+- [ ] **Passo 3:** janelas (`Modal` de exclusão de categoria, valor recebido, menu do "+"): largura máxima de 440 px, centralizadas; o menu do "+" deixa de ocupar a tela toda em `medio` e `largo`.
+- [ ] **Passo 4:** `npx tsc --noEmit && npx eslint . && npx jest` passam. Commit `feat(web): telas e janelas ajustadas para tablet e desktop`.
+
+### Tarefa 0.5.5: Verificação nos três tamanhos
+
+- [ ] **Passo 1:** exportar a web e, no Chrome, tirar capturas de Início, Contas, Calendário, Planejar, Mais e Gasto rápido em 390×844 (celular), 820×1180 (tablet) e 1280×800 (desktop).
+- [ ] **Passo 2:** conferir: sem rolagem horizontal, nada cortado (principalmente rótulos das abas e o botão "+"), texto legível, nenhum elemento esticado além do máximo da largura.
+- [ ] **Passo 3:** a 390 px a aparência deve ser idêntica à da Fase 0. Se algo mudou, é defeito.
+- [ ] **Passo 4:** registrar em `docs/web.md` os três tamanhos. Commit `docs: tamanhos de tela da versão web`.
 
 ---
 
@@ -291,6 +364,7 @@ Entrega: toda linha tem identidade global e data de mudança, e nada é apagado 
 | Fase | Entrega | Vale sozinha? |
 |---|---|---|
 | 0 | Fluxus no navegador, sem conta | Sim |
+| 0.5 | Layout para tablet e desktop | Sim |
 | 1 | Dados prontos para sync, app igual | Sim (invisível) |
 | 2 | Servidor seguro | Não |
 | 3 | Motor testado com rede falsa | Não |
