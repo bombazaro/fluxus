@@ -56,3 +56,20 @@ export async function ligarConta(
   await sincronizar(db, rede);
   return naNuvem ? 'mesclado' : 'novo';
 }
+
+/**
+ * Apaga tudo o que a conta guardou na nuvem e esquece a ligação deste aparelho com ela.
+ * Os dados do aparelho ficam como estão; ao entrar de novo, tudo sobe outra vez.
+ */
+export async function apagarDadosDaNuvem(
+  db: SQLiteDatabase,
+  cliente: { rpc(nome: string, args: Record<string, unknown>): PromiseLike<{ error: unknown }> }
+): Promise<void> {
+  const { error } = await cliente.rpc('excluir_meus_dados', {});
+  if (error) throw new Error('Não foi possível apagar os dados da nuvem. Tente de novo.');
+  await db.execAsync(`
+    DELETE FROM sync_estado;
+    DELETE FROM sync_pendencias;
+    DELETE FROM sync_exclusoes;
+  `);
+}

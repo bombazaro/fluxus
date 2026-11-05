@@ -51,11 +51,9 @@ describe('entrarComEmail', () => {
 
   it('limite de envios do servidor vira aviso claro', async () => {
     const a = auth({
-      signInWithOtp: jest
-        .fn()
-        .mockResolvedValue({
-          error: { message: 'rate limit', status: 429, code: 'over_email_send_rate_limit' },
-        }),
+      signInWithOtp: jest.fn().mockResolvedValue({
+        error: { message: 'rate limit', status: 429, code: 'over_email_send_rate_limit' },
+      }),
     });
     await expect(entrarComEmail(a, 'ana@x.com')).rejects.toThrow(/aguarde/i);
   });
@@ -64,12 +62,10 @@ describe('entrarComEmail', () => {
 describe('confirmarCodigo', () => {
   it('código errado mostra "Código incorreto" e não devolve usuário', async () => {
     const a = auth({
-      verifyOtp: jest
-        .fn()
-        .mockResolvedValue({
-          data: { user: null },
-          error: { message: 'Token has expired or is invalid' },
-        }),
+      verifyOtp: jest.fn().mockResolvedValue({
+        data: { user: null },
+        error: { message: 'Token has expired or is invalid' },
+      }),
     });
     await expect(confirmarCodigo(a, 'ana@x.com', '123456')).rejects.toThrow('Código incorreto');
   });

@@ -1,4 +1,5 @@
 import { Platform } from 'react-native';
+import Armazenamento from 'expo-sqlite/kv-store';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { Registro, TabelaSync } from '@/src/domain/sync/registro';
 import { Cursor, Rede, RegistroRecebido } from './rede';
@@ -67,8 +68,7 @@ export function obterClienteSupabase(): SupabaseClient | null {
   if (!contaDisponivel) return null;
   if (!cliente) {
     // No celular a sessão fica no armazenamento do app; na web, no localStorage do navegador.
-    const armazenamento =
-      Platform.OS === 'web' ? undefined : require('expo-sqlite/kv-store').default;
+    const armazenamento = Platform.OS === 'web' ? undefined : Armazenamento;
     cliente = createClient(
       process.env.EXPO_PUBLIC_SUPABASE_URL as string,
       process.env.EXPO_PUBLIC_SUPABASE_KEY as string,

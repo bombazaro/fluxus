@@ -39,6 +39,13 @@ const ITENS: { titulo: string; descricao: string; icone: IconeIonicons; rota: Hr
     rota: '/configuracoes',
   },
   {
+    titulo: 'Conta e sincronização',
+    descricao: 'Use os mesmos dados no celular e no navegador',
+    icone: 'sync-outline',
+    // as rotas tipadas só ganham esta tela quando o Expo gera os tipos de novo
+    rota: '/conta-sincronizada' as Href,
+  },
+  {
     titulo: 'Backup dos dados',
     descricao: 'Exportar e importar, ou passar para outro celular',
     icone: 'cloud-upload-outline',

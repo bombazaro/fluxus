@@ -1,5 +1,5 @@
 import { SQLiteDatabase } from 'expo-sqlite';
-import { ErroOutraConta, ligarConta } from '../src/services/sync/ligacao';
+import { apagarDadosDaNuvem, ErroOutraConta, ligarConta } from '../src/services/sync/ligacao';
 import { sincronizar } from '../src/services/sync/motor';
 import { criarRedeFalsa } from '../src/services/sync/rede.fake';
 import { criarBanco } from './helpers/bancoEmMemoria';
@@ -86,5 +86,28 @@ describe('ligarConta', () => {
     await ligarConta(a, rede, 'u1');
     expect(linhas().map((l) => l.uid)).toContain('tema');
     expect(linhas().map((l) => l.uid)).not.toContain('notificacaoHora');
+  });
+
+  it('apagar os dados da nuvem esquece a ligação e mantém os dados do aparelho', async () => {
+    const a = await criarBanco();
+    const { rede } = criarRedeFalsa();
+    await novaConta(a, 'Aluguel');
+    await ligarConta(a, rede, 'u1');
+    const rpc = jest.fn().mockResolvedValue({ error: null });
+    await apagarDadosDaNuvem(a, { rpc });
+    expect(rpc).toHaveBeenCalledWith('excluir_meus_dados', {});
+    expect(await nomes(a)).toEqual(['Aluguel']);
+    expect(await n(a, 'SELECT COUNT(*) AS n FROM sync_estado;')).toBe(0);
+    // agora pode entrar com outra conta
+    await expect(ligarConta(a, rede, 'u2')).resolves.toBeDefined();
+  });
+
+  it('se o servidor falhar ao apagar, a ligação continua', async () => {
+    const a = await criarBanco();
+    const { rede } = criarRedeFalsa();
+    await ligarConta(a, rede, 'u1');
+    const rpc = jest.fn().mockResolvedValue({ error: { message: 'x' } });
+    await expect(apagarDadosDaNuvem(a, { rpc })).rejects.toThrow(/apagar/);
+    expect(await n(a, "SELECT COUNT(*) AS n FROM sync_estado WHERE chave = 'usuario_id';")).toBe(1);
   });
 });
