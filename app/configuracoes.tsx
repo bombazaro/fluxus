@@ -25,6 +25,7 @@ import {
   TemaPreferido,
 } from '@/src/domain/configuracoes';
 import { EscolhaQuandoRecebe } from '@/src/components/config/EscolhaQuandoRecebe';
+import { lembretesDisponiveis } from '@/src/services/notificacoes';
 import { pedirPermissaoComExplicacao } from '@/src/services/permissaoLembretes';
 
 const ESPERA_SALVAR_NOME_MS = 600;
@@ -133,62 +134,66 @@ export default function ConfiguracoesScreen() {
           />
         </Cartao>
 
-        <TituloSecao>Lembretes</TituloSecao>
-        <Cartao>
-          <LinhaSwitch
-            titulo="Lembrar dos vencimentos"
-            descricao="Notificação antes e no dia em que cada conta vence, e no dia do salário"
-            valor={config.notificacoesAtivas}
-            onMudar={ligarLembretes}
-          />
-
-          {config.notificacoesAtivas ? (
-            <>
-              <Text style={[rotulo, { marginTop: spacing.base }]}>Avisar</Text>
-              <GrupoOpcoes<number>
-                rotuloAcessivel="Quantos dias antes avisar"
-                opcoes={OPCOES_DIAS_ANTES.map((dias) => ({
-                  valor: dias,
-                  rotulo: dias === 0 ? 'Só no dia' : `${dias} dia${dias > 1 ? 's' : ''} antes`,
-                }))}
-                valor={config.notificacaoDiasAntes}
-                onMudar={(notificacaoDiasAntes) => mudar({ notificacaoDiasAntes })}
+        {lembretesDisponiveis ? (
+          <>
+            <TituloSecao>Lembretes</TituloSecao>
+            <Cartao>
+              <LinhaSwitch
+                titulo="Lembrar dos vencimentos"
+                descricao="Notificação antes e no dia em que cada conta vence, e no dia do salário"
+                valor={config.notificacoesAtivas}
+                onMudar={ligarLembretes}
               />
 
-              <Text style={[rotulo, { marginTop: spacing.base }]}>Horário</Text>
-              <SeletorHora
-                hora={config.notificacaoHora}
-                onMudar={(notificacaoHora) => mudar({ notificacaoHora })}
-              />
+              {config.notificacoesAtivas ? (
+                <>
+                  <Text style={[rotulo, { marginTop: spacing.base }]}>Avisar</Text>
+                  <GrupoOpcoes<number>
+                    rotuloAcessivel="Quantos dias antes avisar"
+                    opcoes={OPCOES_DIAS_ANTES.map((dias) => ({
+                      valor: dias,
+                      rotulo: dias === 0 ? 'Só no dia' : `${dias} dia${dias > 1 ? 's' : ''} antes`,
+                    }))}
+                    valor={config.notificacaoDiasAntes}
+                    onMudar={(notificacaoDiasAntes) => mudar({ notificacaoDiasAntes })}
+                  />
 
-              <View
-                style={[
-                  styles.dica,
-                  {
-                    backgroundColor: colors.warningLight,
-                    marginTop: spacing.base,
-                    padding: spacing.md,
-                  },
-                ]}>
-                <Text style={[textoAjuda, { color: colors.text }]}>
-                  Em alguns celulares (Xiaomi, Samsung, Motorola), a economia de bateria atrasa ou
-                  apaga os lembretes. Se eles não chegarem, deixe o Fluxus{' '}
-                  <Text style={{ fontFamily: typography.fontFamily.semiBold }}>
-                    sem restrição de bateria
-                  </Text>{' '}
-                  nas configurações do app.
-                </Text>
-                <Botao
-                  titulo="Abrir configurações do app"
-                  variante="fantasma"
-                  tamanho="pequeno"
-                  onPress={() => Linking.openSettings()}
-                  style={{ marginTop: spacing.xs, alignSelf: 'flex-start' }}
-                />
-              </View>
-            </>
-          ) : null}
-        </Cartao>
+                  <Text style={[rotulo, { marginTop: spacing.base }]}>Horário</Text>
+                  <SeletorHora
+                    hora={config.notificacaoHora}
+                    onMudar={(notificacaoHora) => mudar({ notificacaoHora })}
+                  />
+
+                  <View
+                    style={[
+                      styles.dica,
+                      {
+                        backgroundColor: colors.warningLight,
+                        marginTop: spacing.base,
+                        padding: spacing.md,
+                      },
+                    ]}>
+                    <Text style={[textoAjuda, { color: colors.text }]}>
+                      Em alguns celulares (Xiaomi, Samsung, Motorola), a economia de bateria atrasa
+                      ou apaga os lembretes. Se eles não chegarem, deixe o Fluxus{' '}
+                      <Text style={{ fontFamily: typography.fontFamily.semiBold }}>
+                        sem restrição de bateria
+                      </Text>{' '}
+                      nas configurações do app.
+                    </Text>
+                    <Botao
+                      titulo="Abrir configurações do app"
+                      variante="fantasma"
+                      tamanho="pequeno"
+                      onPress={() => Linking.openSettings()}
+                      style={{ marginTop: spacing.xs, alignSelf: 'flex-start' }}
+                    />
+                  </View>
+                </>
+              ) : null}
+            </Cartao>
+          </>
+        ) : null}
 
         <TituloSecao>Aviso de aperto</TituloSecao>
         <Cartao>

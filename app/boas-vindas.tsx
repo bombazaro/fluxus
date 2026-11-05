@@ -34,6 +34,7 @@ import {
 } from '@/src/domain/configuracoes';
 import { EscolhaQuandoRecebe } from '@/src/components/config/EscolhaQuandoRecebe';
 import { validarRendaInicial } from '@/src/domain/rendaInicial';
+import { lembretesDisponiveis } from '@/src/services/notificacoes';
 import { pedirPermissaoComExplicacao } from '@/src/services/permissaoLembretes';
 import { avisar } from '@/src/utils/avisar';
 
@@ -41,7 +42,7 @@ type IconeIonicons = keyof typeof Ionicons.glyphMap;
 
 type Passo = 'inicio' | 'renda' | 'lembretes' | 'mes' | 'aparencia';
 
-const PASSOS: { id: Passo; icone: IconeIonicons; titulo: string; texto: string }[] = [
+const TODOS_OS_PASSOS: { id: Passo; icone: IconeIonicons; titulo: string; texto: string }[] = [
   {
     id: 'inicio',
     icone: 'wallet-outline',
@@ -77,6 +78,9 @@ const PASSOS: { id: Passo; icone: IconeIonicons; titulo: string; texto: string }
     texto: 'Escolha o tema e cadastre suas contas: aluguel, internet, luz, parcelas...',
   },
 ];
+
+/** No navegador não há lembretes, então a pergunta sobre eles não aparece. */
+const PASSOS = TODOS_OS_PASSOS.filter((p) => lembretesDisponiveis || p.id !== 'lembretes');
 
 export default function BoasVindasScreen() {
   const router = useRouter();

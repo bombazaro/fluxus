@@ -3,6 +3,7 @@ import { Appearance, AppState } from 'react-native';
 import { router, useRootNavigationState } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import * as Notifications from 'expo-notifications';
+import { useRespostaNotificacao } from '@/src/hooks/useRespostaNotificacao';
 import { useConfigStore } from '@/src/store/useConfigStore';
 import { useMesStore } from '@/src/store/useMesStore';
 import {
@@ -46,6 +47,8 @@ export function Inicializacao() {
   }, [db]);
 
   useEffect(() => {
+    // No navegador o React Native Web não tem esse método; o tema segue o sistema
+    if (typeof Appearance.setColorScheme !== 'function') return;
     Appearance.setColorScheme(
       tema === 'sistema' ? 'unspecified' : tema === 'claro' ? 'light' : 'dark'
     );
@@ -89,7 +92,7 @@ export function Inicializacao() {
   }, [db]);
 
   // Tocar no lembrete abre o detalhe da conta
-  const resposta = Notifications.useLastNotificationResponse();
+  const resposta = useRespostaNotificacao();
   // A última resposta continua a mesma depois de tratada: não abrir duas vezes
   const respostaTratada = useRef<string | null>(null);
   useEffect(() => {
