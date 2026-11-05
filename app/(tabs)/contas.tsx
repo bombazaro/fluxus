@@ -464,6 +464,7 @@ const styles = StyleSheet.create({
   listaArea: { flex: 1 },
   filtrosRow: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: 8,
     marginTop: 4,
     marginBottom: 4,
