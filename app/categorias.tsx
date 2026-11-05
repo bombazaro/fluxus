@@ -1,5 +1,5 @@
 import React, { useCallback, useState } from 'react';
-import { Alert, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
@@ -11,6 +11,8 @@ import { categoriasRepo } from '@/src/db/repositorios/categoriasRepo';
 import { ehCategoriaPadrao, NOME_CATEGORIA_MAXIMO, NOME_OUTROS } from '@/src/domain/categorias';
 import { useMesStore } from '@/src/store/useMesStore';
 import { Categoria } from '@/src/types';
+import { avisar } from '@/src/utils/avisar';
+import { estiloFormulario, estiloJanela } from '@/src/utils/layout';
 
 /** Categoria sendo excluída e quantas contas usam ela. */
 interface Exclusao {
@@ -66,7 +68,7 @@ export default function CategoriasScreen() {
     const contas = await categoriasRepo.contarContas(db, categoria.id);
     const outros = categorias.find((c) => c.nome === NOME_OUTROS);
     if (contas === 0) {
-      Alert.alert(`Excluir ${categoria.nome}?`, 'Nenhuma conta usa essa categoria.', [
+      avisar(`Excluir ${categoria.nome}?`, 'Nenhuma conta usa essa categoria.', [
         { text: 'Cancelar', style: 'cancel' },
         {
           text: 'Excluir',
@@ -83,7 +85,7 @@ export default function CategoriasScreen() {
     if (destinoId === null) return;
     const msg = await categoriasRepo.excluir(db, id, destinoId);
     if (msg) {
-      Alert.alert('Não foi possível excluir', msg);
+      avisar('Não foi possível excluir', msg);
       return;
     }
     if (editandoId === id) limpar();
@@ -157,7 +159,10 @@ export default function CategoriasScreen() {
 
       <ScrollView
         keyboardShouldPersistTaps="handled"
-        contentContainerStyle={{ padding: spacing.base, paddingBottom: spacing.xxl }}>
+        contentContainerStyle={[
+          { padding: spacing.base, paddingBottom: spacing.xxl },
+          estiloFormulario,
+        ]}>
         <Cartao>
           <CampoTexto
             rotulo={editandoId !== null ? 'Novo nome' : 'Nova categoria'}
@@ -216,6 +221,8 @@ export default function CategoriasScreen() {
               backgroundColor: colors.surface,
               borderRadius: radii.card,
               padding: spacing.base,
+              width: '100%',
+              ...estiloJanela,
             }}>
             <Text
               style={{

@@ -1,11 +1,12 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Alert, RefreshControl, ScrollView, StyleSheet, Text } from 'react-native';
+import { RefreshControl, ScrollView, StyleSheet, Text } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useTema } from '@/src/theme';
 import { obterHojeIso, useMesStore } from '@/src/store/useMesStore';
 import { Fab, SeletorMes } from '@/src/components/ui';
+import { DuasColunas } from '@/src/components/ui/DuasColunas';
 import { AvisoErroCarregar } from '@/src/components/home/AvisoErroCarregar';
 import { AvisoAperto } from '@/src/components/home/AvisoAperto';
 import { CartaoSobra } from '@/src/components/home/CartaoSobra';
@@ -26,6 +27,7 @@ import { ModalValorRecebido } from '@/src/components/rendas/ModalValorRecebido';
 import { MenuAdicionar } from '@/src/components/home/MenuAdicionar';
 import { rendasRepo } from '@/src/db/repositorios/rendasRepo';
 import { RendaDoMes } from '@/src/types';
+import { avisar } from '@/src/utils/avisar';
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -67,7 +69,7 @@ export default function HomeScreen() {
   };
 
   const desmarcarRecebida = (renda: RendaDoMes) => {
-    Alert.alert(`Desmarcar ${renda.nome}?`, 'Ela volta a contar como ainda não recebida.', [
+    avisar(`Desmarcar ${renda.nome}?`, 'Ela volta a contar como ainda não recebida.', [
       { text: 'Cancelar', style: 'cancel' },
       {
         text: 'Desmarcar',
@@ -148,55 +150,67 @@ export default function HomeScreen() {
 
         {erro ? <AvisoErroCarregar /> : null}
 
-        <AvisoAperto
-          aperto={aperto}
-          onPress={() => {
-            setOrdenarPorValor(true);
-            router.push('/(tabs)/contas');
-          }}
-        />
+        <DuasColunas
+          esquerda={
+            <>
+              <AvisoAperto
+                aperto={aperto}
+                onPress={() => {
+                  setOrdenarPorValor(true);
+                  router.push('/(tabs)/contas');
+                }}
+              />
 
-        <CartaoSobra
-          resumo={resumo}
-          onGuardarNaReserva={() =>
-            router.push({ pathname: '/reserva', params: { aporte: String(resumo.sobra) } })
+              <CartaoSobra
+                resumo={resumo}
+                onGuardarNaReserva={() =>
+                  router.push({ pathname: '/reserva', params: { aporte: String(resumo.sobra) } })
+                }
+              />
+
+              <EntradasDoMes
+                rendas={rendas}
+                rendaTotalCentavos={resumo.rendaTotal}
+                mesRef={mesRef}
+                hojeIso={obterHojeIso()}
+                onGerenciar={() => router.push('/rendas')}
+                onMarcarRecebida={marcarRecebida}
+                onDesmarcarRecebida={desmarcarRecebida}
+              />
+
+              <ResumoTotais resumo={resumo} />
+            </>
+          }
+          direita={
+            <>
+              {rendas.length > 0 || saldoInicial > 0 ? (
+                <CartaoMenorSaldo
+                  saldoPorDia={saldoPorDia}
+                  saldoInicialCentavos={saldoInicial}
+                  mesAnterior={adicionarMeses(mesRef, -1)}
+                />
+              ) : null}
+
+              <CartaoComparacao
+                comparacao={comparacao}
+                mesAnterior={adicionarMeses(mesRef, -1)}
+                onPress={() => router.push('/comparacao')}
+              />
+
+              <ProximosVencimentos
+                lancamentos={proximosVencimentos}
+                onVerTodas={() => router.push('/(tabs)/contas')}
+                onAbrirConta={(contaId) => router.push(`/conta/${contaId}`)}
+                onMarcarPago={(id) => marcarPago(db, id, true)}
+              />
+
+              <GastosPorCategoria
+                totais={categoriasTotais}
+                totalContasCentavos={resumo.totalContas}
+              />
+            </>
           }
         />
-
-        <EntradasDoMes
-          rendas={rendas}
-          rendaTotalCentavos={resumo.rendaTotal}
-          mesRef={mesRef}
-          hojeIso={obterHojeIso()}
-          onGerenciar={() => router.push('/rendas')}
-          onMarcarRecebida={marcarRecebida}
-          onDesmarcarRecebida={desmarcarRecebida}
-        />
-
-        <ResumoTotais resumo={resumo} />
-
-        {rendas.length > 0 || saldoInicial > 0 ? (
-          <CartaoMenorSaldo
-            saldoPorDia={saldoPorDia}
-            saldoInicialCentavos={saldoInicial}
-            mesAnterior={adicionarMeses(mesRef, -1)}
-          />
-        ) : null}
-
-        <CartaoComparacao
-          comparacao={comparacao}
-          mesAnterior={adicionarMeses(mesRef, -1)}
-          onPress={() => router.push('/comparacao')}
-        />
-
-        <ProximosVencimentos
-          lancamentos={proximosVencimentos}
-          onVerTodas={() => router.push('/(tabs)/contas')}
-          onAbrirConta={(contaId) => router.push(`/conta/${contaId}`)}
-          onMarcarPago={(id) => marcarPago(db, id, true)}
-        />
-
-        <GastosPorCategoria totais={categoriasTotais} totalContasCentavos={resumo.totalContas} />
       </ScrollView>
 
       <Fab accessibilityLabel="Adicionar gasto ou conta" onPress={() => setMenuAberto(true)} />

@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useTema } from '@/src/theme';
+import { estiloGrafico } from '@/src/utils/layout';
 import { obterHojeIso, obterMesAtualIso, useMesStore } from '@/src/store/useMesStore';
 import { MarcaDia, montarCalendario } from '@/src/domain/montarCalendario';
 import { corDaMarca, GradeMensal, ROTULO_MARCA } from '@/src/components/calendario/GradeMensal';
@@ -113,7 +114,7 @@ export default function CalendarioScreen() {
         mostrarBotaoHoje={!estaNoMesAtual}
       />
 
-      <ScrollView contentContainerStyle={{ padding: spacing.base }}>
+      <ScrollView contentContainerStyle={[{ padding: spacing.base }, estiloGrafico]}>
         <Cartao {...gestoTrocaMes.panHandlers}>
           <GradeMensal
             semanas={semanas}

@@ -1,5 +1,5 @@
 import React, { useCallback, useState } from 'react';
-import { Alert, Pressable, ScrollView, Share, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, Share, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
@@ -10,6 +10,8 @@ import { divisoesRepo } from '@/src/db/repositorios/divisoesRepo';
 import { AcertoPessoa, agruparAcertos, textoAcerto } from '@/src/domain/acertos';
 import { obterMesAtualIso } from '@/src/store/useMesStore';
 import { formatarMesAnoAbrev, formatarMoeda } from '@/src/utils/formatadores';
+import { avisar } from '@/src/utils/avisar';
+import { estiloFormulario } from '@/src/utils/layout';
 
 /** Quanto cada pessoa deve das contas divididas, até o mês atual. */
 export default function AcertosScreen() {
@@ -34,7 +36,7 @@ export default function AcertosScreen() {
   };
 
   const acertarTudo = (acerto: AcertoPessoa) => {
-    Alert.alert(
+    avisar(
       `${acerto.nome} acertou tudo?`,
       `Marca ${formatarMoeda(acerto.totalCentavos)} como recebido de ${acerto.nome}.`,
       [
@@ -71,7 +73,11 @@ export default function AcertosScreen() {
           subtitulo="Ninguém deve nada das contas divididas. Para dividir uma conta, marque 'Conta compartilhada' ao cadastrá-la."
         />
       ) : (
-        <ScrollView contentContainerStyle={{ padding: spacing.base, paddingBottom: spacing.xxl }}>
+        <ScrollView
+          contentContainerStyle={[
+            { padding: spacing.base, paddingBottom: spacing.xxl },
+            estiloFormulario,
+          ]}>
           <Text style={textoAjuda}>
             Partes das contas divididas que cada pessoa ainda não te pagou, até este mês. Toque no ✓
             quando a pessoa acertar.

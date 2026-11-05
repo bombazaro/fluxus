@@ -13,6 +13,7 @@ import { useFocusEffect, useRouter } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { Ionicons } from '@expo/vector-icons';
 import { useTema } from '@/src/theme';
+import { useTamanhoDaTela } from '@/src/hooks/useTamanhoDaTela';
 import { useMesStore, FiltroSituacao, obterHojeIso } from '@/src/store/useMesStore';
 import { ItemConta } from '@/src/components/contas/ItemConta';
 import { CampoTexto, EstadoVazio, Fab, SeletorMes } from '@/src/components/ui';
@@ -55,6 +56,9 @@ export default function ContasScreen() {
     ordenarPorValor,
     setOrdenarPorValor,
   } = useMesStore();
+
+  // No desktop os filtros ficam numa coluna ao lado da lista
+  const largo = useTamanhoDaTela() === 'largo';
 
   const [categorias, setCategorias] = useState<Categoria[]>([]);
   const [menuAberto, setMenuAberto] = useState(false);
@@ -178,217 +182,228 @@ export default function ContasScreen() {
         onIrParaHoje={() => irParaHoje(db)}
       />
 
-      {/* Barra de busca e filtros */}
-      <View style={{ paddingHorizontal: spacing.base, paddingTop: spacing.sm }}>
-        <CampoTexto
-          placeholder="Buscar conta pelo nome..."
-          value={busca}
-          onChangeText={setBusca}
-          containerStyle={{ marginBottom: spacing.xs }}
-        />
+      <View style={largo ? styles.corpoLargo : styles.corpo}>
+        <View style={largo ? styles.filtrosLateral : undefined}>
+          {/* Barra de busca e filtros */}
+          <View style={{ paddingHorizontal: spacing.base, paddingTop: spacing.sm }}>
+            <CampoTexto
+              placeholder="Buscar conta pelo nome..."
+              value={busca}
+              onChangeText={setBusca}
+              containerStyle={{ marginBottom: spacing.xs }}
+            />
 
-        {/* Chips de filtro: Todas | Pendentes | Pagas */}
-        <View style={styles.filtrosRow}>
-          {(['todas', 'pendentes', 'pagas'] as FiltroSituacao[]).map((sit) => {
-            const ativa = filtroSituacao === sit;
-            const rotulos: Record<FiltroSituacao, string> = {
-              todas: 'Todas',
-              pendentes: 'Pendentes',
-              pagas: 'Pagas',
-            };
-            return (
+            {/* Chips de filtro: Todas | Pendentes | Pagas */}
+            <View style={[styles.filtrosRow, largo && { flexWrap: 'wrap' }]}>
+              {(['todas', 'pendentes', 'pagas'] as FiltroSituacao[]).map((sit) => {
+                const ativa = filtroSituacao === sit;
+                const rotulos: Record<FiltroSituacao, string> = {
+                  todas: 'Todas',
+                  pendentes: 'Pendentes',
+                  pagas: 'Pagas',
+                };
+                return (
+                  <Pressable
+                    key={sit}
+                    accessibilityRole="button"
+                    accessibilityState={{ selected: ativa }}
+                    onPress={() => setFiltroSituacao(sit)}
+                    style={[
+                      styles.filtroPill,
+                      {
+                        backgroundColor: ativa ? colors.primary : colors.surface,
+                        borderColor: ativa ? colors.primary : colors.border,
+                        borderRadius: radii.full,
+                        paddingHorizontal: spacing.md,
+                        paddingVertical: 6,
+                      },
+                    ]}>
+                    <Text
+                      style={{
+                        color: ativa ? '#FFFFFF' : colors.textSecondary,
+                        fontFamily: typography.fontFamily.medium,
+                        fontSize: 13,
+                      }}>
+                      {rotulos[sit]}
+                    </Text>
+                  </Pressable>
+                );
+              })}
               <Pressable
-                key={sit}
-                accessibilityRole="button"
-                accessibilityState={{ selected: ativa }}
-                onPress={() => setFiltroSituacao(sit)}
+                accessibilityRole="switch"
+                accessibilityState={{ checked: ordenarPorValor }}
+                accessibilityLabel="Mostrar as maiores contas primeiro"
+                onPress={() => setOrdenarPorValor(!ordenarPorValor)}
                 style={[
                   styles.filtroPill,
                   {
-                    backgroundColor: ativa ? colors.primary : colors.surface,
-                    borderColor: ativa ? colors.primary : colors.border,
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    backgroundColor: ordenarPorValor ? colors.primaryLight : colors.surface,
+                    borderColor: ordenarPorValor ? colors.primary : colors.border,
                     borderRadius: radii.full,
                     paddingHorizontal: spacing.md,
                     paddingVertical: 6,
                   },
                 ]}>
+                <Ionicons
+                  name="swap-vertical"
+                  size={14}
+                  color={ordenarPorValor ? colors.primary : colors.textSecondary}
+                />
                 <Text
                   style={{
-                    color: ativa ? '#FFFFFF' : colors.textSecondary,
+                    color: ordenarPorValor ? colors.primary : colors.textSecondary,
                     fontFamily: typography.fontFamily.medium,
                     fontSize: 13,
+                    marginLeft: 4,
                   }}>
-                  {rotulos[sit]}
+                  Maiores
                 </Text>
               </Pressable>
-            );
-          })}
-          <Pressable
-            accessibilityRole="switch"
-            accessibilityState={{ checked: ordenarPorValor }}
-            accessibilityLabel="Mostrar as maiores contas primeiro"
-            onPress={() => setOrdenarPorValor(!ordenarPorValor)}
-            style={[
-              styles.filtroPill,
-              {
-                flexDirection: 'row',
-                alignItems: 'center',
-                backgroundColor: ordenarPorValor ? colors.primaryLight : colors.surface,
-                borderColor: ordenarPorValor ? colors.primary : colors.border,
-                borderRadius: radii.full,
-                paddingHorizontal: spacing.md,
-                paddingVertical: 6,
-              },
-            ]}>
-            <Ionicons
-              name="swap-vertical"
-              size={14}
-              color={ordenarPorValor ? colors.primary : colors.textSecondary}
-            />
-            <Text
-              style={{
-                color: ordenarPorValor ? colors.primary : colors.textSecondary,
-                fontFamily: typography.fontFamily.medium,
-                fontSize: 13,
-                marginLeft: 4,
-              }}>
-              Maiores
-            </Text>
-          </Pressable>
-        </View>
+            </View>
 
-        {/* Chips de Categorias */}
-        {categorias.length > 0 ? (
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={[styles.categoriasScroll, { paddingVertical: spacing.xs }]}>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityState={{ selected: filtroCategoriaId === null }}
-              onPress={() => setFiltroCategoriaId(null)}
-              style={[
-                styles.categoriaFiltroChip,
-                {
-                  backgroundColor:
-                    filtroCategoriaId === null ? colors.surfaceVariant : 'transparent',
-                  borderColor: filtroCategoriaId === null ? colors.text : colors.border,
-                  borderRadius: radii.full,
-                },
-              ]}>
-              <Text
-                style={{
-                  color: colors.text,
-                  fontFamily: typography.fontFamily.medium,
-                  fontSize: 12,
-                }}>
-                Todas Categorias
-              </Text>
-            </Pressable>
-            {categorias.map((cat) => {
-              const ativo = filtroCategoriaId === cat.id;
-              return (
+            {/* Chips de Categorias */}
+            {categorias.length > 0 ? (
+              <ScrollView
+                horizontal={!largo}
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={[
+                  styles.categoriasScroll,
+                  { paddingVertical: spacing.xs },
+                  largo && { flexWrap: 'wrap' },
+                ]}>
                 <Pressable
-                  key={cat.id}
                   accessibilityRole="button"
-                  accessibilityState={{ selected: ativo }}
-                  onPress={() => setFiltroCategoriaId(ativo ? null : cat.id)}
+                  accessibilityState={{ selected: filtroCategoriaId === null }}
+                  onPress={() => setFiltroCategoriaId(null)}
                   style={[
                     styles.categoriaFiltroChip,
                     {
-                      backgroundColor: ativo ? cat.cor : colors.surface,
-                      borderColor: ativo ? cat.cor : colors.border,
+                      backgroundColor:
+                        filtroCategoriaId === null ? colors.surfaceVariant : 'transparent',
+                      borderColor: filtroCategoriaId === null ? colors.text : colors.border,
                       borderRadius: radii.full,
                     },
                   ]}>
                   <Text
                     style={{
-                      color: ativo ? '#FFFFFF' : colors.text,
+                      color: colors.text,
                       fontFamily: typography.fontFamily.medium,
                       fontSize: 12,
                     }}>
-                    {cat.nome}
+                    Todas Categorias
                   </Text>
                 </Pressable>
-              );
-            })}
-          </ScrollView>
-        ) : null}
-      </View>
-
-      {/* Lista de Contas */}
-      {lancamentosFiltrados.length === 0 ? (
-        <ScrollView
-          contentContainerStyle={{ flex: 1, justifyContent: 'center' }}
-          refreshControl={
-            <RefreshControl
-              refreshing={carregando}
-              onRefresh={() => carregarMes(db)}
-              colors={[colors.primary]}
-            />
-          }>
-          <EstadoVazio
-            icone="receipt-outline"
-            titulo="Nenhuma conta encontrada"
-            subtitulo={
-              busca || filtroCategoriaId !== null || filtroSituacao !== 'todas'
-                ? 'Tente mudar os filtros de busca'
-                : 'Cadastre suas contas deste mês pelo botão "+"'
-            }
-            textoBotao={
-              !busca && filtroCategoriaId === null && filtroSituacao === 'todas'
-                ? 'Cadastrar primeira conta'
-                : undefined
-            }
-            onPressBotao={() => router.push('/conta/nova')}
-          />
-        </ScrollView>
-      ) : (
-        <FlatList
-          data={linhas}
-          keyExtractor={(item) => item.chave}
-          contentContainerStyle={{ padding: spacing.base, paddingBottom: 100 }}
-          initialNumToRender={15}
-          windowSize={7}
-          refreshControl={
-            <RefreshControl
-              refreshing={carregando}
-              onRefresh={() => carregarMes(db)}
-              colors={[colors.primary]}
-            />
-          }
-          renderItem={({ item }) =>
-            item.tipo === 'cabecalho' ? (
-              <View style={[styles.secaoCabecalho, { marginTop: spacing.sm }]}>
-                <Text
-                  accessibilityRole="header"
-                  style={[
-                    styles.secaoTexto,
-                    {
-                      color:
-                        item.secao.situacao === 'atrasada'
-                          ? colors.danger
-                          : item.secao.situacao === 'esta_semana'
-                            ? colors.warning
-                            : item.secao.situacao === 'paga'
-                              ? colors.success
-                              : colors.textSecondary,
-                      fontFamily: typography.fontFamily.bold,
-                    },
-                  ]}>
-                  {item.secao.titulo.toUpperCase()} ({item.secao.itens.length})
-                </Text>
-              </View>
-            ) : (
-              <ItemConta
-                lancamento={item.lancamento}
-                onPress={() => router.push(`/conta/${item.lancamento.conta_id}`)}
-                onTogglePago={() => marcarPago(db, item.lancamento.id, item.lancamento.pago === 0)}
+                {categorias.map((cat) => {
+                  const ativo = filtroCategoriaId === cat.id;
+                  return (
+                    <Pressable
+                      key={cat.id}
+                      accessibilityRole="button"
+                      accessibilityState={{ selected: ativo }}
+                      onPress={() => setFiltroCategoriaId(ativo ? null : cat.id)}
+                      style={[
+                        styles.categoriaFiltroChip,
+                        {
+                          backgroundColor: ativo ? cat.cor : colors.surface,
+                          borderColor: ativo ? cat.cor : colors.border,
+                          borderRadius: radii.full,
+                        },
+                      ]}>
+                      <Text
+                        style={{
+                          color: ativo ? '#FFFFFF' : colors.text,
+                          fontFamily: typography.fontFamily.medium,
+                          fontSize: 12,
+                        }}>
+                        {cat.nome}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
+              </ScrollView>
+            ) : null}
+          </View>
+        </View>
+        <View style={styles.listaArea}>
+          {/* Lista de Contas */}
+          {lancamentosFiltrados.length === 0 ? (
+            <ScrollView
+              contentContainerStyle={{ flex: 1, justifyContent: 'center' }}
+              refreshControl={
+                <RefreshControl
+                  refreshing={carregando}
+                  onRefresh={() => carregarMes(db)}
+                  colors={[colors.primary]}
+                />
+              }>
+              <EstadoVazio
+                icone="receipt-outline"
+                titulo="Nenhuma conta encontrada"
+                subtitulo={
+                  busca || filtroCategoriaId !== null || filtroSituacao !== 'todas'
+                    ? 'Tente mudar os filtros de busca'
+                    : 'Cadastre suas contas deste mês pelo botão "+"'
+                }
+                textoBotao={
+                  !busca && filtroCategoriaId === null && filtroSituacao === 'todas'
+                    ? 'Cadastrar primeira conta'
+                    : undefined
+                }
+                onPressBotao={() => router.push('/conta/nova')}
               />
-            )
-          }
-        />
-      )}
+            </ScrollView>
+          ) : (
+            <FlatList
+              data={linhas}
+              keyExtractor={(item) => item.chave}
+              contentContainerStyle={{ padding: spacing.base, paddingBottom: 100 }}
+              initialNumToRender={15}
+              windowSize={7}
+              refreshControl={
+                <RefreshControl
+                  refreshing={carregando}
+                  onRefresh={() => carregarMes(db)}
+                  colors={[colors.primary]}
+                />
+              }
+              renderItem={({ item }) =>
+                item.tipo === 'cabecalho' ? (
+                  <View style={[styles.secaoCabecalho, { marginTop: spacing.sm }]}>
+                    <Text
+                      accessibilityRole="header"
+                      style={[
+                        styles.secaoTexto,
+                        {
+                          color:
+                            item.secao.situacao === 'atrasada'
+                              ? colors.danger
+                              : item.secao.situacao === 'esta_semana'
+                                ? colors.warning
+                                : item.secao.situacao === 'paga'
+                                  ? colors.success
+                                  : colors.textSecondary,
+                          fontFamily: typography.fontFamily.bold,
+                        },
+                      ]}>
+                      {item.secao.titulo.toUpperCase()} ({item.secao.itens.length})
+                    </Text>
+                  </View>
+                ) : (
+                  <ItemConta
+                    lancamento={item.lancamento}
+                    onPress={() => router.push(`/conta/${item.lancamento.conta_id}`)}
+                    onTogglePago={() =>
+                      marcarPago(db, item.lancamento.id, item.lancamento.pago === 0)
+                    }
+                  />
+                )
+              }
+            />
+          )}
+        </View>
+      </View>
 
       {/* Toast / Banner Desfazer (5 segundos) */}
       {ultimoDesfeito ? (
@@ -443,6 +458,10 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+  corpo: { flex: 1 },
+  corpoLargo: { flex: 1, flexDirection: 'row' },
+  filtrosLateral: { width: 320 },
+  listaArea: { flex: 1 },
   filtrosRow: {
     flexDirection: 'row',
     gap: 8,

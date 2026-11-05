@@ -9,6 +9,7 @@ import { useConfigStore } from '@/src/store/useConfigStore';
 import { compararMeses } from '@/src/domain/compararMeses';
 import { adicionarMeses } from '@/src/domain/gerarLancamentos';
 import { formatarMesAno, formatarMoeda } from '@/src/utils/formatadores';
+import { estiloFormulario } from '@/src/utils/layout';
 
 /** Gastos deste mês comparados com o anterior, no total e por categoria. */
 export default function ComparacaoScreen() {
@@ -41,7 +42,11 @@ export default function ComparacaoScreen() {
           subtitulo="Cadastre contas para ver como os gastos mudam de um mês para o outro."
         />
       ) : (
-        <ScrollView contentContainerStyle={{ padding: spacing.base, paddingBottom: spacing.xxl }}>
+        <ScrollView
+          contentContainerStyle={[
+            { padding: spacing.base, paddingBottom: spacing.xxl },
+            estiloFormulario,
+          ]}>
           <Cartao>
             <View style={styles.totais}>
               <View style={{ flex: 1 }}>

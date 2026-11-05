@@ -3,6 +3,7 @@ import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useTema } from '@/src/theme';
+import { estiloJanela } from '@/src/utils/layout';
 
 type IconeIonicons = keyof typeof Ionicons.glyphMap;
 
@@ -111,6 +112,7 @@ const styles = StyleSheet.create({
   },
   folha: {
     width: '100%',
+    ...estiloJanela,
   },
   opcao: {
     flexDirection: 'row',

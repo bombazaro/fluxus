@@ -10,9 +10,12 @@ import {
 } from '@expo-google-fonts/inter';
 import { SQLiteProvider } from 'expo-sqlite';
 import { executarMigracoes } from '@/src/db/migrations';
-import { Pressable, StyleSheet, Text, useColorScheme, View } from 'react-native';
+import { Platform, Pressable, StyleSheet, Text, useColorScheme, View } from 'react-native';
 import { darkColors, lightColors } from '@/src/theme/colors';
 import { Inicializacao } from '@/src/components/Inicializacao';
+import { textosDoErroDeAbertura } from '@/src/domain/erroAbertura';
+import { ColunaWeb } from '@/src/components/ColunaWeb';
+import { Dialogo } from '@/src/components/ui/Dialogo';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -23,6 +26,7 @@ SplashScreen.preventAutoHideAsync();
  */
 export function ErrorBoundary({ error, retry }: ErrorBoundaryProps) {
   const colors = useColorScheme() === 'dark' ? darkColors : lightColors;
+  const textos = textosDoErroDeAbertura(error, Platform.OS === 'web');
 
   useEffect(() => {
     console.error('Erro ao abrir o app:', error);
@@ -31,14 +35,11 @@ export function ErrorBoundary({ error, retry }: ErrorBoundaryProps) {
 
   return (
     <View style={[styles.errorContainer, { backgroundColor: colors.background }]}>
-      <Text style={[styles.errorTitle, { color: colors.danger }]}>
-        Ops! Não foi possível abrir seus dados.
-      </Text>
-      <Text style={[styles.errorText, { color: colors.textSecondary }]}>
-        Seus dados continuam guardados no celular. Feche o app e abra de novo. Se o problema
-        continuar, anote a mensagem abaixo.
-      </Text>
-      <Text style={[styles.errorDetalhe, { color: colors.textMuted }]}>{error.message}</Text>
+      <Text style={[styles.errorTitle, { color: colors.danger }]}>{textos.titulo}</Text>
+      <Text style={[styles.errorText, { color: colors.textSecondary }]}>{textos.explicacao}</Text>
+      {textos.detalhe ? (
+        <Text style={[styles.errorDetalhe, { color: colors.textMuted }]}>{textos.detalhe}</Text>
+      ) : null}
       <Pressable
         accessibilityRole="button"
         onPress={retry}
@@ -74,50 +75,56 @@ export default function RootLayout() {
   }
 
   return (
-    <SQLiteProvider databaseName="fluxus.db" onInit={executarMigracoes}>
-      <Inicializacao />
-      <Stack>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen
-          name="conta/nova"
-          options={{
-            presentation: 'modal',
-            title: 'Nova Conta',
-            headerShown: false,
-          }}
-        />
-        <Stack.Screen
-          name="conta/[id]"
-          options={{
-            title: 'Detalhes da Conta',
-            headerShown: false,
-          }}
-        />
-        <Stack.Screen
-          name="rendas/index"
-          options={{
-            title: 'Rendas',
-            headerShown: false,
-          }}
-        />
-        <Stack.Screen name="configuracoes" options={{ headerShown: false }} />
-        <Stack.Screen name="comparacao" options={{ headerShown: false }} />
-        <Stack.Screen name="reserva" options={{ headerShown: false }} />
-        <Stack.Screen name="simulador" options={{ headerShown: false }} />
-        <Stack.Screen name="pessoas" options={{ headerShown: false }} />
-        <Stack.Screen name="acertos" options={{ headerShown: false }} />
-        <Stack.Screen name="gasto-rapido" options={{ headerShown: false }} />
-        <Stack.Screen name="categorias" options={{ headerShown: false }} />
-        <Stack.Screen name="boas-vindas" options={{ headerShown: false, gestureEnabled: false }} />
-        <Stack.Screen
-          name="backup"
-          options={{
-            title: 'Backup dos dados',
-            headerShown: false,
-          }}
-        />
-      </Stack>
-    </SQLiteProvider>
+    <ColunaWeb>
+      <SQLiteProvider databaseName="fluxus.db" onInit={executarMigracoes}>
+        <Inicializacao />
+        <Stack>
+          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+          <Stack.Screen
+            name="conta/nova"
+            options={{
+              presentation: 'modal',
+              title: 'Nova Conta',
+              headerShown: false,
+            }}
+          />
+          <Stack.Screen
+            name="conta/[id]"
+            options={{
+              title: 'Detalhes da Conta',
+              headerShown: false,
+            }}
+          />
+          <Stack.Screen
+            name="rendas/index"
+            options={{
+              title: 'Rendas',
+              headerShown: false,
+            }}
+          />
+          <Stack.Screen name="configuracoes" options={{ headerShown: false }} />
+          <Stack.Screen name="comparacao" options={{ headerShown: false }} />
+          <Stack.Screen name="reserva" options={{ headerShown: false }} />
+          <Stack.Screen name="simulador" options={{ headerShown: false }} />
+          <Stack.Screen name="pessoas" options={{ headerShown: false }} />
+          <Stack.Screen name="acertos" options={{ headerShown: false }} />
+          <Stack.Screen name="gasto-rapido" options={{ headerShown: false }} />
+          <Stack.Screen name="categorias" options={{ headerShown: false }} />
+          <Stack.Screen
+            name="boas-vindas"
+            options={{ headerShown: false, gestureEnabled: false }}
+          />
+          <Stack.Screen
+            name="backup"
+            options={{
+              title: 'Backup dos dados',
+              headerShown: false,
+            }}
+          />
+        </Stack>
+        <Dialogo />
+      </SQLiteProvider>
+    </ColunaWeb>
   );
 }
 

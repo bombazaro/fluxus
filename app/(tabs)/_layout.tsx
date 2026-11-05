@@ -2,11 +2,15 @@ import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useTema } from '@/src/theme';
 import { Platform, Text } from 'react-native';
+import { LARGURA_MENU_LATERAL } from '@/src/domain/tamanhoDaTela';
+import { useTamanhoDaTela } from '@/src/hooks/useTamanhoDaTela';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function TabLayout() {
   const { colors, typography } = useTema();
   const insets = useSafeAreaInsets();
+  // No desktop as abas viram um menu na lateral esquerda
+  const lateral = useTamanhoDaTela() === 'largo';
 
   return (
     <Tabs
@@ -14,14 +18,26 @@ export default function TabLayout() {
         headerShown: false,
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.textSecondary,
-        tabBarStyle: {
-          backgroundColor: colors.tabBar,
-          borderTopColor: colors.tabBarBorder,
-          borderTopWidth: 1,
-          height: 58 + (Platform.OS === 'android' ? Math.max(insets.bottom, 6) : insets.bottom),
-          paddingBottom: Math.max(insets.bottom, 6),
-          paddingTop: 6,
-        },
+        tabBarPosition: lateral ? 'left' : 'bottom',
+        tabBarVariant: lateral ? 'material' : 'uikit',
+        tabBarStyle: lateral
+          ? {
+              backgroundColor: colors.tabBar,
+              borderRightColor: colors.tabBarBorder,
+              borderRightWidth: 1,
+              width: LARGURA_MENU_LATERAL,
+              minWidth: LARGURA_MENU_LATERAL,
+              maxWidth: LARGURA_MENU_LATERAL,
+              paddingTop: 12,
+            }
+          : {
+              backgroundColor: colors.tabBar,
+              borderTopColor: colors.tabBarBorder,
+              borderTopWidth: 1,
+              height: 58 + (Platform.OS === 'ios' ? insets.bottom : Math.max(insets.bottom, 6)),
+              paddingBottom: Math.max(insets.bottom, 6),
+              paddingTop: 6,
+            },
         tabBarLabel: ({ color, children }) => (
           <Text
             numberOfLines={1}

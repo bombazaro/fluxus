@@ -25,7 +25,10 @@ import {
   TemaPreferido,
 } from '@/src/domain/configuracoes';
 import { EscolhaQuandoRecebe } from '@/src/components/config/EscolhaQuandoRecebe';
+import { NESTE_APARELHO, TEMA_DO_SISTEMA } from '@/src/utils/aparelho';
+import { lembretesDisponiveis } from '@/src/services/notificacoes';
 import { pedirPermissaoComExplicacao } from '@/src/services/permissaoLembretes';
+import { estiloFormulario } from '@/src/utils/layout';
 
 const ESPERA_SALVAR_NOME_MS = 600;
 
@@ -103,7 +106,11 @@ export default function ConfiguracoesScreen() {
       style={[styles.container, { backgroundColor: colors.background }]}>
       <CabecalhoTela titulo="Configurações" />
 
-      <ScrollView contentContainerStyle={{ padding: spacing.base, paddingBottom: spacing.xxl }}>
+      <ScrollView
+        contentContainerStyle={[
+          { padding: spacing.base, paddingBottom: spacing.xxl },
+          estiloFormulario,
+        ]}>
         <TituloSecao style={{ marginTop: 0 }}>Você</TituloSecao>
         <Cartao>
           <CampoTexto
@@ -124,7 +131,7 @@ export default function ConfiguracoesScreen() {
           <GrupoOpcoes<TemaPreferido>
             rotuloAcessivel="Tema"
             opcoes={[
-              { valor: 'sistema', rotulo: 'Do celular' },
+              { valor: 'sistema', rotulo: TEMA_DO_SISTEMA },
               { valor: 'claro', rotulo: 'Claro' },
               { valor: 'escuro', rotulo: 'Escuro' },
             ]}
@@ -133,62 +140,66 @@ export default function ConfiguracoesScreen() {
           />
         </Cartao>
 
-        <TituloSecao>Lembretes</TituloSecao>
-        <Cartao>
-          <LinhaSwitch
-            titulo="Lembrar dos vencimentos"
-            descricao="Notificação antes e no dia em que cada conta vence, e no dia do salário"
-            valor={config.notificacoesAtivas}
-            onMudar={ligarLembretes}
-          />
-
-          {config.notificacoesAtivas ? (
-            <>
-              <Text style={[rotulo, { marginTop: spacing.base }]}>Avisar</Text>
-              <GrupoOpcoes<number>
-                rotuloAcessivel="Quantos dias antes avisar"
-                opcoes={OPCOES_DIAS_ANTES.map((dias) => ({
-                  valor: dias,
-                  rotulo: dias === 0 ? 'Só no dia' : `${dias} dia${dias > 1 ? 's' : ''} antes`,
-                }))}
-                valor={config.notificacaoDiasAntes}
-                onMudar={(notificacaoDiasAntes) => mudar({ notificacaoDiasAntes })}
+        {lembretesDisponiveis ? (
+          <>
+            <TituloSecao>Lembretes</TituloSecao>
+            <Cartao>
+              <LinhaSwitch
+                titulo="Lembrar dos vencimentos"
+                descricao="Notificação antes e no dia em que cada conta vence, e no dia do salário"
+                valor={config.notificacoesAtivas}
+                onMudar={ligarLembretes}
               />
 
-              <Text style={[rotulo, { marginTop: spacing.base }]}>Horário</Text>
-              <SeletorHora
-                hora={config.notificacaoHora}
-                onMudar={(notificacaoHora) => mudar({ notificacaoHora })}
-              />
+              {config.notificacoesAtivas ? (
+                <>
+                  <Text style={[rotulo, { marginTop: spacing.base }]}>Avisar</Text>
+                  <GrupoOpcoes<number>
+                    rotuloAcessivel="Quantos dias antes avisar"
+                    opcoes={OPCOES_DIAS_ANTES.map((dias) => ({
+                      valor: dias,
+                      rotulo: dias === 0 ? 'Só no dia' : `${dias} dia${dias > 1 ? 's' : ''} antes`,
+                    }))}
+                    valor={config.notificacaoDiasAntes}
+                    onMudar={(notificacaoDiasAntes) => mudar({ notificacaoDiasAntes })}
+                  />
 
-              <View
-                style={[
-                  styles.dica,
-                  {
-                    backgroundColor: colors.warningLight,
-                    marginTop: spacing.base,
-                    padding: spacing.md,
-                  },
-                ]}>
-                <Text style={[textoAjuda, { color: colors.text }]}>
-                  Em alguns celulares (Xiaomi, Samsung, Motorola), a economia de bateria atrasa ou
-                  apaga os lembretes. Se eles não chegarem, deixe o Fluxus{' '}
-                  <Text style={{ fontFamily: typography.fontFamily.semiBold }}>
-                    sem restrição de bateria
-                  </Text>{' '}
-                  nas configurações do app.
-                </Text>
-                <Botao
-                  titulo="Abrir configurações do app"
-                  variante="fantasma"
-                  tamanho="pequeno"
-                  onPress={() => Linking.openSettings()}
-                  style={{ marginTop: spacing.xs, alignSelf: 'flex-start' }}
-                />
-              </View>
-            </>
-          ) : null}
-        </Cartao>
+                  <Text style={[rotulo, { marginTop: spacing.base }]}>Horário</Text>
+                  <SeletorHora
+                    hora={config.notificacaoHora}
+                    onMudar={(notificacaoHora) => mudar({ notificacaoHora })}
+                  />
+
+                  <View
+                    style={[
+                      styles.dica,
+                      {
+                        backgroundColor: colors.warningLight,
+                        marginTop: spacing.base,
+                        padding: spacing.md,
+                      },
+                    ]}>
+                    <Text style={[textoAjuda, { color: colors.text }]}>
+                      Em alguns celulares (Xiaomi, Samsung, Motorola), a economia de bateria atrasa
+                      ou apaga os lembretes. Se eles não chegarem, deixe o Fluxus{' '}
+                      <Text style={{ fontFamily: typography.fontFamily.semiBold }}>
+                        sem restrição de bateria
+                      </Text>{' '}
+                      nas configurações do app.
+                    </Text>
+                    <Botao
+                      titulo="Abrir configurações do app"
+                      variante="fantasma"
+                      tamanho="pequeno"
+                      onPress={() => Linking.openSettings()}
+                      style={{ marginTop: spacing.xs, alignSelf: 'flex-start' }}
+                    />
+                  </View>
+                </>
+              ) : null}
+            </Cartao>
+          </>
+        ) : null}
 
         <TituloSecao>Aviso de aperto</TituloSecao>
         <Cartao>
@@ -235,8 +246,8 @@ export default function ConfiguracoesScreen() {
           <View style={styles.linhaDados}>
             <Ionicons name="phone-portrait-outline" size={22} color={colors.warning} />
             <Text style={[textoAjuda, { flex: 1, marginLeft: spacing.sm, color: colors.text }]}>
-              Seus dados ficam só neste celular. Se desinstalar o app, eles serão perdidos. Faça
-              backup de vez em quando em Mais › Backup dos dados.
+              Seus dados ficam só {NESTE_APARELHO}. Se desinstalar o app ou limpar o navegador, eles
+              serão perdidos. Faça backup de vez em quando em Mais › Backup dos dados.
             </Text>
           </View>
         </Cartao>

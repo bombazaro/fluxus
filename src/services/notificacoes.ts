@@ -20,11 +20,15 @@ export const CANAL_VENCIMENTOS = 'vencimentos';
 const CATEGORIA_RENDA = 'renda';
 export const ACAO_RECEBI = 'recebi';
 
+/** No navegador não dá para agendar lembretes: eles só existem no celular. */
+export const lembretesDisponiveis = Platform.OS !== 'web';
+
 /** Quantos dias à frente procurar contas para lembrar. */
 const JANELA_DIAS = 45;
 
 /** Mostra a notificação mesmo com o app aberto. Chamar uma vez, ao abrir o app. */
 export function configurarNotificacoes(): void {
+  if (!lembretesDisponiveis) return;
   Notifications.setNotificationHandler({
     handleNotification: async () => ({
       shouldShowBanner: true,
@@ -49,12 +53,14 @@ async function criarCanal(): Promise<void> {
 }
 
 export async function temPermissao(): Promise<boolean> {
+  if (!lembretesDisponiveis) return false;
   const { granted } = await Notifications.getPermissionsAsync();
   return granted;
 }
 
 /** Pede a permissão do sistema. Mostrar antes uma explicação de por que o app precisa. */
 export async function pedirPermissao(): Promise<boolean> {
+  if (!lembretesDisponiveis) return false;
   await criarCanal();
   if (await temPermissao()) return true;
   const { granted } = await Notifications.requestPermissionsAsync();
@@ -80,6 +86,7 @@ export async function reagendarLembretes(
   db: SQLiteDatabase,
   config: Pick<Configuracoes, 'notificacoesAtivas' | 'notificacaoHora' | 'notificacaoDiasAntes'>
 ): Promise<void> {
+  if (!lembretesDisponiveis) return;
   await Notifications.cancelAllScheduledNotificationsAsync();
   if (!config.notificacoesAtivas || !(await temPermissao())) return;
 

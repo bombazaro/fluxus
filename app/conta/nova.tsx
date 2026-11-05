@@ -1,6 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import {
-  Alert,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -39,6 +38,8 @@ import { useMesStore, obterHojeIso, obterMesAtualIso } from '@/src/store/useMesS
 import { formatarData, formatarMoeda, dataBrParaIso } from '@/src/utils/formatadores';
 import { ModoDivisao, montarDivisao, redistribuirDivisao } from '@/src/domain/dividirConta';
 import { SeletorCategoria } from '@/src/components/contas/SeletorCategoria';
+import { avisar } from '@/src/utils/avisar';
+import { estiloFormulario } from '@/src/utils/layout';
 
 const TIPOS_CONTA: {
   tipo: TipoConta;
@@ -222,7 +223,7 @@ export default function NovaContaModal() {
         categoriaPendente
       );
       if (categoriaFinal.erro || categoriaFinal.id === null) {
-        Alert.alert('Categoria', categoriaFinal.erro ?? 'Escolha a categoria');
+        avisar('Categoria', categoriaFinal.erro ?? 'Escolha a categoria');
         setSalvando(false);
         return;
       }
@@ -341,6 +342,7 @@ export default function NovaContaModal() {
           contentContainerStyle={[
             styles.scrollContent,
             { padding: spacing.base, paddingBottom: 100 },
+            estiloFormulario,
           ]}
           keyboardShouldPersistTaps="handled">
           {/* Seletor do tipo de conta */}

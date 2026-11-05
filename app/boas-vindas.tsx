@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import {
-  Alert,
   KeyboardAvoidingView,
   Linking,
   Platform,
@@ -35,13 +34,17 @@ import {
 } from '@/src/domain/configuracoes';
 import { EscolhaQuandoRecebe } from '@/src/components/config/EscolhaQuandoRecebe';
 import { validarRendaInicial } from '@/src/domain/rendaInicial';
+import { lembretesDisponiveis } from '@/src/services/notificacoes';
 import { pedirPermissaoComExplicacao } from '@/src/services/permissaoLembretes';
+import { NESTE_APARELHO, TEMA_DO_SISTEMA } from '@/src/utils/aparelho';
+import { avisar } from '@/src/utils/avisar';
+import { estiloFormulario } from '@/src/utils/layout';
 
 type IconeIonicons = keyof typeof Ionicons.glyphMap;
 
 type Passo = 'inicio' | 'renda' | 'lembretes' | 'mes' | 'aparencia';
 
-const PASSOS: { id: Passo; icone: IconeIonicons; titulo: string; texto: string }[] = [
+const TODOS_OS_PASSOS: { id: Passo; icone: IconeIonicons; titulo: string; texto: string }[] = [
   {
     id: 'inicio',
     icone: 'wallet-outline',
@@ -77,6 +80,9 @@ const PASSOS: { id: Passo; icone: IconeIonicons; titulo: string; texto: string }
     texto: 'Escolha o tema e cadastre suas contas: aluguel, internet, luz, parcelas...',
   },
 ];
+
+/** No navegador não há lembretes, então a pergunta sobre eles não aparece. */
+const PASSOS = TODOS_OS_PASSOS.filter((p) => lembretesDisponiveis || p.id !== 'lembretes');
 
 export default function BoasVindasScreen() {
   const router = useRouter();
@@ -129,7 +135,7 @@ export default function BoasVindasScreen() {
       if (atual.id === 'renda' && !(await salvarRenda())) return;
       setIndice(indice + 1);
     } catch {
-      Alert.alert('Erro', 'Não foi possível salvar. Tente de novo.');
+      avisar('Erro', 'Não foi possível salvar. Tente de novo.');
     } finally {
       setSalvando(false);
     }
@@ -172,7 +178,7 @@ export default function BoasVindasScreen() {
         style={styles.container}>
         <ScrollView
           keyboardShouldPersistTaps="handled"
-          contentContainerStyle={[styles.conteudo, { padding: spacing.xl }]}>
+          contentContainerStyle={[styles.conteudo, { padding: spacing.xl }, estiloFormulario]}>
           <View
             style={[
               styles.icone,
@@ -225,9 +231,9 @@ export default function BoasVindasScreen() {
                   <Ionicons name="lock-closed-outline" size={22} color={colors.warning} />
                   <Text
                     style={[textoAjuda, { flex: 1, marginLeft: spacing.sm, color: colors.text }]}>
-                    Sem conta, sem internet: seus dados ficam só neste celular. Se desinstalar o
-                    app, eles serão perdidos. Faça backup de vez em quando em Mais › Backup dos
-                    dados.
+                    Sem conta, sem internet: seus dados ficam só {NESTE_APARELHO}. Se desinstalar o
+                    app ou limpar o navegador, eles serão perdidos. Faça backup de vez em quando em
+                    Mais › Backup dos dados.
                   </Text>
                 </View>
               </Cartao>
@@ -346,7 +352,7 @@ export default function BoasVindasScreen() {
                 <GrupoOpcoes<TemaPreferido>
                   rotuloAcessivel="Tema"
                   opcoes={[
-                    { valor: 'sistema', rotulo: 'Do celular' },
+                    { valor: 'sistema', rotulo: TEMA_DO_SISTEMA },
                     { valor: 'claro', rotulo: 'Claro' },
                     { valor: 'escuro', rotulo: 'Escuro' },
                   ]}

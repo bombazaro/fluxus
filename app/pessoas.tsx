@@ -1,5 +1,5 @@
 import React, { useCallback, useState } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
@@ -9,6 +9,8 @@ import { Botao, CabecalhoTela, CampoTexto, Cartao } from '@/src/components/ui';
 import { pessoasRepo } from '@/src/db/repositorios/pessoasRepo';
 import { useMesStore } from '@/src/store/useMesStore';
 import { Pessoa } from '@/src/types';
+import { avisar } from '@/src/utils/avisar';
+import { estiloFormulario } from '@/src/utils/layout';
 
 /** Pessoas com quem as contas são divididas. "Eu" é fixo. */
 export default function PessoasScreen() {
@@ -49,7 +51,7 @@ export default function PessoasScreen() {
 
   const excluir = async (pessoa: Pessoa) => {
     const divisoes = await pessoasRepo.contarDivisoes(db, pessoa.id);
-    Alert.alert(
+    avisar(
       `Excluir ${pessoa.nome}?`,
       divisoes > 0
         ? `${pessoa.nome} aparece em ${divisoes} divisão(ões) de contas. Elas também serão apagadas, e os acertos com essa pessoa somem.`
@@ -77,7 +79,10 @@ export default function PessoasScreen() {
 
       <ScrollView
         keyboardShouldPersistTaps="handled"
-        contentContainerStyle={{ padding: spacing.base, paddingBottom: spacing.xxl }}>
+        contentContainerStyle={[
+          { padding: spacing.base, paddingBottom: spacing.xxl },
+          estiloFormulario,
+        ]}>
         <Text
           style={{
             color: colors.textSecondary,

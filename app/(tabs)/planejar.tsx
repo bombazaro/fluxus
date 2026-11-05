@@ -10,6 +10,7 @@ import { usePrevisao, MESES_PREVISAO } from '@/src/hooks/usePrevisao';
 import { useConfigStore } from '@/src/store/useConfigStore';
 import { preverSaldo } from '@/src/domain/preverSaldo';
 import { formatarMesAno, formatarMoeda } from '@/src/utils/formatadores';
+import { estiloGrafico } from '@/src/utils/layout';
 
 type IconeIonicons = keyof typeof Ionicons.glyphMap;
 
@@ -73,6 +74,7 @@ export default function PlanejarScreen() {
           padding: spacing.base,
           paddingTop: 0,
           paddingBottom: spacing.xxl,
+          ...estiloGrafico,
         }}>
         <Cartao>
           <View style={styles.linhaTitulo}>

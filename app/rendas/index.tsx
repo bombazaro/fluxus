@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { Alert, Modal, Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
+import { Modal, Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
@@ -11,6 +11,8 @@ import { rendasRepo } from '@/src/db/repositorios/rendasRepo';
 import { useMesStore } from '@/src/store/useMesStore';
 import { ModalValorRecebido } from '@/src/components/rendas/ModalValorRecebido';
 import { formatarMesAno, formatarMoeda } from '@/src/utils/formatadores';
+import { avisar } from '@/src/utils/avisar';
+import { estiloFormulario, estiloJanela } from '@/src/utils/layout';
 
 const TIPOS_RENDA: { tipo: TipoRenda; label: string }[] = [
   { tipo: 'fixa', label: 'Fixa (Mensal)' },
@@ -93,7 +95,7 @@ export default function RendasScreen() {
   const handleSalvar = async () => {
     const diaNum = parseInt(diaRecebimento, 10);
     if (!nome.trim() || valorCentavos <= 0 || isNaN(diaNum) || diaNum < 1 || diaNum > 31) {
-      Alert.alert('Atenção', 'Preencha o nome, valor e dia válido (1 a 31).');
+      avisar('Atenção', 'Preencha o nome, valor e dia válido (1 a 31).');
       return;
     }
 
@@ -157,7 +159,7 @@ export default function RendasScreen() {
   };
 
   const handleExcluir = async (renda: Renda) => {
-    Alert.alert('Excluir Renda', `Tem certeza que deseja excluir "${renda.nome}"?`, [
+    avisar('Excluir Renda', `Tem certeza que deseja excluir "${renda.nome}"?`, [
       { text: 'Cancelar', style: 'cancel' },
       {
         text: 'Excluir',
@@ -213,7 +215,8 @@ export default function RendasScreen() {
         </Pressable>
       </View>
 
-      <ScrollView contentContainerStyle={{ padding: spacing.base, paddingBottom: 60 }}>
+      <ScrollView
+        contentContainerStyle={[{ padding: spacing.base, paddingBottom: 60 }, estiloFormulario]}>
         {/* Card resumo total */}
         <Cartao style={{ marginBottom: spacing.base }}>
           <Text
@@ -590,6 +593,7 @@ const styles = StyleSheet.create({
   },
   modalCard: {
     width: '100%',
+    ...estiloJanela,
   },
   modalHeader: {
     flexDirection: 'row',

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
@@ -9,6 +9,9 @@ import { Botao, Cartao } from '@/src/components/ui';
 import { useMesStore } from '@/src/store/useMesStore';
 import { exportarBackup, importarBackup } from '@/src/services/backup';
 import { formatarData } from '@/src/utils/formatadores';
+import { DESTE_APARELHO, DO_APARELHO, NESTE_APARELHO } from '@/src/utils/aparelho';
+import { avisar } from '@/src/utils/avisar';
+import { estiloFormulario } from '@/src/utils/layout';
 
 export default function BackupScreen() {
   const router = useRouter();
@@ -25,7 +28,7 @@ export default function BackupScreen() {
       await exportarBackup(db);
     } catch (err) {
       console.error('Erro ao exportar backup:', err);
-      Alert.alert('Erro', 'Não foi possível gerar o backup. Tente de novo.');
+      avisar('Erro', 'Não foi possível gerar o backup. Tente de novo.');
     } finally {
       setExportando(false);
     }
@@ -36,29 +39,26 @@ export default function BackupScreen() {
     try {
       const resultado = await importarBackup(db);
       if (resultado.status === 'erro') {
-        Alert.alert('Backup não importado', resultado.mensagem);
+        avisar('Backup não importado', resultado.mensagem);
       } else if (resultado.status === 'ok') {
         await carregarMes(db);
-        Alert.alert(
+        avisar(
           'Backup importado',
           `Dados restaurados do backup de ${formatarData(resultado.exportadoEm.slice(0, 10))}.`
         );
       }
     } catch (err) {
       console.error('Erro ao importar backup:', err);
-      Alert.alert(
-        'Erro',
-        'Não foi possível importar o backup. Seus dados atuais não foram alterados.'
-      );
+      avisar('Erro', 'Não foi possível importar o backup. Seus dados atuais não foram alterados.');
     } finally {
       setImportando(false);
     }
   };
 
   const handleImportar = () => {
-    Alert.alert(
+    avisar(
       'Importar backup',
-      'Todos os dados atuais deste celular serão substituídos pelos do arquivo. Deseja continuar?',
+      `Todos os dados atuais ${DESTE_APARELHO} serão substituídos pelos do arquivo. Deseja continuar?`,
       [
         { text: 'Cancelar', style: 'cancel' },
         { text: 'Substituir dados', style: 'destructive', onPress: importar },
@@ -105,13 +105,15 @@ export default function BackupScreen() {
         </Text>
       </View>
 
-      <ScrollView contentContainerStyle={{ padding: spacing.base, gap: spacing.base }}>
+      <ScrollView
+        contentContainerStyle={[{ padding: spacing.base, gap: spacing.base }, estiloFormulario]}>
         <Cartao destaque>
           <View style={styles.linha}>
             <Ionicons name="phone-portrait-outline" size={22} color={colors.warning} />
             <Text style={[textoCorpo, { flex: 1, marginLeft: spacing.sm }]}>
-              Seus dados ficam só neste celular. Se desinstalar o app ou trocar de aparelho, eles
-              são perdidos. Exporte um backup de vez em quando e guarde fora do celular.
+              Seus dados ficam só {NESTE_APARELHO}. Se desinstalar o app, limpar os dados do
+              navegador ou trocar de aparelho, eles são perdidos. Exporte um backup de vez em quando
+              e guarde fora {DO_APARELHO}.
             </Text>
           </View>
         </Cartao>
@@ -150,7 +152,7 @@ export default function BackupScreen() {
           </Text>
           <Text style={[textoCorpo, { marginBottom: spacing.base }]}>
             Restaura os dados de um arquivo de backup. Serve também para passar os dados para outro
-            celular. Os dados atuais deste celular são substituídos.
+            aparelho. Os dados atuais {DESTE_APARELHO} são substituídos.
           </Text>
           <Botao
             titulo="Importar backup"
