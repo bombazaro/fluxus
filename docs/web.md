@@ -7,6 +7,19 @@ outro, use Mais › Backup dos dados.
 O que não existe na web: lembretes de vencimento (só no celular).
 Só uma aba por vez pode usar os dados; a segunda mostra um aviso.
 
+## Tamanhos de tela
+
+O layout muda com a largura da janela (só na web; o app do celular não muda):
+
+| Tamanho | Largura | Como fica |
+|---|---|---|
+| Compacto | abaixo de 600 px | Abas embaixo, igual ao celular. |
+| Médio (tablet) | 600 a 1023 px | Abas embaixo, conteúdo centralizado de até 720 px. |
+| Largo (desktop) | 1024 px ou mais | Menu lateral, Início e Contas em duas colunas. |
+
+Formulários e configurações ficam em 560 px de largura, e as janelas em 440 px.
+As regras estão em `src/domain/tamanhoDaTela.ts` e `src/utils/layout.ts`.
+
 ## Rodar e testar
 
 ```bash
