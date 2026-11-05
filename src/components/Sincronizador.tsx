@@ -17,12 +17,15 @@ export function Sincronizador() {
 
   useEffect(() => {
     if (!rede) return;
+    let cancelado = false;
     const agendador = criarAgendador({
       rodar: async () => {
+        if (cancelado) return;
         const conta = useContaStore.getState();
         conta.comecou();
         try {
           const r = await sincronizar(db, rede);
+          if (cancelado) return; // a conta mudou durante a rodada: o resultado é de outra
           conta.terminou(null);
           if (r.aplicados > 0) {
             // o que veio de outro aparelho precisa aparecer nas telas abertas
@@ -31,6 +34,7 @@ export function Sincronizador() {
           }
         } catch (err) {
           console.warn('Sincronização falhou:', err);
+          if (cancelado) return;
           conta.terminou(err instanceof Error ? err.message : 'Falha ao sincronizar.');
           throw err;
         }
@@ -48,6 +52,7 @@ export function Sincronizador() {
       if (estado === 'active') void agendador.pedir();
     });
     return () => {
+      cancelado = true;
       assinatura.remove();
       agendador.parar();
     };

@@ -1,4 +1,5 @@
 import { SQLiteDatabase } from 'expo-sqlite';
+import { lerInstante } from '../src/domain/sync/data';
 import { sincronizar } from '../src/services/sync/motor';
 import { criarRedeFalsa } from '../src/services/sync/rede.fake';
 import { criarBanco } from './helpers/bancoEmMemoria';
@@ -166,6 +167,7 @@ describe('sincronizar', () => {
     await b.runAsync("UPDATE contas SET valor_centavos = 777 WHERE nome = 'Aluguel';");
     await acalmar(a, b, rede);
     expect((await contas(b))[0].valor_centavos).toBe(777);
+    expect((await contas(a))[0].valor_centavos).toBe(777);
   });
 
   it('filho que chega antes do pai espera e é aplicado depois', async () => {
@@ -310,5 +312,119 @@ describe('sincronizar', () => {
     });
     await acalmar(a, b, rede);
     expect(await contar(b, 'SELECT COUNT(*) AS n FROM contas;')).toBe(620);
+  });
+
+  it('divisões das duas pontas do mesmo lançamento viram uma só por pessoa', async () => {
+    const [a, b] = [await criarBanco(), await criarBanco()];
+    const { rede } = criarRedeFalsa();
+    const ia = await novaConta(a, 'Aluguel');
+    await acalmar(a, b, rede);
+    const ib = (await b.getFirstAsync<{ id: number }>(
+      "SELECT id FROM contas WHERE nome = 'Aluguel';"
+    ))!.id;
+    const la = await novoLancamento(a, ia);
+    const lb = await novoLancamento(b, ib);
+    const sql =
+      'INSERT INTO divisoes (lancamento_id, pessoa_id, valor_centavos) VALUES (?, (SELECT id FROM pessoas LIMIT 1), ?);';
+    await a.runAsync(sql, [la, 5000]);
+    await b.runAsync(sql, [lb, 4000]);
+    await acalmar(a, b, rede);
+    await acalmar(a, b, rede);
+    for (const db of [a, b]) {
+      expect(await contar(db, 'SELECT COUNT(*) AS n FROM divisoes;')).toBe(1);
+    }
+    const va = await a.getFirstAsync<{ v: number }>('SELECT valor_centavos AS v FROM divisoes;');
+    const vb = await b.getFirstAsync<{ v: number }>('SELECT valor_centavos AS v FROM divisoes;');
+    expect(va!.v).toBe(vb!.v);
+    expect(await pendencias(a)).toBe(0);
+    expect(await pendencias(b)).toBe(0);
+  });
+
+  it('registro com defeito vira rejeitado e não trava os outros nem o cursor', async () => {
+    const [a, b] = [await criarBanco(), await criarBanco()];
+    const servidor = criarRedeFalsa();
+    await novaConta(a, 'Aluguel');
+    await sincronizar(a, servidor.rede);
+    servidor.injetar({
+      tabela: 'contas',
+      uid: 'defeituosa',
+      dados: { tipo: 'fixa', categoria_uid: 'padrao:categoria:Outros' },
+      atualizadoEm: new Date().toISOString(),
+      excluidoEm: null,
+    });
+    const r1 = await sincronizar(b, servidor.rede);
+    expect(r1.rejeitados).toBe(1);
+    expect((await contas(b)).map((c) => c.nome)).toEqual(['Aluguel']);
+    await expect(sincronizar(b, servidor.rede)).resolves.toBeDefined();
+  });
+
+  it('o que a pessoa cria durante a sincronização não se perde quando um registro falha', async () => {
+    const [a, b] = [await criarBanco(), await criarBanco()];
+    const servidor = criarRedeFalsa();
+    await novaConta(a, 'Aluguel');
+    await sincronizar(a, servidor.rede);
+    servidor.injetar({
+      tabela: 'contas',
+      uid: 'defeituosa',
+      dados: { tipo: 'fixa' },
+      atualizadoEm: new Date().toISOString(),
+      excluidoEm: null,
+    });
+    const comEscrita = {
+      ...servidor.rede,
+      buscar: async (...args: Parameters<typeof servidor.rede.buscar>) => {
+        const r = await servidor.rede.buscar(...args);
+        await novaConta(b, 'DoUsuario'); // a pessoa salva uma conta no meio da rodada
+        return r;
+      },
+    };
+    await sincronizar(b, comEscrita);
+    expect((await contas(b)).map((c) => c.nome)).toContain('DoUsuario');
+  });
+
+  it('duas rodadas pedidas ao mesmo tempo no mesmo banco rodam uma de cada vez', async () => {
+    const a = await criarBanco();
+    const servidor = criarRedeFalsa();
+    let ativas = 0;
+    let maximo = 0;
+    const lenta = {
+      ...servidor.rede,
+      buscar: async (...args: Parameters<typeof servidor.rede.buscar>) => {
+        ativas += 1;
+        maximo = Math.max(maximo, ativas);
+        await passar();
+        ativas -= 1;
+        return servidor.rede.buscar(...args);
+      },
+    };
+    await Promise.all([sincronizar(a, lenta), sincronizar(a, lenta), sincronizar(a, lenta)]);
+    expect(maximo).toBe(1);
+  });
+
+  it('editar uma linha com data de versão no futuro dá uma data ainda mais nova', async () => {
+    const a = await criarBanco();
+    await novaConta(a, 'Aluguel');
+    const futuro = new Date(Date.now() + 60_000).toISOString();
+    await a.runAsync('UPDATE contas SET atualizado_em = ?;', [futuro]);
+    await a.runAsync("UPDATE contas SET valor_centavos = 5 WHERE nome = 'Aluguel';");
+    const linha = await a.getFirstAsync<{ atualizado_em: string }>(
+      'SELECT atualizado_em FROM contas;'
+    );
+    expect(Date.parse(linha!.atualizado_em)).toBeGreaterThan(Date.parse(futuro));
+  });
+});
+
+describe('lerInstante', () => {
+  it.each([
+    ['2026-11-05T10:00:00.123Z', '2026-11-05T10:00:00.123Z'],
+    ['2026-11-05T10:00:00.123456+00:00', '2026-11-05T10:00:00.123Z'],
+    ['2026-11-05 10:00:00.123456+00', '2026-11-05T10:00:00.123Z'],
+    ['2026-11-05 07:00:00-03', '2026-11-05T10:00:00.000Z'],
+    ['2026-11-05T10:00:00Z', '2026-11-05T10:00:00.000Z'],
+  ])('%s', (entrada, esperado) => {
+    expect(new Date(lerInstante(entrada)).toISOString()).toBe(esperado);
+  });
+  it('texto que não é data dá NaN', () => {
+    expect(Number.isNaN(lerInstante('ontem'))).toBe(true);
   });
 });

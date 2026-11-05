@@ -13,6 +13,7 @@ import {
   Valor,
 } from '@/src/domain/sync/registro';
 import { decidir, MetaLinha } from '@/src/domain/sync/mescla';
+import { lerInstante } from '@/src/domain/sync/data';
 import { Cursor, Rede, RegistroRecebido } from './rede';
 
 export interface ResultadoSync {
@@ -21,18 +22,22 @@ export interface ResultadoSync {
   aplicados: number;
   /** Registros cujo pai ainda não chegou; são tentados de novo na próxima rodada. */
   adiados: number;
+  /** Registros que não puderam ser gravados (dados inválidos); ficam de fora, o resto segue. */
+  rejeitados: number;
 }
 
 const TAMANHO_LOTE = 500;
 /** O servidor numera pela hora em que a transação começa; pode chegar fora de ordem. */
 const FOLGA_DO_CURSOR_MS = 5000;
 const RODADAS_ATE_DESISTIR = 3;
+const TOLERANCIA_RELOGIO_MS = 60_000;
 
-/** Colunas que juntas identificam uma linha criada sozinha em cada aparelho. */
+/** Colunas que juntas identificam uma linha que os aparelhos podem criar cada um por si. */
 const CHAVE_NATURAL: Partial<Record<TabelaSync, [string, string]>> = {
   lancamentos: ['conta_id', 'mes_ref'],
   lancamentos_ignorados: ['conta_id', 'mes_ref'],
   rendas_recebidas: ['renda_id', 'mes_ref'],
+  divisoes: ['lancamento_id', 'pessoa_id'],
 };
 
 type Linha = Record<string, Valor>;
@@ -40,7 +45,7 @@ type Linha = Record<string, Valor>;
 const agoraIso = () => new Date().toISOString();
 
 function normalizarData(texto: string): string | null {
-  const t = Date.parse(texto);
+  const t = lerInstante(texto);
   return Number.isNaN(t) ? null : new Date(t).toISOString();
 }
 
@@ -100,10 +105,20 @@ async function metaLocal(
   const linha = await lerLinha(db, def.tabela, uid);
   if (linha) {
     const registro = paraRegistro(def, linha, indice.uidDoPai);
+    let atualizadoEm = String(linha.atualizado_em ?? '');
+    // Data no futuro (relógio adiantado) que já foi enviada: o servidor a trocou pela hora
+    // dele, então ela não pode ganhar de todas as edições dos outros aparelhos.
+    if (lerInstante(atualizadoEm) > Date.now() + TOLERANCIA_RELOGIO_MS) {
+      const pendente = await db.getFirstAsync(
+        'SELECT 1 FROM sync_pendencias WHERE tabela = ? AND uid = ?;',
+        [def.tabela, uid]
+      );
+      if (!pendente) atualizadoEm = new Date(0).toISOString();
+    }
     return {
       linha,
       meta: {
-        atualizadoEm: String(linha.atualizado_em ?? ''),
+        atualizadoEm,
         excluidoEm: null,
         assinatura: assinaturaDe(registro.dados),
       },
@@ -140,7 +155,12 @@ async function marcarExcluida(db: SQLiteDatabase, tabela: string, uid: string, q
 // Envio
 // ---------------------------------------------------------------------------------------
 
-async function enviarMudancas(db: SQLiteDatabase, rede: Rede, indice: Indice): Promise<number> {
+async function enviarMudancas(
+  db: SQLiteDatabase,
+  rede: Rede,
+  indice: Indice
+): Promise<{ enviados: number; rejeitados: number }> {
+  let rejeitados = 0;
   const itens: { registro: Registro; limpar: () => Promise<void> }[] = [];
 
   for (const def of TABELAS_SYNC) {
@@ -154,7 +174,15 @@ async function enviarMudancas(db: SQLiteDatabase, rede: Rede, indice: Indice): P
         await limparPendencia(db, def.tabela, uid);
         continue;
       }
-      const registro = paraRegistro(def, linha, indice.uidDoPai);
+      let registro: Registro;
+      try {
+        registro = paraRegistro(def, linha, indice.uidDoPai);
+      } catch (err) {
+        // uma linha que não dá para converter não pode impedir as outras de seguirem
+        console.warn('Linha não enviada:', def.tabela, uid, err);
+        rejeitados += 1;
+        continue;
+      }
       itens.push({
         registro,
         // se a linha mudou durante o envio, a pendência fica para a próxima rodada
@@ -192,7 +220,7 @@ async function enviarMudancas(db: SQLiteDatabase, rede: Rede, indice: Indice): P
     await rede.enviar(lote.map((x) => x.registro));
     for (const x of lote) await x.limpar();
   }
-  return itens.length;
+  return { enviados: itens.length, rejeitados };
 }
 
 // ---------------------------------------------------------------------------------------
@@ -208,14 +236,17 @@ async function gravar(
   uid: string,
   valores: Linha,
   quando: string
-) {
+): Promise<boolean> {
+  // Sem transação (ela travaria as gravações da tela), então a troca só vale se a linha
+  // continua como foi lida; se a pessoa editou nesse meio-tempo, a edição dela fica.
+  const visto = existente ? (existente.atualizado_em ?? null) : null;
   if (def.tabela === 'configuracoes') {
     if (existente) {
-      await db.runAsync('UPDATE configuracoes SET valor = ?, atualizado_em = ? WHERE chave = ?;', [
-        valores.valor,
-        quando,
-        uid,
-      ]);
+      const r = await db.runAsync(
+        'UPDATE configuracoes SET valor = ?, atualizado_em = ? WHERE chave = ? AND atualizado_em IS ?;',
+        [valores.valor, quando, uid, visto]
+      );
+      if (r.changes === 0) return false;
     } else {
       await db.runAsync(
         'INSERT INTO configuracoes (chave, valor, atualizado_em) VALUES (?, ?, ?);',
@@ -226,11 +257,12 @@ async function gravar(
     const colunas = [...def.colunas, ...Object.keys(def.pais)];
     const params = colunas.map((c) => valores[c]);
     if (existente) {
-      await db.runAsync(
+      const r = await db.runAsync(
         `UPDATE ${def.tabela} SET ${colunas.map((c) => `${c} = ?`).join(', ')},
-         atualizado_em = ? WHERE uid = ?;`,
-        [...params, quando, uid]
+         atualizado_em = ? WHERE uid = ? AND atualizado_em IS ?;`,
+        [...params, quando, uid, visto]
       );
+      if (r.changes === 0) return false;
     } else {
       await db.runAsync(
         `INSERT INTO ${def.tabela} (${colunas.join(', ')}, uid, atualizado_em)
@@ -250,6 +282,7 @@ async function gravar(
     );
   }
   await limparPendencia(db, def.tabela, uid);
+  return true;
 }
 
 /** Outra linha, com uid diferente, que representa o mesmo mês da mesma conta/renda. */
@@ -328,7 +361,7 @@ async function aplicarVivo(
   };
   const decisao = decidir(meta, remoto);
   if (decisao === 'aplicar-remoto') {
-    await gravar(db, def, linha, reg.uid, valores, quando);
+    if (!(await gravar(db, def, linha, reg.uid, valores, quando))) return 'ignorado';
     if (!linha && def.tabela !== 'configuracoes') {
       const nova = await lerLinha(db, def.tabela, reg.uid);
       if (nova && typeof nova.id === 'number') indice.adicionar(def.tabela, nova.id, reg.uid);
@@ -351,7 +384,11 @@ async function aplicarExclusao(
   const remoto: MetaLinha = { atualizadoEm: quando, excluidoEm: quando, assinatura: 'excluida' };
   if (decidir(meta, remoto) !== 'aplicar-remoto') return 'ignorado';
   if (linha) {
-    await db.runAsync(`DELETE FROM ${def.tabela} WHERE uid = ?;`, [reg.uid]);
+    const r = await db.runAsync(`DELETE FROM ${def.tabela} WHERE uid = ? AND atualizado_em IS ?;`, [
+      reg.uid,
+      linha.atualizado_em ?? null,
+    ]);
+    if (r.changes === 0) return 'ignorado'; // editada agora há pouco: a edição fica
     await indice.carregar(db);
   }
   // Só guarda a exclusão se a linha existia aqui. Com a data do servidor, o reenvio dela é
@@ -395,14 +432,14 @@ async function receberMudancas(
   db: SQLiteDatabase,
   rede: Rede,
   indice: Indice
-): Promise<Pick<ResultadoSync, 'recebidos' | 'aplicados' | 'adiados'>> {
+): Promise<Pick<ResultadoSync, 'recebidos' | 'aplicados' | 'adiados' | 'rejeitados'>> {
   const texto = await lerEstado(db, 'cursor');
   const salvo: Cursor | null = texto ? (JSON.parse(texto) as Cursor) : null;
   // recomeça um pouco antes, porque o servidor pode ter gravado fora de ordem; juntar de
   // novo uma linha que já temos não muda nada
   let cursor: Cursor | null = salvo
     ? {
-        recebidoEm: new Date(Date.parse(salvo.recebidoEm) - FOLGA_DO_CURSOR_MS).toISOString(),
+        recebidoEm: new Date(lerInstante(salvo.recebidoEm) - FOLGA_DO_CURSOR_MS).toISOString(),
         tabela: '',
         uid: '',
       }
@@ -410,7 +447,19 @@ async function receberMudancas(
   let ancora: Cursor | null = salvo;
   let recebidos = 0;
   let aplicados = 0;
+  let rejeitados = 0;
   let adiados: RegistroRecebido[] = [];
+
+  // Um registro com defeito (ex.: de uma versão antiga do app) não pode travar os demais.
+  const aplicar = async (r: RegistroRecebido): Promise<Destino> => {
+    try {
+      return await aplicarRegistro(db, r, indice);
+    } catch (err) {
+      console.warn('Registro recusado:', r.tabela, r.uid, err);
+      rejeitados += 1;
+      return 'ignorado';
+    }
+  };
 
   for (;;) {
     const pagina = await rede.buscar(cursor, TAMANHO_LOTE);
@@ -421,24 +470,22 @@ async function receberMudancas(
 
     const fila = [...adiados, ...pagina].sort((a, b) => ordem(a.tabela) - ordem(b.tabela));
     adiados = [];
-    await db.withTransactionAsync(async () => {
-      await indice.carregar(db);
-      for (const r of fila) {
-        const destino = await aplicarRegistro(db, r, indice);
+    await indice.carregar(db);
+    for (const r of fila) {
+      const destino = await aplicar(r);
+      if (destino === 'aplicado') aplicados += 1;
+      else if (destino === 'adiado') adiados.push(r);
+    }
+    // um pai aplicado depois do filho libera os adiados
+    if (adiados.length > 0) {
+      const deNovo = adiados;
+      adiados = [];
+      for (const r of deNovo) {
+        const destino = await aplicar(r);
         if (destino === 'aplicado') aplicados += 1;
         else if (destino === 'adiado') adiados.push(r);
       }
-      // um pai aplicado depois do filho libera os adiados
-      if (adiados.length > 0) {
-        const de_novo = adiados;
-        adiados = [];
-        for (const r of de_novo) {
-          const destino = await aplicarRegistro(db, r, indice);
-          if (destino === 'aplicado') aplicados += 1;
-          else if (destino === 'adiado') adiados.push(r);
-        }
-      }
-    });
+    }
     if (adiados.length === 0) ancora = cursor;
     if (pagina.length < TAMANHO_LOTE) break;
   }
@@ -457,18 +504,31 @@ async function receberMudancas(
     }
   }
   if (ancora) await gravarEstado(db, 'cursor', JSON.stringify(ancora));
-  return { recebidos, aplicados, adiados: adiados.length };
+  return { recebidos, aplicados, adiados: adiados.length, rejeitados };
 }
+
+const filas = new WeakMap<object, Promise<unknown>>();
 
 /**
  * Uma rodada completa: envia o que mudou aqui e traz o que mudou nos outros aparelhos.
  * Pode ser chamada quantas vezes quiser; se a rede cair no meio, a próxima rodada continua
- * de onde parou (nada se perde nem se duplica).
+ * de onde parou (nada se perde nem se duplica). Rodadas do mesmo banco nunca se sobrepõem.
  */
-export async function sincronizar(db: SQLiteDatabase, rede: Rede): Promise<ResultadoSync> {
+export function sincronizar(db: SQLiteDatabase, rede: Rede): Promise<ResultadoSync> {
+  const anterior = filas.get(db) ?? Promise.resolve();
+  const rodada = anterior.catch(() => undefined).then(() => rodarUma(db, rede));
+  filas.set(db, rodada);
+  return rodada;
+}
+
+async function rodarUma(db: SQLiteDatabase, rede: Rede): Promise<ResultadoSync> {
   const indice = new Indice();
   await indice.carregar(db);
-  const enviados = await enviarMudancas(db, rede, indice);
+  const envio = await enviarMudancas(db, rede, indice);
   const recebido = await receberMudancas(db, rede, indice);
-  return { enviados, ...recebido };
+  return {
+    enviados: envio.enviados,
+    ...recebido,
+    rejeitados: recebido.rejeitados + envio.rejeitados,
+  };
 }

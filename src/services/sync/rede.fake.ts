@@ -61,6 +61,9 @@ export function criarRedeFalsa(opcoes: OpcoesRedeFalsa = {}) {
 
   return {
     rede,
+    /** Põe uma linha direto no servidor, como se outro aparelho (ou versão do app) a tivesse enviado. */
+    injetar: (r: Registro) =>
+      linhas.set(`${r.tabela}|${r.uid}`, { ...r, recebidoEm: agora().toISOString() }),
     /** Linhas guardadas no servidor, para conferir nos testes. */
     linhas: () => [...linhas.values()],
   };

@@ -80,9 +80,9 @@ async function bancoNaVersao4(): Promise<SQLiteDatabase> {
   return db;
 }
 
-describe('migração 5: identidade e rastreio de mudanças', () => {
-  it('a versão do banco é 5', () => {
-    expect(VERSAO_BANCO).toBe(5);
+describe('migrações 5 e 6: identidade e rastreio de mudanças', () => {
+  it('a versão do banco é 6', () => {
+    expect(VERSAO_BANCO).toBe(6);
   });
 
   it('dá uid e data a toda linha existente, sem criar pendências nem mexer nos dados', async () => {
@@ -90,7 +90,7 @@ describe('migração 5: identidade e rastreio de mudanças', () => {
     await executarMigracoes(db);
 
     const versao = await db.getFirstAsync<{ user_version: number }>('PRAGMA user_version;');
-    expect(versao?.user_version).toBe(5);
+    expect(versao?.user_version).toBe(6);
 
     for (const tabela of TABELAS_COM_UID) {
       const sem = await db.getFirstAsync<{ n: number }>(

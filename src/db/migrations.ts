@@ -1,8 +1,8 @@
 import { SQLiteDatabase } from 'expo-sqlite';
-import { aplicarRastreioDeMudancas } from './rastreioDeMudancas';
+import { aplicarRastreioDeMudancas, recriarGatilhosDeEdicao } from './rastreioDeMudancas';
 import { CATEGORIAS_PADRAO, SCHEMA_V1, SCHEMA_V2, SCHEMA_V3, SCHEMA_V4 } from './schema';
 
-export const VERSAO_BANCO = 5;
+export const VERSAO_BANCO = 6;
 
 export async function executarMigracoes(db: SQLiteDatabase): Promise<void> {
   // Ativa chaves estrangeiras
@@ -68,6 +68,13 @@ export async function executarMigracoes(db: SQLiteDatabase): Promise<void> {
   if (versaoAtual < 5) {
     await db.withTransactionAsync(async () => {
       await aplicarRastreioDeMudancas(db);
+      await db.execAsync('PRAGMA user_version = 5;');
+    });
+  }
+
+  if (versaoAtual < 6) {
+    await db.withTransactionAsync(async () => {
+      await recriarGatilhosDeEdicao(db);
       await db.execAsync(`PRAGMA user_version = ${VERSAO_BANCO};`);
     });
   }

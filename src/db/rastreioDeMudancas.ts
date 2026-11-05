@@ -30,6 +30,13 @@ export const CONFIGURACOES_DO_APARELHO = [
 
 /** Data e hora atuais em UTC, com milissegundos, no mesmo formato que o app guarda. */
 const AGORA = "strftime('%Y-%m-%dT%H:%M:%fZ', 'now')";
+/**
+ * Data de uma edição: agora, mas nunca igual ou anterior à versão que a linha já tinha.
+ * Com o relógio atrasado, a edição ficaria "mais velha" que a versão do servidor e seria
+ * recusada; assim ela sempre é a mais nova que este aparelho conhece.
+ */
+const EDITADO_EM = `(CASE WHEN OLD.atualizado_em IS NULL OR ${AGORA} > OLD.atualizado_em THEN ${AGORA}
+  ELSE strftime('%Y-%m-%dT%H:%M:%fZ', OLD.atualizado_em, '+0.001 seconds') END)`;
 const UID_NOVO = 'lower(hex(randomblob(16)))';
 
 function gatilhosDaTabela(t: string): string {
@@ -52,7 +59,7 @@ function gatilhosDaTabela(t: string): string {
     CREATE TRIGGER IF NOT EXISTS trg_${t}_editada AFTER UPDATE ON ${t}
     WHEN NEW.atualizado_em IS OLD.atualizado_em AND NEW.uid IS OLD.uid
     BEGIN
-      UPDATE ${t} SET atualizado_em = ${AGORA} WHERE rowid = NEW.rowid;
+      UPDATE ${t} SET atualizado_em = ${EDITADO_EM} WHERE rowid = NEW.rowid;
       INSERT INTO sync_pendencias (tabela, uid) VALUES ('${t}', NEW.uid)
         ON CONFLICT (tabela, uid) DO NOTHING;
     END;
@@ -83,7 +90,7 @@ function gatilhosDeConfiguracoes(): string {
     CREATE TRIGGER IF NOT EXISTS trg_configuracoes_editada AFTER UPDATE ON configuracoes
     WHEN NEW.atualizado_em IS OLD.atualizado_em AND NEW.chave NOT IN (${doAparelho})
     BEGIN
-      UPDATE configuracoes SET atualizado_em = ${AGORA} WHERE chave = NEW.chave;
+      UPDATE configuracoes SET atualizado_em = ${EDITADO_EM} WHERE chave = NEW.chave;
       INSERT INTO sync_pendencias (tabela, uid) VALUES ('configuracoes', NEW.chave)
         ON CONFLICT (tabela, uid) DO NOTHING;
     END;
@@ -169,6 +176,16 @@ export async function aplicarRastreioDeMudancas(db: SQLiteDatabase): Promise<voi
     UPDATE configuracoes SET atualizado_em = ${AGORA} WHERE chave NOT IN (${doAparelho});
   `);
 
+  for (const t of TABELAS_COM_UID) await db.execAsync(gatilhosDaTabela(t));
+  await db.execAsync(gatilhosDeConfiguracoes());
+}
+
+/** Migração 6: recria os gatilhos de edição com a data sempre crescente. */
+export async function recriarGatilhosDeEdicao(db: SQLiteDatabase): Promise<void> {
+  for (const t of TABELAS_COM_UID) {
+    await db.execAsync(`DROP TRIGGER IF EXISTS trg_${t}_editada;`);
+  }
+  await db.execAsync('DROP TRIGGER IF EXISTS trg_configuracoes_editada;');
   for (const t of TABELAS_COM_UID) await db.execAsync(gatilhosDaTabela(t));
   await db.execAsync(gatilhosDeConfiguracoes());
 }

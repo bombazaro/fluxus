@@ -1,3 +1,5 @@
+import { lerInstante } from './data';
+
 /** O que se sabe de uma versão de linha para decidir qual vale. */
 export interface MetaLinha {
   /** Quando a pessoa mexeu na linha (texto de data e hora, em qualquer formato ISO). */
@@ -12,7 +14,7 @@ export type Decisao = 'aplicar-remoto' | 'manter-local' | 'ja-igual';
 
 /** Hora em milissegundos; data inválida vira 0, a mais antiga possível. */
 function instante(texto: string): number {
-  const t = Date.parse(texto);
+  const t = lerInstante(texto);
   return Number.isNaN(t) ? 0 : t;
 }
 

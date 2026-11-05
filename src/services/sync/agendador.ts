@@ -24,6 +24,8 @@ export function criarAgendador({
   let emAndamento = false;
   let denovo = false;
   let relogios: ReturnType<typeof setInterval>[] = [];
+  let falhas = 0;
+  let esperarAte = 0;
 
   async function pedir(): Promise<void> {
     if (!ativo) return;
@@ -37,8 +39,12 @@ export function criarAgendador({
         denovo = false;
         try {
           await rodar();
+          falhas = 0;
         } catch {
-          // a próxima rodada tenta de novo; quem usa mostra o erro por conta própria
+          // quem usa mostra o erro; aqui só se espera mais a cada falha seguida (3 s, 6 s...
+          // até 1 min) para não gastar bateria e rede quando está sem conexão
+          falhas += 1;
+          esperarAte = Date.now() + Math.min(checagemMs * 2 ** falhas, completoMs);
         }
       } while (denovo && ativo);
     } finally {
@@ -52,6 +58,7 @@ export function criarAgendador({
       ativo = true;
       relogios = [
         setInterval(() => {
+          if (Date.now() < esperarAte) return;
           temPendencia()
             .then((p) => {
               if (p) void pedir();

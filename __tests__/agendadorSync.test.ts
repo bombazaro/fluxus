@@ -87,4 +87,17 @@ describe('agendador de sincronização', () => {
     await folga();
     expect(rodar).toHaveBeenCalledTimes(1);
   });
+
+  it('depois de falhar, espera mais antes de olhar as pendências de novo', async () => {
+    const rodar = jest.fn().mockRejectedValue(new Error('sem rede'));
+    const a = criarAgendador({ rodar, temPendencia: async () => true });
+    a.iniciar();
+    await folga();
+    expect(rodar).toHaveBeenCalledTimes(1);
+    await jest.advanceTimersByTimeAsync(3000); // dentro da espera de 6 s
+    expect(rodar).toHaveBeenCalledTimes(1);
+    await jest.advanceTimersByTimeAsync(6000);
+    expect(rodar.mock.calls.length).toBeGreaterThanOrEqual(2);
+    a.parar();
+  });
 });
