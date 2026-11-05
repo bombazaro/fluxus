@@ -1,5 +1,6 @@
-import { Alert, Linking } from 'react-native';
+import { Linking } from 'react-native';
 import { pedirPermissao } from '@/src/services/notificacoes';
+import { avisar } from '@/src/utils/avisar';
 
 /**
  * Explica por que o app quer mandar notificações antes do pedido do sistema
@@ -7,7 +8,7 @@ import { pedirPermissao } from '@/src/services/notificacoes';
  */
 export function pedirPermissaoComExplicacao(): Promise<boolean> {
   return new Promise((resolve) => {
-    Alert.alert(
+    avisar(
       'Lembretes de vencimento',
       'O Fluxus avisa um pouco antes de cada conta vencer, para nada passar do prazo. ' +
         'Os avisos são criados no próprio celular: nada sai do aparelho.',
@@ -18,7 +19,7 @@ export function pedirPermissaoComExplicacao(): Promise<boolean> {
           onPress: async () => {
             const permitido = await pedirPermissao();
             if (!permitido) {
-              Alert.alert(
+              avisar(
                 'Notificações bloqueadas',
                 'Para receber os lembretes, libere as notificações do Fluxus nas configurações do celular.',
                 [

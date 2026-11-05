@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
@@ -9,6 +9,7 @@ import { Botao, Cartao } from '@/src/components/ui';
 import { useMesStore } from '@/src/store/useMesStore';
 import { exportarBackup, importarBackup } from '@/src/services/backup';
 import { formatarData } from '@/src/utils/formatadores';
+import { avisar } from '@/src/utils/avisar';
 
 export default function BackupScreen() {
   const router = useRouter();
@@ -25,7 +26,7 @@ export default function BackupScreen() {
       await exportarBackup(db);
     } catch (err) {
       console.error('Erro ao exportar backup:', err);
-      Alert.alert('Erro', 'Não foi possível gerar o backup. Tente de novo.');
+      avisar('Erro', 'Não foi possível gerar o backup. Tente de novo.');
     } finally {
       setExportando(false);
     }
@@ -36,27 +37,24 @@ export default function BackupScreen() {
     try {
       const resultado = await importarBackup(db);
       if (resultado.status === 'erro') {
-        Alert.alert('Backup não importado', resultado.mensagem);
+        avisar('Backup não importado', resultado.mensagem);
       } else if (resultado.status === 'ok') {
         await carregarMes(db);
-        Alert.alert(
+        avisar(
           'Backup importado',
           `Dados restaurados do backup de ${formatarData(resultado.exportadoEm.slice(0, 10))}.`
         );
       }
     } catch (err) {
       console.error('Erro ao importar backup:', err);
-      Alert.alert(
-        'Erro',
-        'Não foi possível importar o backup. Seus dados atuais não foram alterados.'
-      );
+      avisar('Erro', 'Não foi possível importar o backup. Seus dados atuais não foram alterados.');
     } finally {
       setImportando(false);
     }
   };
 
   const handleImportar = () => {
-    Alert.alert(
+    avisar(
       'Importar backup',
       'Todos os dados atuais deste celular serão substituídos pelos do arquivo. Deseja continuar?',
       [

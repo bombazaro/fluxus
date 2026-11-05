@@ -1,14 +1,5 @@
 import React, { useCallback, useMemo, useState } from 'react';
-import {
-  Alert,
-  Animated,
-  Modal,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
+import { Animated, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
@@ -37,6 +28,7 @@ import {
   formatarMesAno,
   formatarMoeda,
 } from '@/src/utils/formatadores';
+import { avisar } from '@/src/utils/avisar';
 
 type TipoMeta = 'fixo' | 'meses_gastos';
 type Movimento = 'aporte' | 'retirada';
@@ -133,7 +125,7 @@ export default function ReservaScreen() {
   const salvarMovimento = async () => {
     if (!movimento || !movimentoValido || !dataMovIso) return;
     if (movimento === 'retirada' && valorMov > situacao.guardadoCentavos) {
-      Alert.alert(
+      avisar(
         'Valor maior que o guardado',
         `Você tem ${formatarMoeda(situacao.guardadoCentavos)} na reserva.`
       );
@@ -151,7 +143,7 @@ export default function ReservaScreen() {
   };
 
   const excluirAporte = (a: ReservaAporte) => {
-    Alert.alert(
+    avisar(
       a.valor_centavos >= 0 ? 'Excluir aporte' : 'Excluir retirada',
       `${formatarMoeda(Math.abs(a.valor_centavos))} em ${formatarData(a.data)}. Excluir do histórico?`,
       [

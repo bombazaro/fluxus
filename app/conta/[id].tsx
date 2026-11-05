@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import {
-  Alert,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -26,6 +25,7 @@ import { formatarData, formatarMesAno, formatarMoeda } from '@/src/utils/formata
 import { calcularMediaLancamentos, SugestaoValor } from '@/src/domain/sugerirValor';
 import { SeletorCategoria } from '@/src/components/contas/SeletorCategoria';
 import { DIA_SEM_VENCIMENTO } from '@/src/domain/gerarLancamentos';
+import { avisar } from '@/src/utils/avisar';
 
 export default function DetalheContaScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -122,7 +122,7 @@ export default function DetalheContaScreen() {
         categoriaPendente
       );
       if (categoriaFinal.erro || categoriaFinal.id === null) {
-        Alert.alert('Categoria', categoriaFinal.erro ?? 'Escolha a categoria');
+        avisar('Categoria', categoriaFinal.erro ?? 'Escolha a categoria');
         setSalvando(false);
         return;
       }
@@ -170,7 +170,7 @@ export default function DetalheContaScreen() {
       setEditando(false);
     } catch (err) {
       console.error('Erro ao editar conta:', err);
-      Alert.alert('Erro', 'Não foi possível salvar as alterações. Tente de novo.');
+      avisar('Erro', 'Não foi possível salvar as alterações. Tente de novo.');
     } finally {
       setSalvando(false);
     }
@@ -178,7 +178,7 @@ export default function DetalheContaScreen() {
 
   const handleSalvarEdicao = () => {
     if (!nomeEditado.trim() || valorEditadoCentavos <= 0) {
-      Alert.alert('Atenção', 'Informe um nome e valor válidos.');
+      avisar('Atenção', 'Informe um nome e valor válidos.');
       return;
     }
     if (
@@ -186,12 +186,12 @@ export default function DetalheContaScreen() {
       temVencimentoEditado &&
       (isNaN(diaEditadoNum) || diaEditadoNum < 1 || diaEditadoNum > 31)
     ) {
-      Alert.alert('Atenção', 'Informe um dia de vencimento entre 1 e 31.');
+      avisar('Atenção', 'Informe um dia de vencimento entre 1 e 31.');
       return;
     }
 
     if (valorMudou && conta.tipo !== 'unica') {
-      Alert.alert(
+      avisar(
         'Escopo da alteração',
         'O novo valor vale só para este mês ou também para os próximos?',
         [
@@ -219,7 +219,7 @@ export default function DetalheContaScreen() {
         valor_centavos: sugestaoMedia.valorSugeridoCentavos,
       });
       await carregarMes(db);
-      Alert.alert(
+      avisar(
         'Valor aplicado',
         `Lançamento de ${formatarMesAno(mesRef)} atualizado para ${formatarMoeda(
           sugestaoMedia.valorSugeridoCentavos
@@ -234,7 +234,7 @@ export default function DetalheContaScreen() {
     const novoStatus = conta.ativa === 1 ? 0 : 1;
     const acaoTexto = novoStatus === 0 ? 'desativar' : 'reativar';
 
-    Alert.alert(
+    avisar(
       `${novoStatus === 0 ? 'Desativar' : 'Reativar'} conta`,
       `Tem certeza que deseja ${acaoTexto} esta conta?`,
       [
@@ -252,7 +252,7 @@ export default function DetalheContaScreen() {
   };
 
   const handleExcluir = async () => {
-    Alert.alert('Excluir Conta', 'Como deseja excluir esta conta?', [
+    avisar('Excluir Conta', 'Como deseja excluir esta conta?', [
       {
         text: 'Apenas deste mês',
         onPress: async () => {

@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import {
-  Alert,
   KeyboardAvoidingView,
   Linking,
   Platform,
@@ -36,6 +35,7 @@ import {
 import { EscolhaQuandoRecebe } from '@/src/components/config/EscolhaQuandoRecebe';
 import { validarRendaInicial } from '@/src/domain/rendaInicial';
 import { pedirPermissaoComExplicacao } from '@/src/services/permissaoLembretes';
+import { avisar } from '@/src/utils/avisar';
 
 type IconeIonicons = keyof typeof Ionicons.glyphMap;
 
@@ -129,7 +129,7 @@ export default function BoasVindasScreen() {
       if (atual.id === 'renda' && !(await salvarRenda())) return;
       setIndice(indice + 1);
     } catch {
-      Alert.alert('Erro', 'Não foi possível salvar. Tente de novo.');
+      avisar('Erro', 'Não foi possível salvar. Tente de novo.');
     } finally {
       setSalvando(false);
     }

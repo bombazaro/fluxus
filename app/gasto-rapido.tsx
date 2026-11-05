@@ -1,13 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import {
-  Alert,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
+import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
@@ -27,6 +19,7 @@ import { montarGastoRapido } from '@/src/domain/gastoRapido';
 import { obterHojeIso, useMesStore } from '@/src/store/useMesStore';
 import { Categoria } from '@/src/types';
 import { dataBrParaIso, formatarData } from '@/src/utils/formatadores';
+import { avisar } from '@/src/utils/avisar';
 
 /** Categoria já marcada ao abrir: a de gasto do dia a dia mais comum. */
 const CATEGORIA_SUGERIDA = 'Alimentação';
@@ -71,7 +64,7 @@ export default function GastoRapidoScreen() {
     if (salvando) return;
     const categoriaFinal = await categoriasRepo.resolverEscolha(db, categoriaId, categoriaPendente);
     if (categoriaFinal.erro) {
-      Alert.alert('Categoria', categoriaFinal.erro);
+      avisar('Categoria', categoriaFinal.erro);
       return;
     }
     const categoria =
@@ -84,7 +77,7 @@ export default function GastoRapidoScreen() {
       agoraIso: new Date().toISOString(),
     });
     if (gasto.erro !== null) {
-      Alert.alert('Falta pouco', gasto.erro);
+      avisar('Falta pouco', gasto.erro);
       return;
     }
 
@@ -95,7 +88,7 @@ export default function GastoRapidoScreen() {
       router.back();
     } catch (err) {
       console.error('Erro ao lançar gasto:', err);
-      Alert.alert('Erro', 'Não foi possível lançar o gasto. Tente de novo.');
+      avisar('Erro', 'Não foi possível lançar o gasto. Tente de novo.');
       setSalvando(false);
     }
   };

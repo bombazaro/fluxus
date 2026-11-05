@@ -13,6 +13,7 @@ import { executarMigracoes } from '@/src/db/migrations';
 import { Pressable, StyleSheet, Text, useColorScheme, View } from 'react-native';
 import { darkColors, lightColors } from '@/src/theme/colors';
 import { Inicializacao } from '@/src/components/Inicializacao';
+import { Dialogo } from '@/src/components/ui/Dialogo';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -117,6 +118,7 @@ export default function RootLayout() {
           }}
         />
       </Stack>
+      <Dialogo />
     </SQLiteProvider>
   );
 }
