@@ -3,7 +3,10 @@ import { entregarArquivo, escolherArquivoTexto } from '@/src/services/arquivos.w
 describe('arquivos na web', () => {
   const original = { document: globalThis.document, URL: globalThis.URL };
 
+  beforeEach(() => jest.useFakeTimers());
+
   afterEach(() => {
+    jest.useRealTimers();
     Object.assign(globalThis, original);
   });
 
@@ -25,6 +28,9 @@ describe('arquivos na web', () => {
     expect(link.href).toBe('blob:x');
     expect(link.click).toHaveBeenCalledTimes(1);
     expect(anexados).toContain(link);
+    // o endereço só é liberado depois, senão o Safari baixa um arquivo vazio
+    expect(urlFalsa.revokeObjectURL).not.toHaveBeenCalled();
+    jest.advanceTimersByTime(60_000);
     expect(urlFalsa.revokeObjectURL).toHaveBeenCalledWith('blob:x');
   });
 
@@ -47,6 +53,16 @@ describe('arquivos na web', () => {
 
     const promessa = escolherArquivoTexto();
     (entrada.oncancel as () => void)();
+    expect(await promessa).toBeNull();
+  });
+
+  it('escolherArquivoTexto devolve null se não conseguir ler o arquivo', async () => {
+    const entrada: Record<string, unknown> = { click: jest.fn(), remove: jest.fn() };
+    Object.assign(globalThis, { document: { createElement: jest.fn(() => entrada) } });
+
+    const promessa = escolherArquivoTexto();
+    entrada.files = [{ text: async () => Promise.reject(new Error('sem permissão')) }];
+    (entrada.onchange as () => void)();
     expect(await promessa).toBeNull();
   });
 });

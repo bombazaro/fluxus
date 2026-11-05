@@ -41,6 +41,14 @@ describe('avisar', () => {
       expect(useAvisoStore.getState().pedido).toBeNull();
     });
 
+    it('um aviso novo no lugar de outro aberto fecha o antigo como dispensado', () => {
+      const primeiroDispensado = jest.fn();
+      avisar('Primeiro', undefined, [{ text: 'Ok' }], { onDismiss: primeiroDispensado });
+      avisar('Segundo');
+      expect(primeiroDispensado).toHaveBeenCalledTimes(1);
+      expect(useAvisoStore.getState().pedido?.titulo).toBe('Segundo');
+    });
+
     it('sem botões mostra um Ok que só fecha', () => {
       avisar('Aviso');
       const pedido = useAvisoStore.getState().pedido;

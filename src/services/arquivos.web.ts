@@ -9,7 +9,8 @@ export async function entregarArquivo(nome: string, conteudo: string): Promise<v
   document.body.appendChild(link);
   link.click();
   link.remove();
-  URL.revokeObjectURL(url);
+  // Libera o endereço só depois: o Safari baixa um arquivo vazio se ele sumir logo
+  setTimeout(() => URL.revokeObjectURL(url), 60_000);
 }
 
 /** Abre o seletor de arquivos e devolve o texto do escolhido, ou null se cancelar. */
@@ -19,8 +20,13 @@ export function escolherArquivoTexto(): Promise<string | null> {
     entrada.type = 'file';
     entrada.accept = '.json,application/json,text/plain';
     entrada.onchange = async () => {
-      const arquivo = entrada.files?.[0];
-      resolve(arquivo ? await arquivo.text() : null);
+      try {
+        const arquivo = entrada.files?.[0];
+        resolve(arquivo ? await arquivo.text() : null);
+      } catch {
+        // arquivo apagado ou sem permissão: trata como se tivesse cancelado
+        resolve(null);
+      }
     };
     entrada.oncancel = () => resolve(null);
     entrada.click();

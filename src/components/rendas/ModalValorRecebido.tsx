@@ -4,6 +4,7 @@ import { useTema } from '@/src/theme';
 import { Botao, CampoMoeda } from '@/src/components/ui';
 import { Renda } from '@/src/types';
 import { formatarMesAno } from '@/src/utils/formatadores';
+import { estiloJanela } from '@/src/utils/layout';
 
 export interface ModalValorRecebidoProps {
   /** Renda variável sendo marcada; null fecha o modal. */
@@ -71,8 +72,7 @@ const styles = StyleSheet.create({
   },
   card: {
     width: '100%',
-    maxWidth: 440,
-    alignSelf: 'center',
+    ...estiloJanela,
   },
   titulo: {
     fontSize: 18,

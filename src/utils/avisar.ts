@@ -51,6 +51,8 @@ export function avisar(
     Alert.alert(titulo, mensagem, botoes, opcoes);
     return;
   }
+  // Um aviso novo no lugar de outro aberto: o antigo conta como dispensado, sem ficar pendente
+  useAvisoStore.getState().pedido?.aoDispensar();
   const lista = botoes && botoes.length > 0 ? botoes : [{ text: 'Ok' }];
   useAvisoStore.setState({
     pedido: {

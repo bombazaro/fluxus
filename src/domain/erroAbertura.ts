@@ -7,7 +7,11 @@ export interface TextosErroAbertura {
 
 /** Banco aberto em outra aba: o navegador só deixa uma por vez usar o arquivo. */
 function bancoPresoPorOutraAba(erro: Error): boolean {
-  return erro.message.includes('createSyncAccessHandle');
+  // Chrome cita o método na mensagem; Firefox e Safari usam o nome do erro
+  return (
+    erro.name === 'NoModificationAllowedError' ||
+    (erro.message ?? '').includes('createSyncAccessHandle')
+  );
 }
 
 /** Textos da tela mostrada quando o app não consegue abrir os dados. */
@@ -24,6 +28,6 @@ export function textosDoErroDeAbertura(erro: Error, web: boolean): TextosErroAbe
     explicacao: web
       ? 'Seus dados continuam guardados neste navegador. Recarregue a página. Se o problema continuar, anote a mensagem abaixo.'
       : 'Seus dados continuam guardados no celular. Feche o app e abra de novo. Se o problema continuar, anote a mensagem abaixo.',
-    detalhe: erro.message,
+    detalhe: erro.message ?? '',
   };
 }

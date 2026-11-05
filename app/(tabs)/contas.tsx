@@ -194,7 +194,7 @@ export default function ContasScreen() {
             />
 
             {/* Chips de filtro: Todas | Pendentes | Pagas */}
-            <View style={styles.filtrosRow}>
+            <View style={[styles.filtrosRow, largo && { flexWrap: 'wrap' }]}>
               {(['todas', 'pendentes', 'pagas'] as FiltroSituacao[]).map((sit) => {
                 const ativa = filtroSituacao === sit;
                 const rotulos: Record<FiltroSituacao, string> = {
@@ -464,7 +464,6 @@ const styles = StyleSheet.create({
   listaArea: { flex: 1 },
   filtrosRow: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
     gap: 8,
     marginTop: 4,
     marginBottom: 4,

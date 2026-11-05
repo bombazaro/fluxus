@@ -12,7 +12,7 @@ import { useMesStore } from '@/src/store/useMesStore';
 import { ModalValorRecebido } from '@/src/components/rendas/ModalValorRecebido';
 import { formatarMesAno, formatarMoeda } from '@/src/utils/formatadores';
 import { avisar } from '@/src/utils/avisar';
-import { estiloFormulario } from '@/src/utils/layout';
+import { estiloFormulario, estiloJanela } from '@/src/utils/layout';
 
 const TIPOS_RENDA: { tipo: TipoRenda; label: string }[] = [
   { tipo: 'fixa', label: 'Fixa (Mensal)' },
@@ -593,8 +593,7 @@ const styles = StyleSheet.create({
   },
   modalCard: {
     width: '100%',
-    maxWidth: 440,
-    alignSelf: 'center',
+    ...estiloJanela,
   },
   modalHeader: {
     flexDirection: 'row',

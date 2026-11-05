@@ -25,4 +25,17 @@ describe('textosDoErroDeAbertura', () => {
     expect(t.explicacao).toContain('guardados no celular');
     expect(t.detalhe).toBe(erroDeAba.message);
   });
+
+  it('reconhece o erro de aba duplicada de outros navegadores pelo nome', () => {
+    const erro = Object.assign(new Error('Unable to access file'), {
+      name: 'NoModificationAllowedError',
+    });
+    expect(textosDoErroDeAbertura(erro, true).titulo).toBe('O Fluxus já está aberto em outra aba.');
+  });
+
+  it('não quebra quando o erro não tem mensagem', () => {
+    const t = textosDoErroDeAbertura({} as Error, true);
+    expect(t.titulo).toBe('Ops! Não foi possível abrir seus dados.');
+    expect(t.detalhe).toBe('');
+  });
 });

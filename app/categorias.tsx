@@ -12,7 +12,7 @@ import { ehCategoriaPadrao, NOME_CATEGORIA_MAXIMO, NOME_OUTROS } from '@/src/dom
 import { useMesStore } from '@/src/store/useMesStore';
 import { Categoria } from '@/src/types';
 import { avisar } from '@/src/utils/avisar';
-import { estiloFormulario } from '@/src/utils/layout';
+import { estiloFormulario, estiloJanela } from '@/src/utils/layout';
 
 /** Categoria sendo excluída e quantas contas usam ela. */
 interface Exclusao {
@@ -222,8 +222,7 @@ export default function CategoriasScreen() {
               borderRadius: radii.card,
               padding: spacing.base,
               width: '100%',
-              maxWidth: 440,
-              alignSelf: 'center',
+              ...estiloJanela,
             }}>
             <Text
               style={{
