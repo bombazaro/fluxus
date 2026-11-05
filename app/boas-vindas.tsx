@@ -36,6 +36,7 @@ import { EscolhaQuandoRecebe } from '@/src/components/config/EscolhaQuandoRecebe
 import { validarRendaInicial } from '@/src/domain/rendaInicial';
 import { lembretesDisponiveis } from '@/src/services/notificacoes';
 import { pedirPermissaoComExplicacao } from '@/src/services/permissaoLembretes';
+import { ESTE_APARELHO, TEMA_DO_SISTEMA } from '@/src/utils/aparelho';
 import { avisar } from '@/src/utils/avisar';
 
 type IconeIonicons = keyof typeof Ionicons.glyphMap;
@@ -229,9 +230,9 @@ export default function BoasVindasScreen() {
                   <Ionicons name="lock-closed-outline" size={22} color={colors.warning} />
                   <Text
                     style={[textoAjuda, { flex: 1, marginLeft: spacing.sm, color: colors.text }]}>
-                    Sem conta, sem internet: seus dados ficam só neste celular. Se desinstalar o
-                    app, eles serão perdidos. Faça backup de vez em quando em Mais › Backup dos
-                    dados.
+                    Sem conta, sem internet: seus dados ficam só em {ESTE_APARELHO}. Se desinstalar
+                    o app ou limpar o navegador, eles serão perdidos. Faça backup de vez em quando
+                    em Mais › Backup dos dados.
                   </Text>
                 </View>
               </Cartao>
@@ -350,7 +351,7 @@ export default function BoasVindasScreen() {
                 <GrupoOpcoes<TemaPreferido>
                   rotuloAcessivel="Tema"
                   opcoes={[
-                    { valor: 'sistema', rotulo: 'Do celular' },
+                    { valor: 'sistema', rotulo: TEMA_DO_SISTEMA },
                     { valor: 'claro', rotulo: 'Claro' },
                     { valor: 'escuro', rotulo: 'Escuro' },
                   ]}

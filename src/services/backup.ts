@@ -1,24 +1,14 @@
 import { SQLiteDatabase } from 'expo-sqlite';
-import { File, Paths } from 'expo-file-system';
-import * as Sharing from 'expo-sharing';
-import * as DocumentPicker from 'expo-document-picker';
 import { backupRepo } from '@/src/db/repositorios/backupRepo';
 import { VERSAO_BANCO } from '@/src/db/migrations';
 import { nomeArquivoBackup, validarBackup } from '@/src/domain/backup';
 import { obterHojeIso } from '@/src/store/useMesStore';
+import { entregarArquivo, escolherArquivoTexto } from '@/src/services/arquivos';
 
-/** Gera o arquivo de backup e abre o menu de compartilhar (Drive, WhatsApp, e-mail...). */
+/** Gera o arquivo de backup e o entrega: menu de compartilhar no celular, download na web. */
 export async function exportarBackup(db: SQLiteDatabase): Promise<void> {
   const backup = await backupRepo.exportarTudo(db, VERSAO_BANCO);
-
-  const arquivo = new File(Paths.cache, nomeArquivoBackup(obterHojeIso()));
-  arquivo.create({ overwrite: true });
-  await arquivo.write(JSON.stringify(backup));
-
-  await Sharing.shareAsync(arquivo.uri, {
-    mimeType: 'application/json',
-    dialogTitle: 'Salvar backup do Fluxus',
-  });
+  await entregarArquivo(nomeArquivoBackup(obterHojeIso()), JSON.stringify(backup));
 }
 
 export type ResultadoImportacao =
@@ -31,15 +21,12 @@ export type ResultadoImportacao =
  * Quem chama deve confirmar com o usuário antes, porque os dados atuais somem.
  */
 export async function importarBackup(db: SQLiteDatabase): Promise<ResultadoImportacao> {
-  const escolha = await DocumentPicker.getDocumentAsync({
-    type: ['application/json', 'text/plain', '*/*'],
-    copyToCacheDirectory: true,
-  });
-  if (escolha.canceled) return { status: 'cancelado' };
+  const texto = await escolherArquivoTexto();
+  if (texto === null) return { status: 'cancelado' };
 
   let conteudo: unknown;
   try {
-    conteudo = JSON.parse(await new File(escolha.assets[0].uri).text());
+    conteudo = JSON.parse(texto);
   } catch {
     return {
       status: 'erro',

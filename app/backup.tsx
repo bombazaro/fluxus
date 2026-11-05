@@ -9,6 +9,7 @@ import { Botao, Cartao } from '@/src/components/ui';
 import { useMesStore } from '@/src/store/useMesStore';
 import { exportarBackup, importarBackup } from '@/src/services/backup';
 import { formatarData } from '@/src/utils/formatadores';
+import { ESTE_APARELHO, O_APARELHO } from '@/src/utils/aparelho';
 import { avisar } from '@/src/utils/avisar';
 
 export default function BackupScreen() {
@@ -56,7 +57,7 @@ export default function BackupScreen() {
   const handleImportar = () => {
     avisar(
       'Importar backup',
-      'Todos os dados atuais deste celular serão substituídos pelos do arquivo. Deseja continuar?',
+      `Todos os dados atuais de ${ESTE_APARELHO} serão substituídos pelos do arquivo. Deseja continuar?`,
       [
         { text: 'Cancelar', style: 'cancel' },
         { text: 'Substituir dados', style: 'destructive', onPress: importar },
@@ -108,8 +109,9 @@ export default function BackupScreen() {
           <View style={styles.linha}>
             <Ionicons name="phone-portrait-outline" size={22} color={colors.warning} />
             <Text style={[textoCorpo, { flex: 1, marginLeft: spacing.sm }]}>
-              Seus dados ficam só neste celular. Se desinstalar o app ou trocar de aparelho, eles
-              são perdidos. Exporte um backup de vez em quando e guarde fora do celular.
+              Seus dados ficam só em {ESTE_APARELHO}. Se desinstalar o app, limpar os dados do
+              navegador ou trocar de aparelho, eles são perdidos. Exporte um backup de vez em quando
+              e guarde fora de {O_APARELHO}.
             </Text>
           </View>
         </Cartao>
@@ -148,7 +150,7 @@ export default function BackupScreen() {
           </Text>
           <Text style={[textoCorpo, { marginBottom: spacing.base }]}>
             Restaura os dados de um arquivo de backup. Serve também para passar os dados para outro
-            celular. Os dados atuais deste celular são substituídos.
+            aparelho. Os dados atuais de {ESTE_APARELHO} são substituídos.
           </Text>
           <Botao
             titulo="Importar backup"

@@ -18,7 +18,7 @@ export default function TabLayout() {
           backgroundColor: colors.tabBar,
           borderTopColor: colors.tabBarBorder,
           borderTopWidth: 1,
-          height: 58 + (Platform.OS === 'android' ? Math.max(insets.bottom, 6) : insets.bottom),
+          height: 58 + (Platform.OS === 'ios' ? insets.bottom : Math.max(insets.bottom, 6)),
           paddingBottom: Math.max(insets.bottom, 6),
           paddingTop: 6,
         },

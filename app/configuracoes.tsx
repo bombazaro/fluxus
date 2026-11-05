@@ -25,6 +25,7 @@ import {
   TemaPreferido,
 } from '@/src/domain/configuracoes';
 import { EscolhaQuandoRecebe } from '@/src/components/config/EscolhaQuandoRecebe';
+import { ESTE_APARELHO, TEMA_DO_SISTEMA } from '@/src/utils/aparelho';
 import { lembretesDisponiveis } from '@/src/services/notificacoes';
 import { pedirPermissaoComExplicacao } from '@/src/services/permissaoLembretes';
 
@@ -125,7 +126,7 @@ export default function ConfiguracoesScreen() {
           <GrupoOpcoes<TemaPreferido>
             rotuloAcessivel="Tema"
             opcoes={[
-              { valor: 'sistema', rotulo: 'Do celular' },
+              { valor: 'sistema', rotulo: TEMA_DO_SISTEMA },
               { valor: 'claro', rotulo: 'Claro' },
               { valor: 'escuro', rotulo: 'Escuro' },
             ]}
@@ -240,8 +241,8 @@ export default function ConfiguracoesScreen() {
           <View style={styles.linhaDados}>
             <Ionicons name="phone-portrait-outline" size={22} color={colors.warning} />
             <Text style={[textoAjuda, { flex: 1, marginLeft: spacing.sm, color: colors.text }]}>
-              Seus dados ficam só neste celular. Se desinstalar o app, eles serão perdidos. Faça
-              backup de vez em quando em Mais › Backup dos dados.
+              Seus dados ficam só em {ESTE_APARELHO}. Se desinstalar o app ou limpar o navegador,
+              eles serão perdidos. Faça backup de vez em quando em Mais › Backup dos dados.
             </Text>
           </View>
         </Cartao>
