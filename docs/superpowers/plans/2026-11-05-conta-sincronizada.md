@@ -205,7 +205,18 @@ Entrega: toda linha tem identidade global e data de mudança, e o banco registra
 - **`configuracoes`** não tem `uid`: a chave identifica a linha. As chaves `notificacoesAtivas`, `notificacaoHora` e `notificacaoDiasAntes` são do aparelho e nunca sincronizam (`CONFIGURACOES_DO_APARELHO`).
 - **Categorias de fábrica e a pessoa "Eu"** têm `uid` fixo (`padrao:categoria:<nome>`, `padrao:pessoa:eu`), para não duplicarem ao juntar aparelhos. A Tarefa 4.2(d) não precisa casar por nome.
 - Dentro de gatilhos não se usa `OR REPLACE`/`OR IGNORE`: o SQLite os ignora quando a instrução que dispara tem o próprio tratamento de conflito (upsert). Usar `ON CONFLICT ... DO NOTHING/UPDATE`.
-- **Importar backup** apaga tudo e reinsere: as linhas antigas viram exclusões e as novas ganham `uid` novo e entram como pendências.
+- **Importar backup** apaga tudo e reinsere: as linhas antigas viram exclusões e as novas ganham `uid` novo e entram como pendências. As categorias de fábrica e o "Eu" recuperam o `uid` fixo (`atribuirUidsFixos`), e uma linha que volta com o mesmo `uid` deixa de constar em `sync_exclusoes`.
+- **Formato do backup** continua na versão 4 (`VERSAO_BACKUP`), então o app 1.1.0 ainda importa backups do app novo. Só subir essa versão se as colunas exportadas mudarem.
+
+### Pendências de desenho para a Fase 3 (achadas na revisão da Fase 1)
+- **Linhas geradas pelo próprio app em dois aparelhos** (`lancamentos` criados por `garantirMes`, `lancamentos_ignorados`, `rendas_recebidas`) saem com `uid` diferente em cada aparelho. O motor precisa **casar pela chave natural** (conta + mês; renda + mês) antes de inserir, ou os meses duplicam ou batem na restrição única. Tarefa 3.2 deve incluir esse casamento e um teste "dois aparelhos criam o mesmo mês".
+- **Escrita do sync com a mesma data que a linha já tem** faz o gatilho de edição achar que foi a pessoa e marcar pendência, o que pode gerar um vai-e-volta. O motor deve ignorar linhas remotas com `atualizado_em` igual ou mais antigo (a regra de mescla já devolve `ja-igual`) e, se for preciso, usar uma marca `aplicando_remoto` em `sync_estado` checada pelos gatilhos.
+- **`configuracoes`** não registra exclusão de chave (a importação de backup apaga e reinsere). Inofensivo hoje; tratar se alguma chave puder ser removida.
+
+### Adiado (menor)
+- Importar backup grande é ~2x mais lento com os gatilhos, e `sync_exclusoes` cresce a cada importação: limpar exclusões já enviadas ao servidor na Fase 3.
+- A cópia automática antes de migrar pertence à Tarefa 4.2 (primeira ligação da conta), não à migração local.
+- Testes que faltam: banco v4 com dados sujos (categoria padrão duplicada, "Eu" ausente), cascata em dois níveis, o mesmo SQL no wa-sqlite dentro do Jest.
 
 ### Tarefa 1.1: Migração v5 com rastreio por gatilhos — **feita**
 `src/db/rastreioDeMudancas.ts` (`aplicarRastreioDeMudancas`, `TABELAS_COM_UID`, `CONFIGURACOES_DO_APARELHO`), `src/db/migrations.ts` (`VERSAO_BANCO = 5`), testes em `__tests__/rastreioDeMudancas.test.ts` (12 casos).

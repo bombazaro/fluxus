@@ -1,3 +1,9 @@
+/**
+ * Versão do FORMATO do arquivo de backup. Só muda quando as colunas exportadas mudam: assim um
+ * backup feito num app mais novo ainda abre no mais antigo enquanto o formato for o mesmo.
+ */
+export const VERSAO_BACKUP = 4;
+
 export type ValorColuna = string | number | null;
 export type LinhaBackup = Record<string, ValorColuna>;
 

@@ -6,6 +6,7 @@ import { contasRepo } from '../src/db/repositorios/contasRepo';
 import { configuracoesRepo } from '../src/db/repositorios/configuracoesRepo';
 import { backupRepo } from '../src/db/repositorios/backupRepo';
 import { categoriasRepo } from '../src/db/repositorios/categoriasRepo';
+import { VERSAO_BACKUP, validarBackup } from '../src/domain/backup';
 import { Conta } from '../src/types';
 
 const ANTIGA = '2000-01-01T00:00:00.000Z';
@@ -287,5 +288,58 @@ describe('rastreio de mudanças', () => {
       "SELECT COUNT(*) AS n FROM sync_exclusoes WHERE tabela = 'categorias';"
     );
     expect(ex?.n).toBe(1);
+  });
+
+  it('importar backup mantém a identidade fixa das categorias de fábrica e do "Eu"', async () => {
+    const db = await criarBanco();
+    const backup = await backupRepo.exportarTudo(db, VERSAO_BACKUP);
+
+    await backupRepo.importarTudo(db, backup);
+
+    const fixos = await db.getAllAsync<{ uid: string }>(
+      "SELECT uid FROM categorias WHERE uid LIKE 'padrao:%' UNION ALL SELECT uid FROM pessoas WHERE uid LIKE 'padrao:%';"
+    );
+    expect(fixos).toHaveLength(9);
+    const excluidosFixos = await db.getFirstAsync<{ n: number }>(
+      "SELECT COUNT(*) AS n FROM sync_exclusoes WHERE uid LIKE 'padrao:%';"
+    );
+    expect(excluidosFixos?.n).toBe(0);
+    // nenhuma pendência aponta para um uid que não existe mais
+    const orfas = await db.getFirstAsync<{ n: number }>(
+      `SELECT COUNT(*) AS n FROM sync_pendencias p
+       WHERE p.tabela = 'categorias' AND NOT EXISTS (SELECT 1 FROM categorias c WHERE c.uid = p.uid);`
+    );
+    expect(orfas?.n).toBe(0);
+  });
+
+  it('o formato do backup continua o da versão 4, que o app 1.1.0 ainda importa', async () => {
+    expect(VERSAO_BACKUP).toBe(4);
+    const db = await criarBanco();
+    const backup = await backupRepo.exportarTudo(db, VERSAO_BACKUP);
+    expect(backup.versaoBanco).toBe(4);
+    expect(validarBackup(backup, 4).ok).toBe(true);
+    expect(validarBackup({ ...backup, versaoBanco: 5 }, 4).ok).toBe(false);
+  });
+
+  it('uma linha que volta com o mesmo uid deixa de constar como excluída', async () => {
+    const db = await criarBanco();
+    await db.runAsync(
+      "INSERT INTO categorias (nome, cor, icone, uid, atualizado_em) VALUES ('Pets', '#111111', 'paw', 'u-1', ?);",
+      [ANTIGA]
+    );
+    await db.runAsync("DELETE FROM categorias WHERE uid = 'u-1';");
+    const antes = await db.getFirstAsync<{ n: number }>(
+      "SELECT COUNT(*) AS n FROM sync_exclusoes WHERE uid = 'u-1';"
+    );
+    expect(antes?.n).toBe(1);
+
+    await db.runAsync(
+      "INSERT INTO categorias (nome, cor, icone, uid, atualizado_em) VALUES ('Pets', '#111111', 'paw', 'u-1', ?);",
+      [ANTIGA]
+    );
+    const depois = await db.getFirstAsync<{ n: number }>(
+      "SELECT COUNT(*) AS n FROM sync_exclusoes WHERE uid = 'u-1';"
+    );
+    expect(depois?.n).toBe(0);
   });
 });

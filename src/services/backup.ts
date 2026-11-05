@@ -1,13 +1,12 @@
 import { SQLiteDatabase } from 'expo-sqlite';
 import { backupRepo } from '@/src/db/repositorios/backupRepo';
-import { VERSAO_BANCO } from '@/src/db/migrations';
-import { nomeArquivoBackup, validarBackup } from '@/src/domain/backup';
+import { nomeArquivoBackup, validarBackup, VERSAO_BACKUP } from '@/src/domain/backup';
 import { obterHojeIso } from '@/src/store/useMesStore';
 import { entregarArquivo, escolherArquivoTexto } from '@/src/services/arquivos';
 
 /** Gera o arquivo de backup e o entrega: menu de compartilhar no celular, download na web. */
 export async function exportarBackup(db: SQLiteDatabase): Promise<void> {
-  const backup = await backupRepo.exportarTudo(db, VERSAO_BANCO);
+  const backup = await backupRepo.exportarTudo(db, VERSAO_BACKUP);
   await entregarArquivo(nomeArquivoBackup(obterHojeIso()), JSON.stringify(backup));
 }
 
@@ -34,7 +33,7 @@ export async function importarBackup(db: SQLiteDatabase): Promise<ResultadoImpor
     };
   }
 
-  const validacao = validarBackup(conteudo, VERSAO_BANCO);
+  const validacao = validarBackup(conteudo, VERSAO_BACKUP);
   if (!validacao.ok) return { status: 'erro', mensagem: validacao.erro };
 
   await backupRepo.importarTudo(db, validacao.backup);

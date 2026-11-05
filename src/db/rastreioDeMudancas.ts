@@ -43,6 +43,12 @@ function gatilhosDaTabela(t: string): string {
         ON CONFLICT (tabela, uid) DO NOTHING;
     END;
 
+    CREATE TRIGGER IF NOT EXISTS trg_${t}_reinserida AFTER INSERT ON ${t}
+    WHEN NEW.uid IS NOT NULL
+    BEGIN
+      DELETE FROM sync_exclusoes WHERE tabela = '${t}' AND uid = NEW.uid;
+    END;
+
     CREATE TRIGGER IF NOT EXISTS trg_${t}_editada AFTER UPDATE ON ${t}
     WHEN NEW.atualizado_em IS OLD.atualizado_em AND NEW.uid IS OLD.uid
     BEGIN
@@ -85,6 +91,41 @@ function gatilhosDeConfiguracoes(): string {
 }
 
 /**
+ * Categorias de fábrica e a pessoa "Eu" têm a mesma identidade em todo aparelho, para não
+ * aparecerem duplicadas quando dois aparelhos juntarem os dados. Chamada na migração e
+ * depois de importar um backup (que recria as linhas com uid novo).
+ */
+export async function atribuirUidsFixos(db: SQLiteDatabase): Promise<void> {
+  const fixos: { tabela: string; uid: string; onde: string; params: (string | number)[] }[] = [
+    ...CATEGORIAS_PADRAO.map((c) => ({
+      tabela: 'categorias',
+      uid: `padrao:categoria:${c.nome}`,
+      onde: 'id = (SELECT MIN(id) FROM categorias WHERE nome = ? AND cor = ? AND icone = ?)',
+      params: [c.nome, c.cor, c.icone],
+    })),
+    {
+      tabela: 'pessoas',
+      uid: 'padrao:pessoa:eu',
+      onde: "id = (SELECT MIN(id) FROM pessoas WHERE nome = 'Eu')",
+      params: [],
+    },
+  ];
+  for (const f of fixos) {
+    // a linha deixa de existir com o uid antigo: some a pendência dele
+    await db.runAsync(
+      `DELETE FROM sync_pendencias WHERE tabela = ? AND uid IN (SELECT uid FROM ${f.tabela} WHERE ${f.onde});`,
+      [f.tabela, ...f.params]
+    );
+    await db.runAsync(`UPDATE ${f.tabela} SET uid = ? WHERE ${f.onde};`, [f.uid, ...f.params]);
+    // esse uid existe de novo: não é mais uma exclusão
+    await db.runAsync('DELETE FROM sync_exclusoes WHERE tabela = ? AND uid = ?;', [
+      f.tabela,
+      f.uid,
+    ]);
+  }
+}
+
+/**
  * Migração 5: toda linha ganha `uid` (identidade igual em qualquer aparelho) e
  * `atualizado_em`; gatilhos marcam o que mudou e guardam o que foi excluído.
  * Assim os repositórios não precisam saber de sincronização.
@@ -116,18 +157,7 @@ export async function aplicarRastreioDeMudancas(db: SQLiteDatabase): Promise<voi
     `);
   }
 
-  // Categorias de fábrica e a pessoa "Eu": mesma identidade em todo aparelho, para não
-  // aparecerem duplicadas quando dois aparelhos juntarem os dados.
-  for (const c of CATEGORIAS_PADRAO) {
-    await db.runAsync(
-      `UPDATE categorias SET uid = ?
-       WHERE id = (SELECT MIN(id) FROM categorias WHERE nome = ? AND cor = ? AND icone = ?);`,
-      [`padrao:categoria:${c.nome}`, c.nome, c.cor, c.icone]
-    );
-  }
-  await db.runAsync(
-    "UPDATE pessoas SET uid = 'padrao:pessoa:eu' WHERE id = (SELECT MIN(id) FROM pessoas WHERE nome = 'Eu');"
-  );
+  await atribuirUidsFixos(db);
 
   for (const t of TABELAS_COM_UID) {
     await db.execAsync(`CREATE UNIQUE INDEX IF NOT EXISTS idx_${t}_uid ON ${t}(uid);`);
