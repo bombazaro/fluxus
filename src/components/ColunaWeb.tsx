@@ -1,7 +1,7 @@
 import React from 'react';
 import { Platform, StyleSheet, View } from 'react-native';
 import { useTema } from '@/src/theme';
-import { LARGURA_MAXIMA } from '@/src/domain/tamanhoDaTela';
+import { LARGURA_MAXIMA, LARGURA_MENU_LATERAL } from '@/src/domain/tamanhoDaTela';
 import { useTamanhoDaTela } from '@/src/hooks/useTamanhoDaTela';
 
 /** No celular não faz nada; na web centraliza o app numa coluna que cresce com a janela. */
@@ -14,7 +14,10 @@ export function ColunaWeb({ children }: { children: React.ReactNode }) {
       <View
         style={[
           styles.coluna,
-          { backgroundColor: colors.background, maxWidth: LARGURA_MAXIMA[tamanho] },
+          {
+            backgroundColor: colors.background,
+            maxWidth: LARGURA_MAXIMA[tamanho] + (tamanho === 'largo' ? LARGURA_MENU_LATERAL : 0),
+          },
         ]}>
         {children}
       </View>
