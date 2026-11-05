@@ -38,6 +38,7 @@ import { lembretesDisponiveis } from '@/src/services/notificacoes';
 import { pedirPermissaoComExplicacao } from '@/src/services/permissaoLembretes';
 import { ESTE_APARELHO, TEMA_DO_SISTEMA } from '@/src/utils/aparelho';
 import { avisar } from '@/src/utils/avisar';
+import { estiloFormulario } from '@/src/utils/layout';
 
 type IconeIonicons = keyof typeof Ionicons.glyphMap;
 
@@ -177,7 +178,7 @@ export default function BoasVindasScreen() {
         style={styles.container}>
         <ScrollView
           keyboardShouldPersistTaps="handled"
-          contentContainerStyle={[styles.conteudo, { padding: spacing.xl }]}>
+          contentContainerStyle={[styles.conteudo, { padding: spacing.xl }, estiloFormulario]}>
           <View
             style={[
               styles.icone,

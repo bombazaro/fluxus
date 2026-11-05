@@ -11,6 +11,7 @@ import { exportarBackup, importarBackup } from '@/src/services/backup';
 import { formatarData } from '@/src/utils/formatadores';
 import { ESTE_APARELHO, O_APARELHO } from '@/src/utils/aparelho';
 import { avisar } from '@/src/utils/avisar';
+import { estiloFormulario } from '@/src/utils/layout';
 
 export default function BackupScreen() {
   const router = useRouter();
@@ -104,7 +105,8 @@ export default function BackupScreen() {
         </Text>
       </View>
 
-      <ScrollView contentContainerStyle={{ padding: spacing.base, gap: spacing.base }}>
+      <ScrollView
+        contentContainerStyle={[{ padding: spacing.base, gap: spacing.base }, estiloFormulario]}>
         <Cartao destaque>
           <View style={styles.linha}>
             <Ionicons name="phone-portrait-outline" size={22} color={colors.warning} />

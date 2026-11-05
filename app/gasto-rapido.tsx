@@ -20,6 +20,7 @@ import { obterHojeIso, useMesStore } from '@/src/store/useMesStore';
 import { Categoria } from '@/src/types';
 import { dataBrParaIso, formatarData } from '@/src/utils/formatadores';
 import { avisar } from '@/src/utils/avisar';
+import { estiloFormulario } from '@/src/utils/layout';
 
 /** Categoria já marcada ao abrir: a de gasto do dia a dia mais comum. */
 const CATEGORIA_SUGERIDA = 'Alimentação';
@@ -104,7 +105,10 @@ export default function GastoRapidoScreen() {
         style={styles.container}>
         <ScrollView
           keyboardShouldPersistTaps="handled"
-          contentContainerStyle={{ padding: spacing.base, paddingBottom: spacing.xxl }}>
+          contentContainerStyle={[
+            { padding: spacing.base, paddingBottom: spacing.xxl },
+            estiloFormulario,
+          ]}>
           <Text
             style={{
               color: colors.textSecondary,

@@ -39,6 +39,7 @@ import { formatarData, formatarMoeda, dataBrParaIso } from '@/src/utils/formatad
 import { ModoDivisao, montarDivisao, redistribuirDivisao } from '@/src/domain/dividirConta';
 import { SeletorCategoria } from '@/src/components/contas/SeletorCategoria';
 import { avisar } from '@/src/utils/avisar';
+import { estiloFormulario } from '@/src/utils/layout';
 
 const TIPOS_CONTA: {
   tipo: TipoConta;
@@ -341,6 +342,7 @@ export default function NovaContaModal() {
           contentContainerStyle={[
             styles.scrollContent,
             { padding: spacing.base, paddingBottom: 100 },
+            estiloFormulario,
           ]}
           keyboardShouldPersistTaps="handled">
           {/* Seletor do tipo de conta */}

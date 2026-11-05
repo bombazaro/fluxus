@@ -20,6 +20,7 @@ import { preverSaldo } from '@/src/domain/preverSaldo';
 import { simularImpacto, simularParcelas, Veredito } from '@/src/domain/simularParcelas';
 import { adicionarMeses } from '@/src/domain/gerarLancamentos';
 import { formatarMesAno, formatarMoeda } from '@/src/utils/formatadores';
+import { estiloFormulario } from '@/src/utils/layout';
 
 /** Meses carregados para a previsão (cobre compras de até 24x a partir do mês atual). */
 const MESES_CARREGADOS = 36;
@@ -126,7 +127,10 @@ export default function SimuladorScreen() {
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScrollView
           keyboardShouldPersistTaps="handled"
-          contentContainerStyle={{ padding: spacing.base, paddingBottom: spacing.xxl }}>
+          contentContainerStyle={[
+            { padding: spacing.base, paddingBottom: spacing.xxl },
+            estiloFormulario,
+          ]}>
           <Text style={textoAjuda}>
             Veja se uma compra parcelada cabe nos próximos meses. Nada é salvo até você cadastrar a
             conta.

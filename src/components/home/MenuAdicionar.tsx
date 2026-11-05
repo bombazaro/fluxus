@@ -111,6 +111,8 @@ const styles = StyleSheet.create({
   },
   folha: {
     width: '100%',
+    maxWidth: 440,
+    alignSelf: 'center',
   },
   opcao: {
     flexDirection: 'row',

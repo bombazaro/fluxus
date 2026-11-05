@@ -12,6 +12,7 @@ import { useMesStore } from '@/src/store/useMesStore';
 import { ModalValorRecebido } from '@/src/components/rendas/ModalValorRecebido';
 import { formatarMesAno, formatarMoeda } from '@/src/utils/formatadores';
 import { avisar } from '@/src/utils/avisar';
+import { estiloFormulario } from '@/src/utils/layout';
 
 const TIPOS_RENDA: { tipo: TipoRenda; label: string }[] = [
   { tipo: 'fixa', label: 'Fixa (Mensal)' },
@@ -214,7 +215,8 @@ export default function RendasScreen() {
         </Pressable>
       </View>
 
-      <ScrollView contentContainerStyle={{ padding: spacing.base, paddingBottom: 60 }}>
+      <ScrollView
+        contentContainerStyle={[{ padding: spacing.base, paddingBottom: 60 }, estiloFormulario]}>
         {/* Card resumo total */}
         <Cartao style={{ marginBottom: spacing.base }}>
           <Text
@@ -591,6 +593,8 @@ const styles = StyleSheet.create({
   },
   modalCard: {
     width: '100%',
+    maxWidth: 440,
+    alignSelf: 'center',
   },
   modalHeader: {
     flexDirection: 'row',

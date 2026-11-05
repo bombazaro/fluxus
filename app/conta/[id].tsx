@@ -26,6 +26,7 @@ import { calcularMediaLancamentos, SugestaoValor } from '@/src/domain/sugerirVal
 import { SeletorCategoria } from '@/src/components/contas/SeletorCategoria';
 import { DIA_SEM_VENCIMENTO } from '@/src/domain/gerarLancamentos';
 import { avisar } from '@/src/utils/avisar';
+import { estiloFormulario } from '@/src/utils/layout';
 
 export default function DetalheContaScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -328,7 +329,11 @@ export default function DetalheContaScreen() {
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         style={{ flex: 1 }}>
         <ScrollView
-          contentContainerStyle={[styles.content, { padding: spacing.base, paddingBottom: 60 }]}
+          contentContainerStyle={[
+            styles.content,
+            { padding: spacing.base, paddingBottom: 60 },
+            estiloFormulario,
+          ]}
           keyboardShouldPersistTaps="handled">
           {/* Card Principal */}
           <Cartao style={{ marginBottom: spacing.base }}>

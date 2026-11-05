@@ -12,6 +12,7 @@ import { ehCategoriaPadrao, NOME_CATEGORIA_MAXIMO, NOME_OUTROS } from '@/src/dom
 import { useMesStore } from '@/src/store/useMesStore';
 import { Categoria } from '@/src/types';
 import { avisar } from '@/src/utils/avisar';
+import { estiloFormulario } from '@/src/utils/layout';
 
 /** Categoria sendo excluída e quantas contas usam ela. */
 interface Exclusao {
@@ -158,7 +159,10 @@ export default function CategoriasScreen() {
 
       <ScrollView
         keyboardShouldPersistTaps="handled"
-        contentContainerStyle={{ padding: spacing.base, paddingBottom: spacing.xxl }}>
+        contentContainerStyle={[
+          { padding: spacing.base, paddingBottom: spacing.xxl },
+          estiloFormulario,
+        ]}>
         <Cartao>
           <CampoTexto
             rotulo={editandoId !== null ? 'Novo nome' : 'Nova categoria'}
@@ -217,6 +221,9 @@ export default function CategoriasScreen() {
               backgroundColor: colors.surface,
               borderRadius: radii.card,
               padding: spacing.base,
+              width: '100%',
+              maxWidth: 440,
+              alignSelf: 'center',
             }}>
             <Text
               style={{

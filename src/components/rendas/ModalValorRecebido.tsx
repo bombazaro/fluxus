@@ -71,6 +71,8 @@ const styles = StyleSheet.create({
   },
   card: {
     width: '100%',
+    maxWidth: 440,
+    alignSelf: 'center',
   },
   titulo: {
     fontSize: 18,

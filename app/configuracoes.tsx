@@ -28,6 +28,7 @@ import { EscolhaQuandoRecebe } from '@/src/components/config/EscolhaQuandoRecebe
 import { ESTE_APARELHO, TEMA_DO_SISTEMA } from '@/src/utils/aparelho';
 import { lembretesDisponiveis } from '@/src/services/notificacoes';
 import { pedirPermissaoComExplicacao } from '@/src/services/permissaoLembretes';
+import { estiloFormulario } from '@/src/utils/layout';
 
 const ESPERA_SALVAR_NOME_MS = 600;
 
@@ -105,7 +106,11 @@ export default function ConfiguracoesScreen() {
       style={[styles.container, { backgroundColor: colors.background }]}>
       <CabecalhoTela titulo="Configurações" />
 
-      <ScrollView contentContainerStyle={{ padding: spacing.base, paddingBottom: spacing.xxl }}>
+      <ScrollView
+        contentContainerStyle={[
+          { padding: spacing.base, paddingBottom: spacing.xxl },
+          estiloFormulario,
+        ]}>
         <TituloSecao style={{ marginTop: 0 }}>Você</TituloSecao>
         <Cartao>
           <CampoTexto

@@ -10,6 +10,7 @@ import { pessoasRepo } from '@/src/db/repositorios/pessoasRepo';
 import { useMesStore } from '@/src/store/useMesStore';
 import { Pessoa } from '@/src/types';
 import { avisar } from '@/src/utils/avisar';
+import { estiloFormulario } from '@/src/utils/layout';
 
 /** Pessoas com quem as contas são divididas. "Eu" é fixo. */
 export default function PessoasScreen() {
@@ -78,7 +79,10 @@ export default function PessoasScreen() {
 
       <ScrollView
         keyboardShouldPersistTaps="handled"
-        contentContainerStyle={{ padding: spacing.base, paddingBottom: spacing.xxl }}>
+        contentContainerStyle={[
+          { padding: spacing.base, paddingBottom: spacing.xxl },
+          estiloFormulario,
+        ]}>
         <Text
           style={{
             color: colors.textSecondary,

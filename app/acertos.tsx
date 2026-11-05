@@ -11,6 +11,7 @@ import { AcertoPessoa, agruparAcertos, textoAcerto } from '@/src/domain/acertos'
 import { obterMesAtualIso } from '@/src/store/useMesStore';
 import { formatarMesAnoAbrev, formatarMoeda } from '@/src/utils/formatadores';
 import { avisar } from '@/src/utils/avisar';
+import { estiloFormulario } from '@/src/utils/layout';
 
 /** Quanto cada pessoa deve das contas divididas, até o mês atual. */
 export default function AcertosScreen() {
@@ -72,7 +73,11 @@ export default function AcertosScreen() {
           subtitulo="Ninguém deve nada das contas divididas. Para dividir uma conta, marque 'Conta compartilhada' ao cadastrá-la."
         />
       ) : (
-        <ScrollView contentContainerStyle={{ padding: spacing.base, paddingBottom: spacing.xxl }}>
+        <ScrollView
+          contentContainerStyle={[
+            { padding: spacing.base, paddingBottom: spacing.xxl },
+            estiloFormulario,
+          ]}>
           <Text style={textoAjuda}>
             Partes das contas divididas que cada pessoa ainda não te pagou, até este mês. Toque no ✓
             quando a pessoa acertar.

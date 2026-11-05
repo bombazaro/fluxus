@@ -29,6 +29,7 @@ import {
   formatarMoeda,
 } from '@/src/utils/formatadores';
 import { avisar } from '@/src/utils/avisar';
+import { estiloFormulario } from '@/src/utils/layout';
 
 type TipoMeta = 'fixo' | 'meses_gastos';
 type Movimento = 'aporte' | 'retirada';
@@ -179,7 +180,11 @@ export default function ReservaScreen() {
       style={[styles.container, { backgroundColor: colors.background }]}>
       <CabecalhoTela titulo="Reserva de emergência" />
 
-      <ScrollView contentContainerStyle={{ padding: spacing.base, paddingBottom: spacing.xxl }}>
+      <ScrollView
+        contentContainerStyle={[
+          { padding: spacing.base, paddingBottom: spacing.xxl },
+          estiloFormulario,
+        ]}>
         <Cartao style={{ alignItems: 'center' }}>
           <Animated.View style={{ transform: [{ scale: escala }] }}>
             <AnelProgresso
