@@ -16,6 +16,7 @@ import { Inicializacao } from '@/src/components/Inicializacao';
 import { textosDoErroDeAbertura } from '@/src/domain/erroAbertura';
 import { ColunaWeb } from '@/src/components/ColunaWeb';
 import { Dialogo } from '@/src/components/ui/Dialogo';
+import { Sincronizador } from '@/src/components/Sincronizador';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -78,6 +79,7 @@ export default function RootLayout() {
     <ColunaWeb>
       <SQLiteProvider databaseName="fluxus.db" onInit={executarMigracoes}>
         <Inicializacao />
+        <Sincronizador />
         <Stack>
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
           <Stack.Screen
