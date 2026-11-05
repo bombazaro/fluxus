@@ -228,7 +228,7 @@ Só `pessoasRepo` passou a listar `id, nome` em vez de `SELECT *`, para não vaz
 
 ## Fase 2 — Servidor (Supabase)
 
-### Tarefa 2.1: Projeto, tabela e regras de acesso — arquivos prontos, falta aplicar
+### Tarefa 2.1: Projeto, tabela e regras de acesso — **feita**
 
 **Files:** `supabase/schema.sql`, `supabase/teste_isolamento.sql`, `supabase/README.md`, `.env.example`.
 
@@ -241,7 +241,7 @@ Só `pessoasRepo` passou a listar `id, nome` em vez de `SELECT *`, para não vaz
 - `excluir_meus_dados() returns integer`.
 
 - [x] **Passo 1:** projeto criado pelo usuário (`skccrxynthlvdeuaomch`, São Paulo, plano grátis).
-- [ ] **Passo 2:** o usuário cola `schema.sql` e depois `teste_isolamento.sql` no SQL Editor; o esperado é a mensagem `OK: todas as verificações passaram`.
+- [x] **Passo 2:** o usuário aplicou `schema.sql` e `teste_isolamento.sql` (resultado `OK`). Conferido também de fora, com a chave pública e sem login: ler e gravar a tabela e chamar as duas funções retornam `permission denied`.
 - [ ] **Passo 3:** Auth por e-mail (código) e URLs de redirecionamento (`https://fluxus-financas.netlify.app`); Google fica para depois.
 - [x] **Passo 4:** commit `feat(sync): schema do servidor`.
 
