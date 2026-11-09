@@ -11,11 +11,11 @@ Só uma aba por vez pode usar os dados; a segunda mostra um aviso.
 
 O layout muda com a largura da janela (só na web; o app do celular não muda):
 
-| Tamanho | Largura | Como fica |
-|---|---|---|
-| Compacto | abaixo de 600 px | Abas embaixo, igual ao celular. |
-| Médio (tablet) | 600 a 1023 px | Abas embaixo, conteúdo centralizado de até 720 px. |
-| Largo (desktop) | 1024 px ou mais | Menu lateral, Início e Contas em duas colunas. |
+| Tamanho         | Largura          | Como fica                                          |
+| --------------- | ---------------- | -------------------------------------------------- |
+| Compacto        | abaixo de 600 px | Abas embaixo, igual ao celular.                    |
+| Médio (tablet)  | 600 a 1023 px    | Abas embaixo, conteúdo centralizado de até 720 px. |
+| Largo (desktop) | 1024 px ou mais  | Menu lateral, Início e Contas em duas colunas.     |
 
 Formulários e configurações ficam em 560 px de largura, e as janelas em 440 px.
 As regras estão em `src/domain/tamanhoDaTela.ts` e `src/utils/layout.ts`.
@@ -32,7 +32,14 @@ npx expo export -p web    # gera a pasta dist/ (site estático)
 1. No Netlify, escolha "Add new site" › "Import an existing project" e ligue o repositório
    `bombazaro/fluxus`.
 2. O `netlify.toml` já define o build (`npx expo export -p web`) e a pasta de saída (`dist`).
-3. Pronto: `public/_headers` e `public/_redirects` são copiados para `dist/` e o Netlify os lê.
+3. Para a conta funcionar no site, em **Site configuration › Environment variables** crie duas
+   variáveis (as mesmas do `.env` local; veja `.env.example`):
+   - `EXPO_PUBLIC_SUPABASE_URL`: em Supabase › Project Settings › API (ou o botão Connect), "Project URL".
+   - `EXPO_PUBLIC_SUPABASE_KEY`: na mesma página, a chave **publishable** (`sb_publishable_...`).
+     Nunca use a `service_role`/secret nem a senha do banco.
+     Depois refaça o deploy (Deploys › Trigger deploy › Clear cache and deploy site): essas variáveis
+     entram no site na hora do build.
+4. Pronto: `public/_headers` e `public/_redirects` são copiados para `dist/` e o Netlify os lê.
 
 Os cabeçalhos são obrigatórios. Sem eles o SQLite do navegador não abre:
 

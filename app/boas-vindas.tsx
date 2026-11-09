@@ -231,9 +231,10 @@ export default function BoasVindasScreen() {
                   <Ionicons name="lock-closed-outline" size={22} color={colors.warning} />
                   <Text
                     style={[textoAjuda, { flex: 1, marginLeft: spacing.sm, color: colors.text }]}>
-                    Sem conta, sem internet: seus dados ficam só {NESTE_APARELHO}. Se desinstalar o
-                    app ou limpar o navegador, eles serão perdidos. Faça backup de vez em quando em
-                    Mais › Backup dos dados.
+                    Sem conta e sem internet: seus dados ficam {NESTE_APARELHO}. Se desinstalar o
+                    app ou limpar o navegador, eles serão perdidos, a não ser que você faça backup
+                    (Mais › Backup dos dados) ou entre numa conta (Mais › Conta e sincronização),
+                    que também deixa os mesmos dados no celular e no navegador.
                   </Text>
                 </View>
               </Cartao>

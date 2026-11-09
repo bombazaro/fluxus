@@ -72,13 +72,23 @@ O Fluxus não está na Play Store: ele é instalado pelo arquivo APK. Funciona e
 >
 > - Prefira mandar o **link** da página acima em vez do arquivo pelo WhatsApp: às vezes ele renomeia ou bloqueia arquivos `.apk`.
 > - **Para atualizar**, baixe o APK da versão nova e instale por cima. Os dados continuam no app.
-> - Os dados ficam só no celular. Antes de trocar de celular ou desinstalar, faça um backup em **Mais › Backup dos dados**.
+> - Os dados ficam no celular. Antes de trocar de celular ou desinstalar, faça um backup em **Mais › Backup dos dados** ou entre na conta (veja abaixo).
 
 ## Versão web
 
-O app também roda no navegador (`npx expo start --web`). Os dados ficam no próprio navegador, sem
-ligação com o celular, e não há lembretes de vencimento. Backup e restauração funcionam por
-download e envio de arquivo. Como publicar: [docs/web.md](docs/web.md).
+O app também roda no navegador (`npx expo start --web`). Os dados ficam no próprio navegador e não
+há lembretes de vencimento. Backup e restauração funcionam por download e envio de arquivo. Como
+publicar: [docs/web.md](docs/web.md).
+
+## Conta e sincronização (opcional)
+
+Em **Mais › Conta e sincronização** dá para entrar com o e-mail (código de uso único) e usar os
+mesmos dados no celular e no navegador. O app continua funcionando offline; as mudanças sobem e
+descem quando há internet, e a edição mais recente vence. Ao ligar um aparelho, o app salva um
+backup e junta os dados dele com os da conta, sem apagar nada. É possível sair e apagar tudo o que
+está na nuvem. O que vai para a nuvem e como funciona o servidor: [docs/privacidade.md](docs/privacidade.md)
+e [supabase/README.md](supabase/README.md). Para ativar a conta num build, defina
+`EXPO_PUBLIC_SUPABASE_URL` e `EXPO_PUBLIC_SUPABASE_KEY` (veja `.env.example`).
 
 ## Stack
 

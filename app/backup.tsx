@@ -111,9 +111,10 @@ export default function BackupScreen() {
           <View style={styles.linha}>
             <Ionicons name="phone-portrait-outline" size={22} color={colors.warning} />
             <Text style={[textoCorpo, { flex: 1, marginLeft: spacing.sm }]}>
-              Seus dados ficam só {NESTE_APARELHO}. Se desinstalar o app, limpar os dados do
-              navegador ou trocar de aparelho, eles são perdidos. Exporte um backup de vez em quando
-              e guarde fora {DO_APARELHO}.
+              Seus dados ficam {NESTE_APARELHO}. Se desinstalar o app, limpar os dados do navegador
+              ou trocar de aparelho, eles são perdidos. Exporte um backup de vez em quando e guarde
+              fora {DO_APARELHO}. Quem usa a conta (Mais › Conta e sincronização) também tem uma
+              cópia na nuvem, mas o backup continua valendo como segurança extra.
             </Text>
           </View>
         </Cartao>
