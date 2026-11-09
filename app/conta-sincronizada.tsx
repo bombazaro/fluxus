@@ -240,6 +240,11 @@ export default function ContaSincronizadaScreen() {
                 Entre com seu e-mail para usar os mesmos dados no celular e no navegador. O app
                 continua funcionando sem internet; a conta só guarda uma cópia e mantém tudo igual.
               </Text>
+              <Text style={[texto, { marginBottom: spacing.base }]}>
+                O que vai para a nuvem: suas contas, rendas, valores, categorias, pessoas e
+                configurações, para poder sincronizar. Não pedimos nem guardamos dados bancários. Só
+                você lê esses dados, e pode apagá-los da nuvem quando quiser.
+              </Text>
               <Cartao>
                 <CampoTexto
                   rotulo="E-mail"

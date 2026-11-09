@@ -246,8 +246,9 @@ export default function ConfiguracoesScreen() {
           <View style={styles.linhaDados}>
             <Ionicons name="phone-portrait-outline" size={22} color={colors.warning} />
             <Text style={[textoAjuda, { flex: 1, marginLeft: spacing.sm, color: colors.text }]}>
-              Seus dados ficam só {NESTE_APARELHO}. Se desinstalar o app ou limpar o navegador, eles
-              serão perdidos. Faça backup de vez em quando em Mais › Backup dos dados.
+              Seus dados ficam {NESTE_APARELHO}. Se desinstalar o app ou limpar o navegador, eles
+              serão perdidos. Faça backup de vez em quando em Mais › Backup dos dados ou use a conta
+              em Mais › Conta e sincronização.
             </Text>
           </View>
         </Cartao>
