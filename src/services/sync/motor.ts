@@ -33,11 +33,13 @@ const RODADAS_ATE_DESISTIR = 3;
 const TOLERANCIA_RELOGIO_MS = 60_000;
 
 /** Colunas que juntas identificam uma linha que os aparelhos podem criar cada um por si. */
-const CHAVE_NATURAL: Partial<Record<TabelaSync, [string, string]>> = {
+const CHAVE_NATURAL: Partial<Record<TabelaSync, string[]>> = {
   lancamentos: ['conta_id', 'mes_ref'],
   lancamentos_ignorados: ['conta_id', 'mes_ref'],
   rendas_recebidas: ['renda_id', 'mes_ref'],
   divisoes: ['lancamento_id', 'pessoa_id'],
+  // tabela de uma linha só (o app lê a primeira): sem colunas, qualquer outra linha colide
+  reserva_meta: [],
 };
 
 type Linha = Record<string, Valor>;
@@ -285,7 +287,7 @@ async function gravar(
   return true;
 }
 
-/** Outra linha, com uid diferente, que representa o mesmo mês da mesma conta/renda. */
+/** Outra linha, com uid diferente, que representa a mesma coisa (mesmo mês da mesma conta, etc.). */
 async function acharColisao(
   db: SQLiteDatabase,
   def: DefinicaoTabela,
@@ -294,10 +296,11 @@ async function acharColisao(
 ): Promise<Linha | null> {
   const chave = CHAVE_NATURAL[def.tabela];
   if (!chave) return null;
-  return db.getFirstAsync<Linha>(
-    `SELECT * FROM ${def.tabela} WHERE ${chave[0]} = ? AND ${chave[1]} = ? AND uid <> ?;`,
-    [valores[chave[0]], valores[chave[1]], uid]
-  );
+  const condicoes = [...chave.map((c) => `${c} = ?`), 'uid <> ?'].join(' AND ');
+  return db.getFirstAsync<Linha>(`SELECT * FROM ${def.tabela} WHERE ${condicoes};`, [
+    ...chave.map((c) => valores[c]),
+    uid,
+  ]);
 }
 
 async function aplicarVivo(
