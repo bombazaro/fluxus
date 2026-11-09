@@ -414,6 +414,41 @@ describe('sincronizar', () => {
   });
 });
 
+describe('meta da reserva (uma só por conta)', () => {
+  const meta = (db: SQLiteDatabase) =>
+    db.getAllAsync<{ valor_meta_centavos: number; uid: string }>(
+      'SELECT valor_meta_centavos, uid FROM reserva_meta ORDER BY id;'
+    );
+
+  it('metas criadas nos dois aparelhos antes de sincronizar viram uma só, igual nos dois', async () => {
+    const [a, b] = [await criarBanco(), await criarBanco()];
+    const { rede } = criarRedeFalsa();
+    await a.runAsync('INSERT INTO reserva_meta (valor_meta_centavos) VALUES (100000);');
+    await passar();
+    await b.runAsync('INSERT INTO reserva_meta (valor_meta_centavos) VALUES (250000);');
+    await acalmar(a, b, rede);
+    await acalmar(a, b, rede);
+    const [ma, mb] = [await meta(a), await meta(b)];
+    expect(ma).toHaveLength(1);
+    expect(mb).toHaveLength(1);
+    expect(ma[0]).toEqual(mb[0]);
+    expect(await pendencias(a)).toBe(0);
+    expect(await pendencias(b)).toBe(0);
+  });
+
+  it('com a meta já sincronizada, editar num aparelho continua valendo no outro', async () => {
+    const [a, b] = [await criarBanco(), await criarBanco()];
+    const { rede } = criarRedeFalsa();
+    await a.runAsync('INSERT INTO reserva_meta (valor_meta_centavos) VALUES (100000);');
+    await acalmar(a, b, rede);
+    await passar();
+    await b.runAsync('UPDATE reserva_meta SET valor_meta_centavos = 300000;');
+    await acalmar(a, b, rede);
+    expect((await meta(a))[0].valor_meta_centavos).toBe(300000);
+    expect(await meta(a)).toHaveLength(1);
+  });
+});
+
 describe('lerInstante', () => {
   it.each([
     ['2026-11-05T10:00:00.123Z', '2026-11-05T10:00:00.123Z'],
