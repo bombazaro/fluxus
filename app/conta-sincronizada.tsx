@@ -6,7 +6,12 @@ import { useTema } from '@/src/theme';
 import { Botao, CabecalhoTela, CampoTexto, Cartao } from '@/src/components/ui';
 import { confirmarCodigo, entrarComEmail, sair, validarEmail } from '@/src/services/conta';
 import { exportarBackup } from '@/src/services/backup';
-import { apagarDadosDaNuvem, ErroOutraConta, ligarConta } from '@/src/services/sync/ligacao';
+import {
+  apagarDadosDaNuvem,
+  ErroOutraConta,
+  ligarConta,
+  temDadosParaProteger,
+} from '@/src/services/sync/ligacao';
 import { sincronizar } from '@/src/services/sync/motor';
 import {
   contaDisponivel,
@@ -87,7 +92,8 @@ export default function ContaSincronizadaScreen() {
         "SELECT valor FROM sync_estado WHERE chave = 'usuario_id';"
       );
       const novaRede = criarRedeSupabase(cliente);
-      if (!jaLigado) {
+      // com o aparelho vazio não há o que proteger: entra direto, sem backup
+      if (!jaLigado && (await temDadosParaProteger(db))) {
         const seguir = await confirmar(
           'Ligar este aparelho à conta',
           'Vamos salvar uma cópia de segurança dos seus dados atuais e depois juntá-los com o que já estiver na conta. Nada será apagado.',

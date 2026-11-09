@@ -73,3 +73,19 @@ export async function apagarDadosDaNuvem(
     DELETE FROM sync_exclusoes;
   `);
 }
+
+/**
+ * Há algo criado pela pessoa neste aparelho (além do que o app traz de fábrica)? Se não,
+ * ligar a conta não arrisca nada e dispensa o backup de segurança.
+ */
+export async function temDadosParaProteger(db: SQLiteDatabase): Promise<boolean> {
+  const l = await db.getFirstAsync<{ tem: number }>(
+    `SELECT (
+       EXISTS (SELECT 1 FROM contas) OR EXISTS (SELECT 1 FROM rendas)
+       OR EXISTS (SELECT 1 FROM reserva_meta) OR EXISTS (SELECT 1 FROM reserva_aportes)
+       OR EXISTS (SELECT 1 FROM pessoas WHERE uid <> 'padrao:pessoa:eu')
+       OR EXISTS (SELECT 1 FROM categorias WHERE uid NOT LIKE 'padrao:categoria:%')
+     ) AS tem;`
+  );
+  return l?.tem === 1;
+}
