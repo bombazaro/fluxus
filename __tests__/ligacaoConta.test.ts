@@ -1,5 +1,10 @@
 import { SQLiteDatabase } from 'expo-sqlite';
-import { apagarDadosDaNuvem, ErroOutraConta, ligarConta } from '../src/services/sync/ligacao';
+import {
+  apagarDadosDaNuvem,
+  ErroOutraConta,
+  ligarConta,
+  temDadosParaProteger,
+} from '../src/services/sync/ligacao';
 import { sincronizar } from '../src/services/sync/motor';
 import { criarRedeFalsa } from '../src/services/sync/rede.fake';
 import { criarBanco } from './helpers/bancoEmMemoria';
@@ -109,5 +114,34 @@ describe('ligarConta', () => {
     const rpc = jest.fn().mockResolvedValue({ error: { message: 'x' } });
     await expect(apagarDadosDaNuvem(a, { rpc })).rejects.toThrow(/apagar/);
     expect(await n(a, "SELECT COUNT(*) AS n FROM sync_estado WHERE chave = 'usuario_id';")).toBe(1);
+  });
+
+  it('aparelho recém-aberto, só com o que vem de fábrica, não tem o que proteger', async () => {
+    expect(await temDadosParaProteger(await criarBanco())).toBe(false);
+  });
+
+  it.each([
+    [
+      'uma conta',
+      "INSERT INTO contas (nome, categoria_id, tipo, valor_centavos, data_inicio, criado_em) VALUES ('Luz', 1, 'unica', 100, '2026-01-01', '2026-01-01T00:00:00.000Z');",
+    ],
+    [
+      'uma renda',
+      "INSERT INTO rendas (nome, valor_centavos, dia_recebimento, criado_em) VALUES ('Salário', 100, 5, '2026-01-01T00:00:00.000Z');",
+    ],
+    [
+      'um aporte na reserva',
+      "INSERT INTO reserva_aportes (valor_centavos, data) VALUES (100, '2026-01-01');",
+    ],
+    ['uma meta de reserva', 'INSERT INTO reserva_meta (valor_meta_centavos) VALUES (100);'],
+    ['uma pessoa nova', "INSERT INTO pessoas (nome) VALUES ('Ana');"],
+    [
+      'uma categoria própria',
+      "INSERT INTO categorias (nome, cor, icone) VALUES ('Pets', '#000000', 'paw');",
+    ],
+  ])('com %s há o que proteger', async (_nome, sql) => {
+    const a = await criarBanco();
+    await a.runAsync(sql);
+    expect(await temDadosParaProteger(a)).toBe(true);
   });
 });
