@@ -33,3 +33,24 @@ Projeto: `https://skccrxynthlvdeuaomch.supabase.co` (região São Paulo, plano g
 - Só a **URL** e a **chave pública** (`sb_publishable_...`) entram no app. Ficam em `.env`
   (veja `.env.example`) e nas variáveis de ambiente do Netlify.
 - A chave **secret / service_role** e a senha do banco nunca entram no repositório nem no app.
+
+## IA no cadastro (função `ia`)
+
+Ajuda a cadastrar gastos: sugere a categoria pelo nome e interpreta frases ("paguei 150 de mercado
+ontem"). A IA nunca salva: só devolve um JSON que o app confere e usa para preencher o formulário.
+
+1. **Chave do Google (uma vez):** em aistudio.google.com › Get API key, crie uma chave (sem
+   cartão). Em Supabase › Edge Functions › Secrets, crie `GEMINI_API_KEY` com ela. Opcionais:
+   `GEMINI_MODELO` (padrão em `provedor.ts`) e `IA_LIMITE_DIARIO` (padrão 50 usos por pessoa/dia).
+   A chave nunca entra no app nem no repositório.
+2. **SQL:** rode `schema.sql` de novo (cria `ia_uso` e `registrar_uso_ia`) e `teste_isolamento.sql`
+   (deve terminar com `OK: ...`).
+3. **Publicar a função:** Supabase › Edge Functions › Deploy a new function › nome `ia`; cole os
+   três arquivos de `functions/ia/` (`index.ts`, `logica.ts`, `provedor.ts`) ou use a CLI:
+   `supabase functions deploy ia --project-ref skccrxynthlvdeuaomch`. Deixe **Verify JWT** ligado:
+   só quem está logado chama.
+
+Como funciona: o app manda `{tarefa, texto, categorias, hoje}` com o login da pessoa; a função
+confere o login, conta o uso (`registrar_uso_ia`, que filtra por `auth.uid()`, sem `service_role`),
+pede ao provedor um JSON no formato do esquema e devolve só campos conhecidos e categorias da
+lista. O texto digitado não é guardado. Trocar de provedor é mexer só em `provedor.ts`.

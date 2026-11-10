@@ -135,6 +135,7 @@ export default function RootLayout() {
           <Stack.Screen name="pessoas" options={{ headerShown: false }} />
           <Stack.Screen name="acertos" options={{ headerShown: false }} />
           <Stack.Screen name="gasto-rapido" options={{ headerShown: false }} />
+          <Stack.Screen name="texto-livre" options={{ headerShown: false }} />
           <Stack.Screen name="categorias" options={{ headerShown: false }} />
           <Stack.Screen
             name="boas-vindas"

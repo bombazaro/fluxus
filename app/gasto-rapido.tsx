@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useTema } from '@/src/theme';
 import {
@@ -13,6 +13,9 @@ import {
   Cartao,
 } from '@/src/components/ui';
 import { SeletorCategoria } from '@/src/components/contas/SeletorCategoria';
+import { FaixaIa } from '@/src/components/ia/FaixaIa';
+import { SugestaoCategoria } from '@/src/components/ia/SugestaoCategoria';
+import { useSugestaoDeCategoria } from '@/src/hooks/useIa';
 import { categoriasRepo } from '@/src/db/repositorios/categoriasRepo';
 import { contasRepo } from '@/src/db/repositorios/contasRepo';
 import { montarGastoRapido } from '@/src/domain/gastoRapido';
@@ -31,26 +34,54 @@ export default function GastoRapidoScreen() {
   const db = useSQLiteContext();
   const { colors, typography, spacing } = useTema();
   const carregarMes = useMesStore((s) => s.carregarMes);
+  // A tela de texto livre (IA) abre este formulário já preenchido
+  const preenchido = useLocalSearchParams<{
+    valor?: string;
+    descricao?: string;
+    data?: string;
+    categoria?: string;
+    ia?: string;
+    aviso?: string;
+  }>();
 
-  const [valorCentavos, setValorCentavos] = useState(0);
-  const [descricao, setDescricao] = useState('');
+  const [valorCentavos, setValorCentavos] = useState(() => {
+    const valor = Number(preenchido.valor);
+    return Number.isInteger(valor) && valor > 0 ? valor : 0;
+  });
+  const [descricao, setDescricao] = useState(preenchido.descricao ?? '');
   const [categorias, setCategorias] = useState<Categoria[]>([]);
   const [categoriaId, setCategoriaId] = useState<number | null>(null);
   const [categoriaPendente, setCategoriaPendente] = useState('');
-  const [data, setData] = useState(() => formatarData(obterHojeIso()));
+  const [data, setData] = useState(() =>
+    formatarData(
+      preenchido.data && /^\d{4}-\d{2}-\d{2}$/.test(preenchido.data)
+        ? preenchido.data
+        : obterHojeIso()
+    )
+  );
   const [salvando, setSalvando] = useState(false);
+  const sugestaoId = useSugestaoDeCategoria(preenchido.ia ? '' : descricao, categorias);
+  const sugestao =
+    sugestaoId !== null && sugestaoId !== categoriaId
+      ? categorias.find((c) => c.id === sugestaoId)
+      : undefined;
 
   useEffect(() => {
     categoriasRepo
       .listarTodas(db)
       .then((lista) => {
         setCategorias(lista);
+        const pedida = lista.find((c) => c.id === Number(preenchido.categoria));
         setCategoriaId(
           (atual) =>
-            atual ?? (lista.find((c) => c.nome === CATEGORIA_SUGERIDA) ?? lista[0])?.id ?? null
+            atual ??
+            pedida?.id ??
+            (lista.find((c) => c.nome === CATEGORIA_SUGERIDA) ?? lista[0])?.id ??
+            null
         );
       })
       .catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [db]);
 
   const criarCategoria = async (nome: string): Promise<string | null> => {
@@ -109,6 +140,7 @@ export default function GastoRapidoScreen() {
             { padding: spacing.base, paddingBottom: spacing.xxl },
             estiloFormulario,
           ]}>
+          {preenchido.ia ? <FaixaIa aviso={preenchido.aviso} /> : null}
           <Text
             style={{
               color: colors.textSecondary,
@@ -161,6 +193,12 @@ export default function GastoRapidoScreen() {
             onCriarCategoria={criarCategoria}
             onNomePendente={setCategoriaPendente}
           />
+          {sugestao ? (
+            <SugestaoCategoria
+              nomeDaCategoria={sugestao.nome}
+              onUsar={() => setCategoriaId(sugestao.id)}
+            />
+          ) : null}
 
           <View style={{ marginTop: spacing.xl }}>
             <Botao

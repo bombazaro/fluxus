@@ -9,7 +9,7 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useFocusEffect, useRouter } from 'expo-router';
+import { Href, useFocusEffect, useRouter } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { Ionicons } from '@expo/vector-icons';
 import { useTema } from '@/src/theme';
@@ -449,6 +449,7 @@ export default function ContasScreen() {
         onFechar={() => setMenuAberto(false)}
         onGastoRapido={() => router.push('/gasto-rapido')}
         onNovaConta={() => router.push('/conta/nova')}
+        onTextoLivre={() => router.push('/texto-livre' as Href)}
       />
     </SafeAreaView>
   );
