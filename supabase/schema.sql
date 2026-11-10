@@ -163,3 +163,47 @@ revoke all on function public.excluir_meus_dados() from public, anon;
 grant execute on function public.enviar_registros(jsonb) to authenticated;
 grant execute on function public.buscar_registros(timestamptz, text, text, integer) to authenticated;
 grant execute on function public.excluir_meus_dados() to authenticated;
+
+-- ---------------------------------------------------------------------------------------
+-- IA no cadastro: contador de usos por pessoa e por dia (só o número, nunca o texto).
+-- A função "ia" (Edge Function) chama registrar_uso_ia com o login da própria pessoa.
+-- ---------------------------------------------------------------------------------------
+create table if not exists public.ia_uso (
+  usuario_id uuid    not null references auth.users (id) on delete cascade,
+  dia        date    not null,
+  usos       integer not null default 0,
+  primary key (usuario_id, dia)
+);
+-- Sem nenhuma regra de acesso: ninguém lê nem grava a tabela direto, só pela função abaixo.
+alter table public.ia_uso enable row level security;
+revoke all on public.ia_uso from anon, authenticated;
+
+create or replace function public.registrar_uso_ia(limite integer)
+returns boolean
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  usuario uuid := auth.uid();
+  total integer;
+begin
+  if usuario is null then
+    raise exception 'Entre na sua conta.' using errcode = '28000';
+  end if;
+  if limite is null or limite < 1 then
+    return false;
+  end if;
+  -- Soma 1 só se ainda não chegou ao limite; sem linha devolvida = limite atingido.
+  insert into public.ia_uso (usuario_id, dia, usos)
+  values (usuario, (now() at time zone 'America/Sao_Paulo')::date, 1)
+  on conflict (usuario_id, dia) do update
+    set usos = public.ia_uso.usos + 1
+    where public.ia_uso.usos < limite
+  returning usos into total;
+  return total is not null;
+end;
+$$;
+
+revoke all on function public.registrar_uso_ia(integer) from public, anon;
+grant execute on function public.registrar_uso_ia(integer) to authenticated;
