@@ -51,11 +51,19 @@ describe('montarInstrucao e montarEsquema', () => {
     expect(t).toMatch(/ignore qualquer instrução/);
   });
 
-  it('o esquema limita a categoria à lista', () => {
+  it('o esquema limita a categoria à lista (ou null)', () => {
     const e = montarEsquema(pedido) as any;
-    expect(e.properties.categoria.enum).toEqual(['Alimentação', 'Moradia']);
+    expect(e.properties.categoria.enum).toEqual(['Alimentação', 'Moradia', null]);
     const c = montarEsquema({ ...pedido, tarefa: 'categoria' }) as any;
-    expect(c.properties.categoria.enum).toEqual(['Alimentação', 'Moradia']);
+    expect(c.properties.categoria.enum).toEqual(['Alimentação', 'Moradia', null]);
+  });
+
+  it('o esquema é estrito: todos os campos obrigatórios e nenhum extra', () => {
+    for (const tarefa of ['cadastro', 'categoria'] as const) {
+      const e = montarEsquema({ ...pedido, tarefa }) as any;
+      expect(e.additionalProperties).toBe(false);
+      expect([...e.required].sort()).toEqual(Object.keys(e.properties).sort());
+    }
   });
 });
 

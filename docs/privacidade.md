@@ -21,14 +21,14 @@ logado. O desenvolvedor tem acesso técnico ao painel do projeto, mas não usa o
 
 Quando você usa a sugestão de categoria ou o cadastro por texto livre, o **texto que você digita**
 (nome do gasto ou a frase) e os **nomes das suas categorias** são enviados, pela função do
-Fluxus no Supabase, ao Google (Gemini) apenas para gerar a resposta. O Fluxus **não guarda** esse
-texto: guarda só um contador de usos por dia (limite de 50). Nenhum valor, conta ou data já
-salvos é enviado.
+Fluxus no Supabase, à Groq (empresa de IA, servidores nos EUA) apenas para gerar a resposta. O
+Fluxus **não guarda** esse texto: guarda só um contador de usos por dia (limite de 50). Nenhum
+valor, conta ou data já salvos é enviado.
 
-No plano gratuito da API do Google, o conteúdo enviado **pode ser usado para melhorar os produtos
-do Google**. Por isso, não escreva dados pessoais sensíveis nesses campos. A IA nunca salva nada
-sozinha: ela só preenche o formulário, e você confere e salva. Sem conta ou sem internet, o
-cadastro manual continua igual.
+Segundo a Groq, por padrão ela não retém os dados de inferência; registros de confiabilidade e
+abuso podem ficar até 30 dias. Mesmo assim, não escreva dados pessoais sensíveis nesses campos. A
+IA nunca salva nada sozinha: ela só preenche o formulário, e você confere e salva. Sem conta ou
+sem internet, o cadastro manual continua igual.
 
 ## Seus controles
 

@@ -2,9 +2,9 @@
  * Mede a IA de verdade: roda as frases de __tests__/ia/casos.json pela mesma cadeia do app
  * (instrução → provedor → limpeza do servidor → validação do app) e conta os acertos por campo.
  *
- * Uso:   GEMINI_API_KEY=... npx tsx scripts/avaliar-ia.ts
- *        (ou guarde a chave em .env.ia, que o git ignora: GEMINI_API_KEY=...)
- * Custo: zero no plano gratuito (dentro do limite diário). Faz uma chamada por frase.
+ * Uso:   GROQ_API_KEY=... npx tsx scripts/avaliar-ia.ts
+ *        (ou guarde a chave em .env.ia, que o git ignora: GROQ_API_KEY=...)
+ * Custo: zero no plano gratuito (limite diário de 1.000 pedidos). Faz uma chamada por frase.
  */
 import { readFileSync, existsSync } from 'node:fs';
 import {
@@ -33,6 +33,7 @@ const categorias = casos.categorias.map((nome: string, i: number) => ({
   icone: '',
 })) as Categoria[];
 const nomeDe = (id: number | null) => categorias.find((c) => c.id === id)?.nome ?? null;
+const PAUSA_MS = 6000; // plano gratuito do Groq: 30 pedidos e 8 mil tokens por minuto
 const pausa = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 async function chamar(tarefa: 'categoria' | 'cadastro', texto: string) {
@@ -50,8 +51,8 @@ async function chamar(tarefa: 'categoria' | 'cadastro', texto: string) {
 }
 
 async function main() {
-  if (!process.env.GEMINI_API_KEY)
-    throw new Error('Defina GEMINI_API_KEY (veja o topo deste arquivo).');
+  if (!process.env.GROQ_API_KEY)
+    throw new Error('Defina GROQ_API_KEY (veja o topo deste arquivo).');
   const campos = { tipo: [0, 0], valor: [0, 0], categoria: [0, 0], data: [0, 0] } as Record<
     string,
     number[]
@@ -70,7 +71,7 @@ async function main() {
       });
     } catch (e) {
       erros.push(`${caso.texto}: ERRO ${(e as Error).message}`);
-      await pausa(1500);
+      await pausa(PAUSA_MS);
       continue;
     }
     const c = r.entendeu ? r.cadastro : null;
@@ -91,7 +92,7 @@ async function main() {
     const ok = oks.every(Boolean);
     if (ok) perfeitas++;
     else erros.push(`${caso.texto} → ${JSON.stringify(c ?? r)}`);
-    await pausa(1500); // respeita o limite por minuto do plano gratuito
+    await pausa(PAUSA_MS);
   }
 
   let catOk = 0;
@@ -104,12 +105,12 @@ async function main() {
     } catch (e) {
       erros.push(`categoria "${caso.texto}": ERRO ${(e as Error).message}`);
     }
-    await pausa(1500);
+    await pausa(PAUSA_MS);
   }
 
   const pct = (a: number, b: number) => (b ? `${a}/${b} (${Math.round((100 * a) / b)}%)` : '-');
   console.log(
-    `\nModelo: ${process.env.GEMINI_MODELO || '(padrão de provedor.ts)'}  ·  hoje fixo: ${casos.hoje}`
+    `\nModelo: ${process.env.GROQ_MODELO || '(padrão de provedor.ts)'}  ·  hoje fixo: ${casos.hoje}`
   );
   console.log(`Frases 100% corretas: ${pct(perfeitas, casos.cadastro.length)}  (meta ≥ 75%)`);
   for (const [k, [a, b]] of Object.entries(campos))

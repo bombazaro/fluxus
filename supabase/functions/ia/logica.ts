@@ -80,29 +80,45 @@ export function montarInstrucao(pedido: Pedido): string {
   );
 }
 
-/** Esquema JSON que o provedor deve seguir. */
+/**
+ * Esquema JSON que o provedor deve seguir. Padrão JSON Schema no modo estrito: todos os
+ * campos obrigatórios (os "em branco" são null) e nenhum campo extra.
+ */
 export function montarEsquema(pedido: Pedido): Record<string, unknown> {
+  const categoria = { type: ['string', 'null'], enum: [...pedido.categorias, null] };
   if (pedido.tarefa === 'categoria') {
     return {
       type: 'object',
-      properties: { categoria: { type: 'string', enum: pedido.categorias, nullable: true } },
+      properties: { categoria },
       required: ['categoria'],
+      additionalProperties: false,
     };
   }
   return {
     type: 'object',
     properties: {
       entendeu: { type: 'boolean' },
-      motivo: { type: 'string', nullable: true },
-      tipo: { type: 'string', enum: [...TIPOS], nullable: true },
-      descricao: { type: 'string', nullable: true },
-      valor_centavos: { type: 'integer', nullable: true },
-      categoria: { type: 'string', enum: pedido.categorias, nullable: true },
-      data: { type: 'string', nullable: true },
-      dia_vencimento: { type: 'integer', nullable: true },
-      parcelas: { type: 'integer', nullable: true },
+      motivo: { type: ['string', 'null'] },
+      tipo: { type: ['string', 'null'], enum: [...TIPOS, null] },
+      descricao: { type: ['string', 'null'] },
+      valor_centavos: { type: ['integer', 'null'] },
+      categoria,
+      data: { type: ['string', 'null'] },
+      dia_vencimento: { type: ['integer', 'null'] },
+      parcelas: { type: ['integer', 'null'] },
     },
-    required: ['entendeu'],
+    required: [
+      'entendeu',
+      'motivo',
+      'tipo',
+      'descricao',
+      'valor_centavos',
+      'categoria',
+      'data',
+      'dia_vencimento',
+      'parcelas',
+    ],
+    additionalProperties: false,
   };
 }
 

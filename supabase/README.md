@@ -39,9 +39,9 @@ Projeto: `https://skccrxynthlvdeuaomch.supabase.co` (região São Paulo, plano g
 Ajuda a cadastrar gastos: sugere a categoria pelo nome e interpreta frases ("paguei 150 de mercado
 ontem"). A IA nunca salva: só devolve um JSON que o app confere e usa para preencher o formulário.
 
-1. **Chave do Google (uma vez):** em aistudio.google.com › Get API key, crie uma chave (sem
-   cartão). Em Supabase › Edge Functions › Secrets, crie `GEMINI_API_KEY` com ela. Opcionais:
-   `GEMINI_MODELO` (padrão em `provedor.ts`) e `IA_LIMITE_DIARIO` (padrão 50 usos por pessoa/dia).
+1. **Chave da Groq (uma vez):** em console.groq.com/keys, crie uma chave (plano gratuito, sem
+   cartão). Em Supabase › Edge Functions › Secrets, crie `GROQ_API_KEY` com ela. Opcionais:
+   `GROQ_MODELO` (padrão em `provedor.ts`) e `IA_LIMITE_DIARIO` (padrão 50 usos por pessoa/dia).
    A chave nunca entra no app nem no repositório.
 2. **SQL:** rode `schema.sql` de novo (cria `ia_uso` e `registrar_uso_ia`) e `teste_isolamento.sql`
    (deve terminar com `OK: ...`).

@@ -164,9 +164,8 @@ export default function TextoLivreScreen() {
               </View>
 
               <Text style={[texto12, { marginTop: spacing.lg }]}>
-                Privacidade: o texto que você digita (e os nomes das suas categorias) é enviado ao
-                Google (Gemini) só para ser interpretado. O Fluxus não o guarda. No plano gratuito
-                do Google, esse conteúdo pode ser usado para melhorar os produtos dele. Não escreva
+                Privacidade: o texto que você digita (e os nomes das suas categorias) é enviado à
+                Groq, empresa de IA, só para ser interpretado. O Fluxus não o guarda. Não escreva
                 dados pessoais sensíveis.
               </Text>
             </>
