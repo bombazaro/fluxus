@@ -19,7 +19,10 @@ export function Dialogo() {
       onRequestClose={() => (cancelar ? cancelar.aoToque() : pedido.aoDispensar())}>
       <View style={styles.fundo}>
         <View
-          accessibilityRole="alert"
+          role="alertdialog"
+          aria-modal
+          aria-labelledby="dialogo-titulo"
+          aria-describedby={pedido.mensagem ? 'dialogo-mensagem' : undefined}
           style={{
             backgroundColor: colors.surface,
             borderRadius: radii.card,
@@ -28,6 +31,9 @@ export function Dialogo() {
             maxWidth: 400,
           }}>
           <Text
+            nativeID="dialogo-titulo"
+            role="heading"
+            aria-level={2}
             style={{
               color: colors.text,
               fontFamily: typography.fontFamily.bold,
@@ -37,6 +43,7 @@ export function Dialogo() {
           </Text>
           {pedido.mensagem ? (
             <Text
+              nativeID="dialogo-mensagem"
               style={{
                 color: colors.textSecondary,
                 fontFamily: typography.fontFamily.regular,
