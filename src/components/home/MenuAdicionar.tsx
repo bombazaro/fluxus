@@ -46,6 +46,8 @@ export function MenuAdicionar({
         onPress={onFechar}
         style={[styles.fundo, { paddingBottom: insets.bottom + spacing.base }]}>
         <Pressable
+          role="group"
+          aria-label="Adicionar gasto ou conta"
           style={[
             styles.folha,
             { backgroundColor: colors.surface, borderRadius: radii.card, padding: spacing.sm },

@@ -34,11 +34,17 @@ export function ModalValorRecebido({
     <Modal visible={renda !== null} transparent animationType="fade" onRequestClose={onFechar}>
       <View style={styles.overlay}>
         <View
+          role="dialog"
+          aria-modal
+          aria-labelledby="valor-recebido-titulo"
           style={[
             styles.card,
             { backgroundColor: colors.surface, borderRadius: radii.card, padding: spacing.base },
           ]}>
           <Text
+            nativeID="valor-recebido-titulo"
+            role="heading"
+            aria-level={2}
             style={[styles.titulo, { color: colors.text, fontFamily: typography.fontFamily.bold }]}>
             Quanto caiu de {renda?.nome}?
           </Text>
