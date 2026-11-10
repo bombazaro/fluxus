@@ -9,7 +9,7 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
+import { Href, useRouter } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { Ionicons } from '@expo/vector-icons';
 import { useTema } from '@/src/theme';
@@ -25,6 +25,8 @@ import {
 import { rendasRepo } from '@/src/db/repositorios/rendasRepo';
 import { useConfigStore } from '@/src/store/useConfigStore';
 import { useMesStore } from '@/src/store/useMesStore';
+import { useContaStore } from '@/src/store/useContaStore';
+import { contaDisponivel } from '@/src/services/sync/supabase';
 import {
   NOME_MAXIMO,
   OPCOES_DIAS_ANTES,
@@ -42,7 +44,7 @@ import { estiloFormulario } from '@/src/utils/layout';
 
 type IconeIonicons = keyof typeof Ionicons.glyphMap;
 
-type Passo = 'inicio' | 'renda' | 'lembretes' | 'mes' | 'aparencia';
+type Passo = 'inicio' | 'conta' | 'renda' | 'lembretes' | 'mes' | 'aparencia';
 
 const TODOS_OS_PASSOS: { id: Passo; icone: IconeIonicons; titulo: string; texto: string }[] = [
   {
@@ -52,6 +54,14 @@ const TODOS_OS_PASSOS: { id: Passo; icone: IconeIonicons; titulo: string; texto:
     texto:
       'Cadastre suas contas e rendas uma vez. O app calcula sozinho quanto falta pagar, quanto ' +
       'sobra e avisa antes de cada vencimento. Antes, umas perguntas rápidas.',
+  },
+  {
+    id: 'conta',
+    icone: 'mail-outline',
+    titulo: 'Já tem uma conta?',
+    texto:
+      'Entre com o seu e-mail para recuperar seus dados ou deixar os mesmos dados no celular e ' +
+      'no navegador. É opcional: dá para fazer isso depois em Mais › Conta e sincronização.',
   },
   {
     id: 'renda',
@@ -81,8 +91,13 @@ const TODOS_OS_PASSOS: { id: Passo; icone: IconeIonicons; titulo: string; texto:
   },
 ];
 
-/** No navegador não há lembretes, então a pergunta sobre eles não aparece. */
-const PASSOS = TODOS_OS_PASSOS.filter((p) => lembretesDisponiveis || p.id !== 'lembretes');
+/**
+ * No navegador não há lembretes, então a pergunta sobre eles não aparece. O passo da conta só
+ * aparece se este app foi construído com o servidor configurado.
+ */
+const PASSOS = TODOS_OS_PASSOS.filter(
+  (p) => (lembretesDisponiveis || p.id !== 'lembretes') && (contaDisponivel || p.id !== 'conta')
+);
 
 export default function BoasVindasScreen() {
   const router = useRouter();
@@ -91,6 +106,7 @@ export default function BoasVindasScreen() {
   const config = useConfigStore((s) => s.config);
   const atualizar = useConfigStore((s) => s.atualizar);
   const carregarMes = useMesStore((s) => s.carregarMes);
+  const usuario = useContaStore((s) => s.usuario);
 
   const [indice, setIndice] = useState(0);
   const [nomeRenda, setNomeRenda] = useState('Salário');
@@ -237,6 +253,36 @@ export default function BoasVindasScreen() {
                     que também deixa os mesmos dados no celular e no navegador.
                   </Text>
                 </View>
+              </Cartao>
+            ) : null}
+
+            {atual.id === 'conta' ? (
+              <Cartao>
+                {usuario ? (
+                  <>
+                    <View style={styles.linha}>
+                      <Ionicons name="checkmark-circle" size={22} color={colors.success} />
+                      <Text style={[rotulo, { flex: 1, marginLeft: spacing.sm, marginBottom: 0 }]}>
+                        Conectado como {usuario.email}
+                      </Text>
+                    </View>
+                    <Text style={[textoAjuda, { marginTop: spacing.sm }]}>
+                      Se seus dados já voltaram, toque em Pular tudo para não cadastrar a renda de
+                      novo. Se este aparelho ainda não foi ligado à conta, a tela de conta pergunta.
+                    </Text>
+                  </>
+                ) : null}
+                <Botao
+                  titulo={usuario ? 'Abrir conta e sincronização' : 'Entrar com e-mail'}
+                  variante={usuario ? 'fantasma' : 'principal'}
+                  onPress={() => router.push('/conta-sincronizada' as Href)}
+                  style={usuario ? { marginTop: spacing.xs } : undefined}
+                />
+                {!usuario ? (
+                  <Text style={[textoAjuda, { marginTop: spacing.sm }]}>
+                    Você recebe um código no e-mail. Não há senha.
+                  </Text>
+                ) : null}
               </Cartao>
             ) : null}
 
