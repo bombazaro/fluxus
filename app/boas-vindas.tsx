@@ -28,7 +28,7 @@ import { useConfigStore } from '@/src/store/useConfigStore';
 import { useMesStore } from '@/src/store/useMesStore';
 import { useContaStore } from '@/src/store/useContaStore';
 import { contaDisponivel, obterClienteSupabase } from '@/src/services/sync/supabase';
-import { enderecoDeRetornoDoGoogle, entrarComGoogle } from '@/src/services/conta';
+import { iniciarEntradaComGoogle } from '@/src/services/entradaGoogle';
 import {
   NOME_MAXIMO,
   OPCOES_DIAS_ANTES,
@@ -129,7 +129,12 @@ export default function BoasVindasScreen() {
     const cliente = obterClienteSupabase();
     if (!cliente) return;
     try {
-      await entrarComGoogle(cliente.auth, enderecoDeRetornoDoGoogle());
+      const pessoa = await iniciarEntradaComGoogle(cliente.auth);
+      if (pessoa) {
+        // no celular a sessão já abriu: a tela de conta liga o aparelho e traz os dados
+        useContaStore.getState().definirUsuario(pessoa);
+        irParaConta();
+      }
     } catch (e) {
       avisar('Erro', e instanceof Error ? e.message : 'Não foi possível entrar com o Google.');
     }
@@ -304,15 +309,15 @@ export default function BoasVindasScreen() {
                 ) : (
                   <>
                     <Botao titulo="Entrar com e-mail" onPress={irParaConta} />
-                    {Platform.OS === 'web' ? (
-                      <Botao
-                        titulo="Entrar com o Google"
-                        iconeEsquerda={<IconeGoogle />}
-                        variante="secundario"
-                        onPress={entrarGoogle}
-                        style={{ marginTop: spacing.sm }}
-                      />
-                    ) : null}
+
+                    <Botao
+                      titulo="Entrar com o Google"
+                      iconeEsquerda={<IconeGoogle />}
+                      variante="secundario"
+                      onPress={entrarGoogle}
+                      style={{ marginTop: spacing.sm }}
+                    />
+
                     <Text style={[textoAjuda, { marginTop: spacing.sm }]}>
                       Você recebe um código no e-mail. Não há senha.
                     </Text>

@@ -5,15 +5,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useTema } from '@/src/theme';
 import { Botao, CabecalhoTela, CampoTexto, Cartao } from '@/src/components/ui';
-import {
-  confirmarCodigo,
-  enderecoDeRetornoDoGoogle,
-  entrarComEmail,
-  entrarComGoogle,
-  sair,
-  Usuario,
-  validarEmail,
-} from '@/src/services/conta';
+import { confirmarCodigo, entrarComEmail, sair, Usuario, validarEmail } from '@/src/services/conta';
+import { iniciarEntradaComGoogle } from '@/src/services/entradaGoogle';
 import { exportarBackup } from '@/src/services/backup';
 import {
   apagarDadosDaNuvem,
@@ -160,7 +153,9 @@ export default function ContaSincronizadaScreen() {
     if (!cliente) return;
     setErro(null);
     try {
-      await entrarComGoogle(cliente.auth, enderecoDeRetornoDoGoogle());
+      const pessoa = await iniciarEntradaComGoogle(cliente.auth);
+      // no celular a sessão já abriu: a ligação do aparelho começa pelo efeito abaixo
+      if (pessoa) useContaStore.getState().definirUsuario(pessoa);
     } catch (e) {
       setErro(e instanceof Error ? e.message : 'Não foi possível entrar com o Google.');
     }
@@ -376,7 +371,7 @@ export default function ContaSincronizadaScreen() {
                   )}
                 </View>
               </Cartao>
-              {Platform.OS === 'web' && !codigoEnviado ? (
+              {!codigoEnviado ? (
                 <Botao
                   titulo="Entrar com o Google"
                   iconeEsquerda={<IconeGoogle />}
