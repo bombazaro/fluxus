@@ -2,6 +2,7 @@ import {
   confirmarCodigo,
   ClienteAuth,
   entrarComEmail,
+  entrarComGoogle,
   sair,
   usuarioAtual,
   validarEmail,
@@ -13,6 +14,7 @@ function auth(sobre: Partial<ClienteAuth> = {}): jest.Mocked<ClienteAuth> {
     verifyOtp: jest
       .fn()
       .mockResolvedValue({ data: { user: { id: 'u1', email: 'a@b.com' } }, error: null }),
+    signInWithOAuth: jest.fn().mockResolvedValue({ data: {}, error: null }),
     signOut: jest.fn().mockResolvedValue({ error: null }),
     getSession: jest.fn().mockResolvedValue({ data: { session: null } }),
     ...sobre,
@@ -118,5 +120,28 @@ describe('sair e usuarioAtual', () => {
         .mockResolvedValue({ data: { session: { user: { id: 'u9', email: 'x@y.com' } } } }),
     });
     expect(await usuarioAtual(a)).toEqual({ id: 'u9', email: 'x@y.com' });
+  });
+});
+
+describe('entrarComGoogle', () => {
+  it('pede o login do Google e diz para onde voltar', async () => {
+    const a = auth();
+    await entrarComGoogle(a, 'https://site.exemplo/conta-sincronizada');
+    expect(a.signInWithOAuth).toHaveBeenCalledWith({
+      provider: 'google',
+      options: { redirectTo: 'https://site.exemplo/conta-sincronizada' },
+    });
+  });
+
+  it('erro do servidor vira mensagem simples', async () => {
+    const a = auth({
+      signInWithOAuth: jest.fn().mockResolvedValue({ data: {}, error: { message: 'x' } }),
+    });
+    await expect(entrarComGoogle(a, 'https://s')).rejects.toThrow(/Google/);
+  });
+
+  it('falha de rede vira mensagem de conexão', async () => {
+    const a = auth({ signInWithOAuth: jest.fn().mockRejectedValue(new Error('rede')) });
+    await expect(entrarComGoogle(a, 'https://s')).rejects.toThrow('Sem conexão');
   });
 });

@@ -26,7 +26,8 @@ import { rendasRepo } from '@/src/db/repositorios/rendasRepo';
 import { useConfigStore } from '@/src/store/useConfigStore';
 import { useMesStore } from '@/src/store/useMesStore';
 import { useContaStore } from '@/src/store/useContaStore';
-import { contaDisponivel } from '@/src/services/sync/supabase';
+import { contaDisponivel, obterClienteSupabase } from '@/src/services/sync/supabase';
+import { enderecoDeRetornoDoGoogle, entrarComGoogle } from '@/src/services/conta';
 import {
   NOME_MAXIMO,
   OPCOES_DIAS_ANTES,
@@ -122,6 +123,16 @@ export default function BoasVindasScreen() {
   // mais nada a perguntar.
   const foiParaConta = useRef(false);
   const carregarConfig = useConfigStore((s) => s.carregar);
+
+  const entrarGoogle = async () => {
+    const cliente = obterClienteSupabase();
+    if (!cliente) return;
+    try {
+      await entrarComGoogle(cliente.auth, enderecoDeRetornoDoGoogle());
+    } catch (e) {
+      avisar('Erro', e instanceof Error ? e.message : 'Não foi possível entrar com o Google.');
+    }
+  };
 
   const irParaConta = () => {
     foiParaConta.current = true;
@@ -292,6 +303,14 @@ export default function BoasVindasScreen() {
                 ) : (
                   <>
                     <Botao titulo="Entrar com e-mail" onPress={irParaConta} />
+                    {Platform.OS === 'web' ? (
+                      <Botao
+                        titulo="Entrar com o Google"
+                        variante="secundario"
+                        onPress={entrarGoogle}
+                        style={{ marginTop: spacing.sm }}
+                      />
+                    ) : null}
                     <Text style={[textoAjuda, { marginTop: spacing.sm }]}>
                       Você recebe um código no e-mail. Não há senha.
                     </Text>

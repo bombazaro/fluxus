@@ -77,7 +77,8 @@ export function obterClienteSupabase(): SupabaseClient | null {
           storage: armazenamento,
           autoRefreshToken: true,
           persistSession: true,
-          detectSessionInUrl: false,
+          // Na web, o login do Google volta para o site com a sessão na URL.
+          detectSessionInUrl: Platform.OS === 'web',
         },
       }
     );

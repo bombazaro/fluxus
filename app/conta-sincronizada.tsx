@@ -1,10 +1,18 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { KeyboardAvoidingView, Platform, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useTema } from '@/src/theme';
 import { Botao, CabecalhoTela, CampoTexto, Cartao } from '@/src/components/ui';
-import { confirmarCodigo, entrarComEmail, sair, validarEmail } from '@/src/services/conta';
+import {
+  confirmarCodigo,
+  enderecoDeRetornoDoGoogle,
+  entrarComEmail,
+  entrarComGoogle,
+  sair,
+  Usuario,
+  validarEmail,
+} from '@/src/services/conta';
 import { exportarBackup } from '@/src/services/backup';
 import {
   apagarDadosDaNuvem,
@@ -83,49 +91,93 @@ export default function ContaSincronizadaScreen() {
     }
   };
 
+  /**
+   * Liga este aparelho à conta recém-aberta (por código ou pelo Google): backup de segurança
+   * se houver dados, primeira sincronização e atualização das telas.
+   * Devolve false se a pessoa desistiu (e então sai da conta).
+   */
+  const ligarEsteAparelho = async (pessoa: Usuario): Promise<boolean> => {
+    if (!cliente) return false;
+    const jaLigado = await db.getFirstAsync<{ valor: string }>(
+      "SELECT valor FROM sync_estado WHERE chave = 'usuario_id';"
+    );
+    const novaRede = criarRedeSupabase(cliente);
+    // com o aparelho vazio não há o que proteger: entra direto, sem backup
+    if (!jaLigado && (await temDadosParaProteger(db))) {
+      const seguir = await confirmar(
+        'Ligar este aparelho à conta',
+        'Vamos salvar uma cópia de segurança dos seus dados atuais e depois juntá-los com o que já estiver na conta. Nada será apagado.',
+        'Continuar'
+      );
+      if (!seguir) {
+        await sair(cliente.auth);
+        useContaStore.getState().definirUsuario(null);
+        return false;
+      }
+      await exportarBackup(db);
+    }
+    const resultado = await ligarConta(db, novaRede, pessoa.id);
+    useContaStore.getState().definirUsuario(pessoa);
+    useContaStore.getState().definirRede(novaRede);
+    await useConfigStore.getState().carregar(db);
+    await carregarMes(db);
+    avisar(
+      'Conta ligada',
+      resultado === 'novo'
+        ? 'Seus dados foram enviados para a conta.'
+        : 'Seus dados foram juntados com os da conta.'
+    );
+    return true;
+  };
+
+  const tratarErroDeLigacao = async (e: unknown) => {
+    if (e instanceof ErroOutraConta && cliente) {
+      await sair(cliente.auth).catch(() => {});
+      useContaStore.getState().definirUsuario(null);
+    }
+    setErro(e instanceof Error ? e.message : 'Não foi possível entrar.');
+  };
+
   const entrar = async () => {
     if (!cliente) return;
     setErro(null);
     setOcupado(true);
     try {
       const pessoa = await confirmarCodigo(cliente.auth, email, codigo);
-      const jaLigado = await db.getFirstAsync<{ valor: string }>(
-        "SELECT valor FROM sync_estado WHERE chave = 'usuario_id';"
-      );
-      const novaRede = criarRedeSupabase(cliente);
-      // com o aparelho vazio não há o que proteger: entra direto, sem backup
-      if (!jaLigado && (await temDadosParaProteger(db))) {
-        const seguir = await confirmar(
-          'Ligar este aparelho à conta',
-          'Vamos salvar uma cópia de segurança dos seus dados atuais e depois juntá-los com o que já estiver na conta. Nada será apagado.',
-          'Continuar'
-        );
-        if (!seguir) {
-          await sair(cliente.auth);
-          return;
-        }
-        await exportarBackup(db);
+      if (await ligarEsteAparelho(pessoa)) {
+        setCodigo('');
+        setCodigoEnviado(false);
       }
-      const resultado = await ligarConta(db, novaRede, pessoa.id);
-      useContaStore.getState().definirUsuario(pessoa);
-      useContaStore.getState().definirRede(novaRede);
-      await useConfigStore.getState().carregar(db);
-      await carregarMes(db);
-      setCodigo('');
-      setCodigoEnviado(false);
-      avisar(
-        'Conta ligada',
-        resultado === 'novo'
-          ? 'Seus dados foram enviados para a conta.'
-          : 'Seus dados foram juntados com os da conta.'
-      );
     } catch (e) {
-      if (e instanceof ErroOutraConta) await sair(cliente.auth).catch(() => {});
-      setErro(e instanceof Error ? e.message : 'Não foi possível entrar.');
+      await tratarErroDeLigacao(e);
     } finally {
       setOcupado(false);
     }
   };
+
+  const entrarGoogle = async () => {
+    if (!cliente) return;
+    setErro(null);
+    try {
+      await entrarComGoogle(cliente.auth, enderecoDeRetornoDoGoogle());
+    } catch (e) {
+      setErro(e instanceof Error ? e.message : 'Não foi possível entrar com o Google.');
+    }
+  };
+
+  // Na volta do Google a sessão já existe, mas este aparelho ainda não foi ligado à conta.
+  const [tentativa, setTentativa] = useState(0);
+  const ultimaTentativa = useRef(-1);
+  useEffect(() => {
+    if (!cliente || !usuario || rede || ocupado || ultimaTentativa.current === tentativa) return;
+    ultimaTentativa.current = tentativa;
+    setErro(null);
+    setOcupado(true);
+    void ligarEsteAparelho(usuario)
+      .catch(tratarErroDeLigacao)
+      .finally(() => setOcupado(false));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [usuario, rede, tentativa]);
 
   const sincronizarAgora = async () => {
     if (!rede) return;
@@ -232,9 +284,20 @@ export default function ContaSincronizadaScreen() {
           ) : usuario ? (
             <Cartao>
               <Text style={texto}>
-                Você entrou como {usuario.email}, mas este aparelho ainda não foi ligado à conta.
-                Saia e entre de novo para ligar.
+                {ocupado
+                  ? 'Ligando este aparelho à conta...'
+                  : `Você entrou como ${usuario.email}, mas este aparelho ainda não foi ligado à conta.`}
               </Text>
+              {erro ? (
+                <Text style={[texto, { color: colors.danger, marginTop: spacing.sm }]}>{erro}</Text>
+              ) : null}
+              {!ocupado ? (
+                <Botao
+                  titulo="Ligar este aparelho"
+                  onPress={() => setTentativa((t) => t + 1)}
+                  style={{ marginTop: spacing.base }}
+                />
+              ) : null}
               <Botao
                 titulo="Sair"
                 variante="secundario"
@@ -312,6 +375,14 @@ export default function ContaSincronizadaScreen() {
                   )}
                 </View>
               </Cartao>
+              {Platform.OS === 'web' && !codigoEnviado ? (
+                <Botao
+                  titulo="Entrar com o Google"
+                  variante="secundario"
+                  onPress={entrarGoogle}
+                  style={{ marginTop: spacing.base }}
+                />
+              ) : null}
             </>
           )}
         </ScrollView>
