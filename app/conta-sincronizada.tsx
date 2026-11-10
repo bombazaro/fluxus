@@ -18,6 +18,7 @@ import {
   criarRedeSupabase,
   obterClienteSupabase,
 } from '@/src/services/sync/supabase';
+import { useConfigStore } from '@/src/store/useConfigStore';
 import { useContaStore } from '@/src/store/useContaStore';
 import { useMesStore } from '@/src/store/useMesStore';
 import { avisar } from '@/src/utils/avisar';
@@ -108,6 +109,7 @@ export default function ContaSincronizadaScreen() {
       const resultado = await ligarConta(db, novaRede, pessoa.id);
       useContaStore.getState().definirUsuario(pessoa);
       useContaStore.getState().definirRede(novaRede);
+      await useConfigStore.getState().carregar(db);
       await carregarMes(db);
       setCodigo('');
       setCodigoEnviado(false);

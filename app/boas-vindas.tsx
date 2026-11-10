@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useCallback, useRef, useState } from 'react';
 import {
   KeyboardAvoidingView,
   Linking,
@@ -9,7 +9,7 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
+import { Href, useFocusEffect, useRouter } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { Ionicons } from '@expo/vector-icons';
 import { useTema } from '@/src/theme';
@@ -25,6 +25,8 @@ import {
 import { rendasRepo } from '@/src/db/repositorios/rendasRepo';
 import { useConfigStore } from '@/src/store/useConfigStore';
 import { useMesStore } from '@/src/store/useMesStore';
+import { useContaStore } from '@/src/store/useContaStore';
+import { contaDisponivel } from '@/src/services/sync/supabase';
 import {
   NOME_MAXIMO,
   OPCOES_DIAS_ANTES,
@@ -42,9 +44,17 @@ import { estiloFormulario } from '@/src/utils/layout';
 
 type IconeIonicons = keyof typeof Ionicons.glyphMap;
 
-type Passo = 'inicio' | 'renda' | 'lembretes' | 'mes' | 'aparencia';
+type Passo = 'conta' | 'inicio' | 'renda' | 'lembretes' | 'mes' | 'aparencia';
 
 const TODOS_OS_PASSOS: { id: Passo; icone: IconeIonicons; titulo: string; texto: string }[] = [
+  {
+    id: 'conta',
+    icone: 'mail-outline',
+    titulo: 'Bem-vindo ao Fluxus',
+    texto:
+      'Já usa o Fluxus? Entre com o seu e-mail e seus dados voltam sozinhos, sem cadastrar nada ' +
+      'de novo. Se é a primeira vez, é só continuar.',
+  },
   {
     id: 'inicio',
     icone: 'wallet-outline',
@@ -81,8 +91,13 @@ const TODOS_OS_PASSOS: { id: Passo; icone: IconeIonicons; titulo: string; texto:
   },
 ];
 
-/** No navegador não há lembretes, então a pergunta sobre eles não aparece. */
-const PASSOS = TODOS_OS_PASSOS.filter((p) => lembretesDisponiveis || p.id !== 'lembretes');
+/**
+ * No navegador não há lembretes, então a pergunta sobre eles não aparece. O passo da conta só
+ * aparece se este app foi construído com o servidor configurado.
+ */
+const PASSOS = TODOS_OS_PASSOS.filter(
+  (p) => (lembretesDisponiveis || p.id !== 'lembretes') && (contaDisponivel || p.id !== 'conta')
+).map((p) => (p.id === 'inicio' && contaDisponivel ? { ...p, titulo: 'Vamos configurar' } : p));
 
 export default function BoasVindasScreen() {
   const router = useRouter();
@@ -91,6 +106,7 @@ export default function BoasVindasScreen() {
   const config = useConfigStore((s) => s.config);
   const atualizar = useConfigStore((s) => s.atualizar);
   const carregarMes = useMesStore((s) => s.carregarMes);
+  const usuario = useContaStore((s) => s.usuario);
 
   const [indice, setIndice] = useState(0);
   const [nomeRenda, setNomeRenda] = useState('Salário');
@@ -101,6 +117,30 @@ export default function BoasVindasScreen() {
   const [rendaId, setRendaId] = useState<number | null>(null);
   const [salvando, setSalvando] = useState(false);
   const [nome, setNome] = useState(config.nome);
+
+  // Marcado ao abrir a tela de conta: ao voltar, se os dados da pessoa já chegaram, não há
+  // mais nada a perguntar.
+  const foiParaConta = useRef(false);
+  const carregarConfig = useConfigStore((s) => s.carregar);
+
+  const irParaConta = () => {
+    foiParaConta.current = true;
+    router.push('/conta-sincronizada' as Href);
+  };
+
+  useFocusEffect(
+    useCallback(() => {
+      if (!foiParaConta.current) return;
+      foiParaConta.current = false;
+      void (async () => {
+        await carregarConfig(db);
+        if (useConfigStore.getState().config.onboardingConcluido) {
+          await carregarMes(db);
+          router.replace('/(tabs)');
+        }
+      })();
+    }, [db, carregarConfig, carregarMes, router])
+  );
 
   const atual = PASSOS[indice];
   const ultimo = indice === PASSOS.length - 1;
@@ -237,6 +277,26 @@ export default function BoasVindasScreen() {
                     que também deixa os mesmos dados no celular e no navegador.
                   </Text>
                 </View>
+              </Cartao>
+            ) : null}
+
+            {atual.id === 'conta' ? (
+              <Cartao>
+                {usuario ? (
+                  <View style={styles.linha}>
+                    <Ionicons name="checkmark-circle" size={22} color={colors.success} />
+                    <Text style={[rotulo, { flex: 1, marginLeft: spacing.sm, marginBottom: 0 }]}>
+                      Conectado como {usuario.email}
+                    </Text>
+                  </View>
+                ) : (
+                  <>
+                    <Botao titulo="Entrar com e-mail" onPress={irParaConta} />
+                    <Text style={[textoAjuda, { marginTop: spacing.sm }]}>
+                      Você recebe um código no e-mail. Não há senha.
+                    </Text>
+                  </>
+                )}
               </Cartao>
             ) : null}
 
