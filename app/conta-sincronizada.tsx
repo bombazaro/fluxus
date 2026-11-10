@@ -1,3 +1,4 @@
+import { IconeGoogle } from '@/src/components/ui/IconeGoogle';
 import React, { useEffect, useRef, useState } from 'react';
 import { KeyboardAvoidingView, Platform, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -378,6 +379,7 @@ export default function ContaSincronizadaScreen() {
               {Platform.OS === 'web' && !codigoEnviado ? (
                 <Botao
                   titulo="Entrar com o Google"
+                  iconeEsquerda={<IconeGoogle />}
                   variante="secundario"
                   onPress={entrarGoogle}
                   style={{ marginTop: spacing.base }}

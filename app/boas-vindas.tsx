@@ -1,3 +1,4 @@
+import { IconeGoogle } from '@/src/components/ui/IconeGoogle';
 import React, { useCallback, useRef, useState } from 'react';
 import {
   KeyboardAvoidingView,
@@ -306,6 +307,7 @@ export default function BoasVindasScreen() {
                     {Platform.OS === 'web' ? (
                       <Botao
                         titulo="Entrar com o Google"
+                        iconeEsquerda={<IconeGoogle />}
                         variante="secundario"
                         onPress={entrarGoogle}
                         style={{ marginTop: spacing.sm }}
