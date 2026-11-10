@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { Appearance, AppState } from 'react-native';
-import { router, useRootNavigationState } from 'expo-router';
+import { router, usePathname, useRootNavigationState } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import * as Notifications from 'expo-notifications';
 import { useRespostaNotificacao } from '@/src/hooks/useRespostaNotificacao';
@@ -31,6 +31,7 @@ const ESPERA_REAGENDAR_MS = 1500;
 export function Inicializacao() {
   const db = useSQLiteContext();
   const navegacaoPronta = !!useRootNavigationState()?.key;
+  const rota = usePathname();
 
   const carregada = useConfigStore((s) => s.carregada);
   const tema = useConfigStore((s) => s.config.tema);
@@ -57,10 +58,19 @@ export function Inicializacao() {
   }, [tema]);
 
   useEffect(() => {
-    if (carregada && navegacaoPronta && !onboardingConcluido) {
+    // Na volta do login do Google o app abre em /conta-sincronizada: deixa a tela ligar este
+    // aparelho à conta (os dados chegam e as boas-vindas deixam de ser necessárias).
+    const ligandoConta = rota === '/conta-sincronizada';
+    if (
+      carregada &&
+      navegacaoPronta &&
+      !onboardingConcluido &&
+      !ligandoConta &&
+      rota !== '/boas-vindas'
+    ) {
       router.replace('/boas-vindas');
     }
-  }, [carregada, navegacaoPronta, onboardingConcluido]);
+  }, [carregada, navegacaoPronta, onboardingConcluido, rota]);
 
   // Lembretes: ao abrir, quando as configurações ou as contas mudam...
   useEffect(() => {
