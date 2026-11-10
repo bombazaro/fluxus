@@ -33,6 +33,17 @@ describe('textosDoErroDeAbertura', () => {
     expect(textosDoErroDeAbertura(erro, true).titulo).toBe('O Fluxus já está aberto em outra aba.');
   });
 
+  it('reconhece o estado inválido que o worker deixa depois da primeira falha', () => {
+    expect(textosDoErroDeAbertura(new Error('Invalid VFS state'), true).titulo).toBe(
+      'O Fluxus já está aberto em outra aba.'
+    );
+  });
+
+  it('reconhece o erro do Firefox, que chega do worker só com a mensagem', () => {
+    const erro = new Error('No modification allowed');
+    expect(textosDoErroDeAbertura(erro, true).titulo).toBe('O Fluxus já está aberto em outra aba.');
+  });
+
   it('não quebra quando o erro não tem mensagem', () => {
     const t = textosDoErroDeAbertura({} as Error, true);
     expect(t.titulo).toBe('Ops! Não foi possível abrir seus dados.');

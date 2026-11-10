@@ -12,6 +12,7 @@ import {
   reagendarLembretes,
   rendaDaNotificacao,
 } from '@/src/services/notificacoes';
+import { bancoReabriuComSucesso } from '@/src/domain/erroAbertura';
 import { rendasRepo } from '@/src/db/repositorios/rendasRepo';
 
 configurarNotificacoes();
@@ -43,6 +44,7 @@ export function Inicializacao() {
   const rendas = useMesStore((s) => s.rendas);
 
   useEffect(() => {
+    bancoReabriuComSucesso();
     useConfigStore.getState().carregar(db);
   }, [db]);
 
