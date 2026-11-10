@@ -6,11 +6,16 @@ export interface TextosErroAbertura {
 }
 
 /** Banco aberto em outra aba: o navegador só deixa uma por vez usar o arquivo. */
-function bancoPresoPorOutraAba(erro: Error): boolean {
-  // Chrome cita o método na mensagem; Firefox e Safari usam o nome do erro
+export function bancoPresoPorOutraAba(erro: Error): boolean {
+  // O erro cruza o worker e perde o nome: Chrome deixa o método na mensagem,
+  // Firefox deixa só "No modification allowed"
+  const mensagem = erro.message ?? '';
   return (
     erro.name === 'NoModificationAllowedError' ||
-    (erro.message ?? '').includes('createSyncAccessHandle')
+    mensagem.includes('createSyncAccessHandle') ||
+    mensagem.includes('No modification allowed') ||
+    // O worker falhou ao pegar o arquivo uma vez e não tenta de novo
+    mensagem.includes('Invalid VFS state')
   );
 }
 
@@ -30,4 +35,31 @@ export function textosDoErroDeAbertura(erro: Error, web: boolean): TextosErroAbe
       : 'Seus dados continuam guardados no celular. Feche o app e abra de novo. Se o problema continuar, anote a mensagem abaixo.',
     detalhe: erro.message ?? '',
   };
+}
+
+const CHAVE_TENTATIVAS = 'fluxus:tentativas-banco';
+const MAXIMO_TENTATIVAS = 6;
+
+/**
+ * Conta mais uma recarga automática da página; false quando já recarregou vezes demais
+ * (aí a pessoa vê a tela de erro e decide). O contador dura só enquanto a aba existe.
+ */
+export function recarregarParaReabrirBanco(): boolean {
+  try {
+    const feitas = Number(sessionStorage.getItem(CHAVE_TENTATIVAS) ?? '0');
+    if (feitas >= MAXIMO_TENTATIVAS) return false;
+    sessionStorage.setItem(CHAVE_TENTATIVAS, String(feitas + 1));
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/** Banco abriu: zera o contador de recargas. */
+export function bancoReabriuComSucesso(): void {
+  try {
+    sessionStorage.removeItem(CHAVE_TENTATIVAS);
+  } catch {
+    // sem sessionStorage: nada a limpar
+  }
 }

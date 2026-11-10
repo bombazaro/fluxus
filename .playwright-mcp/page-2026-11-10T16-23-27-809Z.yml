@@ -1,0 +1,13 @@
+- generic [ref=f4e11]:
+  - generic [ref=f4e13]:
+    - generic [ref=f4e14]: 
+    - heading "Bem-vindo ao Fluxus" [level=1] [ref=f4e16]
+    - generic [ref=f4e17]: Já usa o Fluxus? Entre com o seu e-mail e seus dados voltam sozinhos, sem cadastrar nada de novo. Se é a primeira vez, é só continuar.
+    - generic [ref=f4e19]:
+      - button "Entrar com e-mail" [ref=f4e20] [cursor=pointer]
+      - button "Entrar com o Google" [ref=f4e22] [cursor=pointer]
+      - generic [ref=f4e24]: Você recebe um código no e-mail. Não há senha.
+  - generic [ref=f4e25]:
+    - generic "Passo 1 de 5" [ref=f4e26]
+    - button "Continuar" [ref=f4e32] [cursor=pointer]
+    - button "Pular tudo" [ref=f4e35] [cursor=pointer]

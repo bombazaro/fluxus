@@ -1,0 +1,2 @@
+[     430ms] [WARNING] [expo-notifications] Listening to push token changes is not yet fully supported on web. Adding a listener will have no effect. @ http://localhost:8099/_expo/static/js/web/__common-f3efb73c833e36e09301f102542f1fae.js:222
+[   14748ms] [ERROR] Failed to load resource: the server responded with a status of 403 () @ https://skccrxynthlvdeuaomch.supabase.co/auth/v1/user:1

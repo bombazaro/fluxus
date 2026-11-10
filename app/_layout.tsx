@@ -13,11 +13,21 @@ import { executarMigracoes } from '@/src/db/migrations';
 import { Platform, Pressable, StyleSheet, Text, useColorScheme, View } from 'react-native';
 import { darkColors, lightColors } from '@/src/theme/colors';
 import { Inicializacao } from '@/src/components/Inicializacao';
-import { textosDoErroDeAbertura } from '@/src/domain/erroAbertura';
+import {
+  bancoPresoPorOutraAba,
+  recarregarParaReabrirBanco,
+  textosDoErroDeAbertura,
+} from '@/src/domain/erroAbertura';
 import { ColunaWeb } from '@/src/components/ColunaWeb';
 import { Dialogo } from '@/src/components/ui/Dialogo';
 import { Sincronizador } from '@/src/components/Sincronizador';
 import { ConectorConta } from '@/src/components/ConectorConta';
+import { liberarWorkersAoSair } from '@/src/services/liberarWorkersAoSair';
+
+// Antes de qualquer worker nascer: solta o arquivo do banco ao sair da página (Firefox)
+if (Platform.OS === 'web' && typeof window !== 'undefined') {
+  liberarWorkersAoSair(window);
+}
 
 SplashScreen.preventAutoHideAsync();
 
@@ -33,6 +43,17 @@ export function ErrorBoundary({ error, retry }: ErrorBoundaryProps) {
   useEffect(() => {
     console.error('Erro ao abrir o app:', error);
     SplashScreen.hideAsync().catch(() => {});
+  }, [error]);
+
+  // O worker da página anterior pode demorar para soltar o arquivo (ex.: ao voltar do login
+  // do Google). Depois da primeira falha o worker deste carregamento fica inutilizável
+  // ("Invalid VFS state"), então tentar de novo sem recarregar não adianta: recarrega a página.
+  useEffect(() => {
+    if (Platform.OS !== 'web' || !bancoPresoPorOutraAba(error)) return;
+    const espera = setTimeout(() => {
+      if (recarregarParaReabrirBanco()) window.location.reload();
+    }, 1500);
+    return () => clearTimeout(espera);
   }, [error]);
 
   return (

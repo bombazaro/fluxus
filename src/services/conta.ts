@@ -17,6 +17,10 @@ export interface ClienteAuth {
     token: string;
     type: 'email';
   }): Promise<{ data: { user: { id: string; email?: string } | null }; error: ErroAuth }>;
+  signInWithOAuth(args: {
+    provider: 'google';
+    options?: { redirectTo?: string };
+  }): Promise<{ error: ErroAuth }>;
   signOut(): Promise<{ error: ErroAuth }>;
   getSession(): Promise<{
     data: { session: { user: { id: string; email?: string } } | null };
@@ -51,6 +55,28 @@ export async function entrarComEmail(auth: ClienteAuth, email: string): Promise<
     }
     throw new Error('Não foi possível enviar o código. Confira o e-mail e tente de novo.');
   }
+}
+
+/**
+ * Abre o login do Google. A página sai do app e volta em `voltarPara` já com a sessão aberta;
+ * quem recebe a volta precisa ligar o aparelho à conta (veja a tela de conta).
+ */
+export async function entrarComGoogle(auth: ClienteAuth, voltarPara: string): Promise<void> {
+  let erro: ErroAuth;
+  try {
+    ({ error: erro } = await auth.signInWithOAuth({
+      provider: 'google',
+      options: { redirectTo: voltarPara },
+    }));
+  } catch {
+    throw new Error(SEM_CONEXAO);
+  }
+  if (erro) throw new Error('Não foi possível entrar com o Google. Tente de novo.');
+}
+
+/** Para onde o Google devolve a pessoa (só na web): a tela de conta, que liga o aparelho. */
+export function enderecoDeRetornoDoGoogle(): string {
+  return `${window.location.origin}/conta-sincronizada`;
 }
 
 /** Confere o código recebido por e-mail e abre a sessão. */
