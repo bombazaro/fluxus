@@ -2,6 +2,9 @@ import { SQLiteDatabase } from 'expo-sqlite';
 import { atribuirUidsFixos } from '@/src/db/rastreioDeMudancas';
 import { BackupFluxus, LinhaBackup, ValorColuna } from '@/src/domain/backup';
 
+/** Limite antigo do SQLite é 999 parâmetros por instrução; fica abaixo dele. */
+const LIMITE_VARIAVEIS = 900;
+
 /**
  * Tabelas do backup, dos "pais" para os "filhos" (ordem das chaves estrangeiras),
  * com as colunas permitidas. Só essas colunas são lidas do arquivo importado,
@@ -99,11 +102,20 @@ export const backupRepo = {
       }
 
       for (const { nome, colunas, padroes } of TABELAS) {
-        const marcadores = colunas.map(() => '?').join(', ');
-        const sql = `INSERT INTO ${nome} (${colunas.join(', ')}) VALUES (${marcadores});`;
-        for (const linha of backup.tabelas[nome] ?? []) {
-          const valores: ValorColuna[] = colunas.map((c) => linha[c] ?? padroes?.[c] ?? null);
-          await db.runAsync(sql, valores);
+        const linhas = backup.tabelas[nome] ?? [];
+        // Várias linhas por INSERT: cada chamada ao banco tem um custo fixo no celular e no
+        // navegador, e um backup grande tem milhares de lançamentos.
+        const porLote = Math.max(1, Math.floor(LIMITE_VARIAVEIS / colunas.length));
+        const grupo = `(${colunas.map(() => '?').join(', ')})`;
+        for (let i = 0; i < linhas.length; i += porLote) {
+          const lote = linhas.slice(i, i + porLote);
+          const valores: ValorColuna[] = lote.flatMap((linha) =>
+            colunas.map((c) => linha[c] ?? padroes?.[c] ?? null)
+          );
+          await db.runAsync(
+            `INSERT INTO ${nome} (${colunas.join(', ')}) VALUES ${lote.map(() => grupo).join(', ')};`,
+            valores
+          );
         }
       }
       // as linhas voltaram com uid novo: refaz a identidade fixa das de fábrica
