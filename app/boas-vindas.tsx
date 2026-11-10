@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useCallback, useRef, useState } from 'react';
 import {
   KeyboardAvoidingView,
   Linking,
@@ -9,7 +9,7 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Href, useRouter } from 'expo-router';
+import { Href, useFocusEffect, useRouter } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { Ionicons } from '@expo/vector-icons';
 import { useTema } from '@/src/theme';
@@ -44,9 +44,17 @@ import { estiloFormulario } from '@/src/utils/layout';
 
 type IconeIonicons = keyof typeof Ionicons.glyphMap;
 
-type Passo = 'inicio' | 'conta' | 'renda' | 'lembretes' | 'mes' | 'aparencia';
+type Passo = 'conta' | 'inicio' | 'renda' | 'lembretes' | 'mes' | 'aparencia';
 
 const TODOS_OS_PASSOS: { id: Passo; icone: IconeIonicons; titulo: string; texto: string }[] = [
+  {
+    id: 'conta',
+    icone: 'mail-outline',
+    titulo: 'Bem-vindo ao Fluxus',
+    texto:
+      'Já usa o Fluxus? Entre com o seu e-mail e seus dados voltam sozinhos, sem cadastrar nada ' +
+      'de novo. Se é a primeira vez, é só continuar.',
+  },
   {
     id: 'inicio',
     icone: 'wallet-outline',
@@ -54,14 +62,6 @@ const TODOS_OS_PASSOS: { id: Passo; icone: IconeIonicons; titulo: string; texto:
     texto:
       'Cadastre suas contas e rendas uma vez. O app calcula sozinho quanto falta pagar, quanto ' +
       'sobra e avisa antes de cada vencimento. Antes, umas perguntas rápidas.',
-  },
-  {
-    id: 'conta',
-    icone: 'mail-outline',
-    titulo: 'Já tem uma conta?',
-    texto:
-      'Entre com o seu e-mail para recuperar seus dados ou deixar os mesmos dados no celular e ' +
-      'no navegador. É opcional: dá para fazer isso depois em Mais › Conta e sincronização.',
   },
   {
     id: 'renda',
@@ -97,7 +97,7 @@ const TODOS_OS_PASSOS: { id: Passo; icone: IconeIonicons; titulo: string; texto:
  */
 const PASSOS = TODOS_OS_PASSOS.filter(
   (p) => (lembretesDisponiveis || p.id !== 'lembretes') && (contaDisponivel || p.id !== 'conta')
-);
+).map((p) => (p.id === 'inicio' && contaDisponivel ? { ...p, titulo: 'Vamos configurar' } : p));
 
 export default function BoasVindasScreen() {
   const router = useRouter();
@@ -117,6 +117,30 @@ export default function BoasVindasScreen() {
   const [rendaId, setRendaId] = useState<number | null>(null);
   const [salvando, setSalvando] = useState(false);
   const [nome, setNome] = useState(config.nome);
+
+  // Marcado ao abrir a tela de conta: ao voltar, se os dados da pessoa já chegaram, não há
+  // mais nada a perguntar.
+  const foiParaConta = useRef(false);
+  const carregarConfig = useConfigStore((s) => s.carregar);
+
+  const irParaConta = () => {
+    foiParaConta.current = true;
+    router.push('/conta-sincronizada' as Href);
+  };
+
+  useFocusEffect(
+    useCallback(() => {
+      if (!foiParaConta.current) return;
+      foiParaConta.current = false;
+      void (async () => {
+        await carregarConfig(db);
+        if (useConfigStore.getState().config.onboardingConcluido) {
+          await carregarMes(db);
+          router.replace('/(tabs)');
+        }
+      })();
+    }, [db, carregarConfig, carregarMes, router])
+  );
 
   const atual = PASSOS[indice];
   const ultimo = indice === PASSOS.length - 1;
@@ -259,30 +283,20 @@ export default function BoasVindasScreen() {
             {atual.id === 'conta' ? (
               <Cartao>
                 {usuario ? (
+                  <View style={styles.linha}>
+                    <Ionicons name="checkmark-circle" size={22} color={colors.success} />
+                    <Text style={[rotulo, { flex: 1, marginLeft: spacing.sm, marginBottom: 0 }]}>
+                      Conectado como {usuario.email}
+                    </Text>
+                  </View>
+                ) : (
                   <>
-                    <View style={styles.linha}>
-                      <Ionicons name="checkmark-circle" size={22} color={colors.success} />
-                      <Text style={[rotulo, { flex: 1, marginLeft: spacing.sm, marginBottom: 0 }]}>
-                        Conectado como {usuario.email}
-                      </Text>
-                    </View>
+                    <Botao titulo="Entrar com e-mail" onPress={irParaConta} />
                     <Text style={[textoAjuda, { marginTop: spacing.sm }]}>
-                      Se seus dados já voltaram, toque em Pular tudo para não cadastrar a renda de
-                      novo. Se este aparelho ainda não foi ligado à conta, a tela de conta pergunta.
+                      Você recebe um código no e-mail. Não há senha.
                     </Text>
                   </>
-                ) : null}
-                <Botao
-                  titulo={usuario ? 'Abrir conta e sincronização' : 'Entrar com e-mail'}
-                  variante={usuario ? 'fantasma' : 'principal'}
-                  onPress={() => router.push('/conta-sincronizada' as Href)}
-                  style={usuario ? { marginTop: spacing.xs } : undefined}
-                />
-                {!usuario ? (
-                  <Text style={[textoAjuda, { marginTop: spacing.sm }]}>
-                    Você recebe um código no e-mail. Não há senha.
-                  </Text>
-                ) : null}
+                )}
               </Cartao>
             ) : null}
 
