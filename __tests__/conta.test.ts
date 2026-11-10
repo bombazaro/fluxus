@@ -3,6 +3,8 @@ import {
   ClienteAuth,
   entrarComEmail,
   entrarComGoogle,
+  entrarComGoogleNoCelular,
+  lerSessaoDaVolta,
   sair,
   usuarioAtual,
   validarEmail,
@@ -15,6 +17,10 @@ function auth(sobre: Partial<ClienteAuth> = {}): jest.Mocked<ClienteAuth> {
       .fn()
       .mockResolvedValue({ data: { user: { id: 'u1', email: 'a@b.com' } }, error: null }),
     signInWithOAuth: jest.fn().mockResolvedValue({ data: {}, error: null }),
+    setSession: jest.fn().mockResolvedValue({
+      data: { session: { user: { id: 'u1', email: 'a@b.com' } } },
+      error: null,
+    }),
     signOut: jest.fn().mockResolvedValue({ error: null }),
     getSession: jest.fn().mockResolvedValue({ data: { session: null } }),
     ...sobre,
@@ -143,5 +149,90 @@ describe('entrarComGoogle', () => {
   it('falha de rede vira mensagem de conexão', async () => {
     const a = auth({ signInWithOAuth: jest.fn().mockRejectedValue(new Error('rede')) });
     await expect(entrarComGoogle(a, 'https://s')).rejects.toThrow('Sem conexão');
+  });
+});
+
+describe('lerSessaoDaVolta', () => {
+  it('lê os tokens do fragmento da URL', () => {
+    expect(
+      lerSessaoDaVolta('fluxus://conta-sincronizada#access_token=AAA&refresh_token=RRR&x=1')
+    ).toEqual({
+      access_token: 'AAA',
+      refresh_token: 'RRR',
+    });
+  });
+  it('lê os tokens também quando vêm na query', () => {
+    expect(
+      lerSessaoDaVolta('fluxus://conta-sincronizada?access_token=AAA&refresh_token=RRR')
+    ).toEqual({
+      access_token: 'AAA',
+      refresh_token: 'RRR',
+    });
+  });
+  it.each([
+    'fluxus://conta-sincronizada',
+    'fluxus://c#error=access_denied',
+    'fluxus://c#access_token=A',
+  ])('devolve null sem os dois tokens (%p)', (url) => {
+    expect(lerSessaoDaVolta(url)).toBeNull();
+  });
+});
+
+describe('entrarComGoogleNoCelular', () => {
+  const VOLTA = 'fluxus://conta-sincronizada';
+  const comUrl = () =>
+    auth({
+      signInWithOAuth: jest
+        .fn()
+        .mockResolvedValue({ data: { url: 'https://google/login' }, error: null }),
+    });
+
+  it('abre o navegador, recebe os tokens e abre a sessão', async () => {
+    const a = comUrl();
+    const abrir = jest
+      .fn()
+      .mockResolvedValue({ type: 'success', url: `${VOLTA}#access_token=AAA&refresh_token=RRR` });
+    const usuario = await entrarComGoogleNoCelular(a, abrir, VOLTA);
+    expect(a.signInWithOAuth).toHaveBeenCalledWith({
+      provider: 'google',
+      options: { redirectTo: VOLTA, skipBrowserRedirect: true },
+    });
+    expect(abrir).toHaveBeenCalledWith('https://google/login', VOLTA);
+    expect(a.setSession).toHaveBeenCalledWith({ access_token: 'AAA', refresh_token: 'RRR' });
+    expect(usuario).toEqual({ id: 'u1', email: 'a@b.com' });
+  });
+
+  it('devolve null quando a pessoa fecha o navegador sem entrar', async () => {
+    const a = comUrl();
+    const abrir = jest.fn().mockResolvedValue({ type: 'cancel' });
+    expect(await entrarComGoogleNoCelular(a, abrir, VOLTA)).toBeNull();
+    expect(a.setSession).not.toHaveBeenCalled();
+  });
+
+  it('volta sem tokens vira mensagem simples', async () => {
+    const a = comUrl();
+    const abrir = jest
+      .fn()
+      .mockResolvedValue({ type: 'success', url: `${VOLTA}#error=access_denied` });
+    await expect(entrarComGoogleNoCelular(a, abrir, VOLTA)).rejects.toThrow(/Google/);
+  });
+
+  it('sem endereço de login do servidor, avisa', async () => {
+    const a = auth();
+    await expect(entrarComGoogleNoCelular(a, jest.fn(), VOLTA)).rejects.toThrow(/Google/);
+  });
+
+  it('erro ao abrir a sessão vira mensagem simples', async () => {
+    const a = comUrl();
+    a.setSession.mockResolvedValue({ data: { session: null }, error: { message: 'x' } });
+    const abrir = jest
+      .fn()
+      .mockResolvedValue({ type: 'success', url: `${VOLTA}#access_token=A&refresh_token=R` });
+    await expect(entrarComGoogleNoCelular(a, abrir, VOLTA)).rejects.toThrow(/Google/);
+  });
+
+  it('falha de rede vira mensagem de conexão', async () => {
+    const a = auth({ signInWithOAuth: jest.fn().mockRejectedValue(new Error('rede')) });
+    await expect(entrarComGoogleNoCelular(a, jest.fn(), VOLTA)).rejects.toThrow('Sem conexão');
   });
 });
