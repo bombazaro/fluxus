@@ -1,4 +1,8 @@
-import { textosDoErroDeAbertura } from '@/src/domain/erroAbertura';
+import {
+  bancoBloqueadoEmJanelaPrivada,
+  bancoPresoPorOutraAba,
+  textosDoErroDeAbertura,
+} from '@/src/domain/erroAbertura';
 
 const erroDeAba = new Error(
   "Failed to execute 'createSyncAccessHandle' on 'FileSystemFileHandle': Access Handles cannot be created if there is another open Access Handle"
@@ -42,6 +46,27 @@ describe('textosDoErroDeAbertura', () => {
   it('reconhece o erro do Firefox, que chega do worker só com a mensagem', () => {
     const erro = new Error('No modification allowed');
     expect(textosDoErroDeAbertura(erro, true).titulo).toBe('O Fluxus já está aberto em outra aba.');
+  });
+
+  it('na web, o bloqueio do armazenamento em janela privada vira um aviso claro', () => {
+    const erro = new Error('Security error when calling GetDirectory');
+    const t = textosDoErroDeAbertura(erro, true);
+    expect(t.titulo).toBe('Este navegador não deixa guardar dados aqui.');
+    expect(t.explicacao).toContain('janela privada');
+    expect(t.explicacao).toContain('janela normal');
+    expect(t.detalhe).toBeNull();
+  });
+
+  it('reconhece o bloqueio pelo nome do erro e não o confunde com aba duplicada', () => {
+    const erro = Object.assign(new Error('The operation is insecure.'), { name: 'SecurityError' });
+    expect(bancoBloqueadoEmJanelaPrivada(erro)).toBe(true);
+    expect(bancoPresoPorOutraAba(erro)).toBe(false);
+    expect(bancoBloqueadoEmJanelaPrivada(erroDeAba)).toBe(false);
+  });
+
+  it('no celular o erro de segurança segue com o texto de sempre', () => {
+    const erro = new Error('Security error when calling GetDirectory');
+    expect(textosDoErroDeAbertura(erro, false).titulo).toBe('Ops! Não foi possível abrir seus dados.');
   });
 
   it('não quebra quando o erro não tem mensagem', () => {

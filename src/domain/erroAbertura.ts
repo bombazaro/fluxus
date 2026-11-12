@@ -19,8 +19,29 @@ export function bancoPresoPorOutraAba(erro: Error): boolean {
   );
 }
 
+/**
+ * O navegador nega o armazenamento de arquivos (OPFS), onde o banco mora. Acontece em janela
+ * privada do Firefox ("Security error when calling GetDirectory") e em navegadores que o bloqueiam.
+ */
+export function bancoBloqueadoEmJanelaPrivada(erro: Error): boolean {
+  const mensagem = erro.message ?? '';
+  return (
+    erro.name === 'SecurityError' ||
+    mensagem.includes('GetDirectory') ||
+    mensagem.includes('Security error')
+  );
+}
+
 /** Textos da tela mostrada quando o app não consegue abrir os dados. */
 export function textosDoErroDeAbertura(erro: Error, web: boolean): TextosErroAbertura {
+  if (web && bancoBloqueadoEmJanelaPrivada(erro)) {
+    return {
+      titulo: 'Este navegador não deixa guardar dados aqui.',
+      explicacao:
+        'Isso costuma acontecer em janela privada (anônima). Abra o Fluxus numa janela normal para usar o app.',
+      detalhe: null,
+    };
+  }
   if (web && bancoPresoPorOutraAba(erro)) {
     return {
       titulo: 'O Fluxus já está aberto em outra aba.',
