@@ -3,6 +3,7 @@ import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useTema } from '@/src/theme';
+import { useIaDisponivel } from '@/src/hooks/useIa';
 import { estiloJanela } from '@/src/utils/layout';
 
 type IconeIonicons = keyof typeof Ionicons.glyphMap;
@@ -12,6 +13,8 @@ export interface MenuAdicionarProps {
   onFechar: () => void;
   onGastoRapido: () => void;
   onNovaConta: () => void;
+  /** Abre a tela de texto livre (IA). A opção só aparece para quem tem a conta ligada. */
+  onTextoLivre: () => void;
 }
 
 /** O que o "+" da tela Início pode lançar: um gasto já pago ou uma conta a pagar. */
@@ -20,8 +23,10 @@ export function MenuAdicionar({
   onFechar,
   onGastoRapido,
   onNovaConta,
+  onTextoLivre,
 }: MenuAdicionarProps) {
   const { colors, typography, spacing, radii } = useTema();
+  const { disponivel: iaDisponivel } = useIaDisponivel();
   const insets = useSafeAreaInsets();
 
   const opcoes: { icone: IconeIonicons; titulo: string; texto: string; onPress: () => void }[] = [
@@ -37,6 +42,16 @@ export function MenuAdicionar({
       texto: 'Conta a pagar: aluguel, internet, parcelas',
       onPress: onNovaConta,
     },
+    ...(iaDisponivel
+      ? [
+          {
+            icone: 'sparkles-outline' as IconeIonicons,
+            titulo: 'Escrever em texto livre',
+            texto: 'Digite como falaria: "paguei 150 de mercado ontem"',
+            onPress: onTextoLivre,
+          },
+        ]
+      : []),
   ];
 
   return (

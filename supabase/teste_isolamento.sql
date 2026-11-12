@@ -95,6 +95,25 @@ begin
   select count(*) into n from public.registros where usuario_id = a and uid = 'c1' and dados is null;
   if n <> 1 then raise exception 'FALHOU: a linha do A foi alterada pelo B'; end if;
 
+  -- ===== IA: contador de usos por pessoa =====
+  perform set_config('request.jwt.claims', json_build_object('sub', a, 'role', 'authenticated')::text, true);
+  set local role authenticated;
+  if not public.registrar_uso_ia(2) then raise exception 'FALHOU: 1o uso da IA deveria passar'; end if;
+  if not public.registrar_uso_ia(2) then raise exception 'FALHOU: 2o uso da IA deveria passar'; end if;
+  if public.registrar_uso_ia(2) then raise exception 'FALHOU: 3o uso passou do limite de 2'; end if;
+  if public.registrar_uso_ia(0) then raise exception 'FALHOU: limite 0 deveria recusar'; end if;
+  begin
+    perform * from public.ia_uso;
+    raise exception 'FALHOU: A leu a tabela ia_uso direto';
+  exception when insufficient_privilege then null;
+  end;
+  -- o B tem o próprio contador, não é afetado pelo A
+  perform set_config('request.jwt.claims', json_build_object('sub', b, 'role', 'authenticated')::text, true);
+  if not public.registrar_uso_ia(2) then raise exception 'FALHOU: contador do B afetado pelo A'; end if;
+  reset role;
+  select usos into n from public.ia_uso where usuario_id = a;
+  if n <> 2 then raise exception 'FALHOU: A deveria ter 2 usos, tem %', n; end if;
+
   -- ===== sem login (anon) =====
   perform set_config('request.jwt.claims', json_build_object('role', 'anon')::text, true);
   set local role anon;

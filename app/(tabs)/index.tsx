@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { RefreshControl, ScrollView, StyleSheet, Text } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
+import { Href, useRouter } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useTema } from '@/src/theme';
 import { obterHojeIso, useMesStore } from '@/src/store/useMesStore';
@@ -220,6 +220,7 @@ export default function HomeScreen() {
         onFechar={() => setMenuAberto(false)}
         onGastoRapido={() => router.push('/gasto-rapido')}
         onNovaConta={() => router.push('/conta/nova')}
+        onTextoLivre={() => router.push('/texto-livre' as Href)}
       />
 
       <ModalValorRecebido

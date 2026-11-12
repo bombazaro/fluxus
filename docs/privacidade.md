@@ -15,7 +15,20 @@ lembrete de cada aparelho (hora e dias de aviso).
 próprias linhas, e o app nunca grava direto na tabela, só por funções que filtram pelo usuário
 logado. O desenvolvedor tem acesso técnico ao painel do projeto, mas não usa os seus dados.
 
-**Entrar:** por código de uso único enviado ao e-mail. Não há senha para guardar.
+**Entrar:** por código de uso único enviado ao e-mail, ou com a conta do Google. Não há senha para guardar.
+
+## IA no cadastro (opcional, só com a conta)
+
+Quando você usa a sugestão de categoria ou o cadastro por texto livre, o **texto que você digita**
+(nome do gasto ou a frase) e os **nomes das suas categorias** são enviados, pela função do
+Fluxus no Supabase, à Groq (empresa de IA, servidores nos EUA) apenas para gerar a resposta. O
+Fluxus **não guarda** esse texto: guarda só um contador de usos por dia (limite de 50). Nenhum
+valor, conta ou data já salvos é enviado.
+
+Segundo a Groq, por padrão ela não retém os dados de inferência; registros de confiabilidade e
+abuso podem ficar até 30 dias. Mesmo assim, não escreva dados pessoais sensíveis nesses campos. A
+IA nunca salva nada sozinha: ela só preenche o formulário, e você confere e salva. Sem conta ou
+sem internet, o cadastro manual continua igual.
 
 ## Seus controles
 

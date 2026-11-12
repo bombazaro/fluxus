@@ -38,6 +38,9 @@ import { useMesStore, obterHojeIso, obterMesAtualIso } from '@/src/store/useMesS
 import { formatarData, formatarMoeda, dataBrParaIso } from '@/src/utils/formatadores';
 import { ModoDivisao, montarDivisao, redistribuirDivisao } from '@/src/domain/dividirConta';
 import { SeletorCategoria } from '@/src/components/contas/SeletorCategoria';
+import { FaixaIa } from '@/src/components/ia/FaixaIa';
+import { SugestaoCategoria } from '@/src/components/ia/SugestaoCategoria';
+import { useSugestaoDeCategoria } from '@/src/hooks/useIa';
 import { avisar } from '@/src/utils/avisar';
 import { estiloFormulario } from '@/src/utils/layout';
 
@@ -96,6 +99,12 @@ export default function NovaContaModal() {
     valor?: string;
     parcelas?: string;
     mes?: string;
+    // preenchimento pela IA (tela de texto livre)
+    dia?: string;
+    data?: string;
+    categoria?: string;
+    ia?: string;
+    aviso?: string;
   }>();
   const [tipo, setTipo] = useState<TipoConta>(
     TIPOS_CONTA.some((t) => t.tipo === preenchido.tipo) ? (preenchido.tipo as TipoConta) : 'fixa'
@@ -105,9 +114,18 @@ export default function NovaContaModal() {
     const valor = Number(preenchido.valor);
     return Number.isInteger(valor) && valor > 0 ? valor : 0;
   });
-  const [diaVencimento, setDiaVencimento] = useState('10');
+  const [diaVencimento, setDiaVencimento] = useState(() => {
+    const dia = Number(preenchido.dia);
+    return Number.isInteger(dia) && dia >= 1 && dia <= 31 ? String(dia) : '10';
+  });
   // Como a pessoa digita (DD/MM/AAAA); dataUnicaIso é o que vai para o banco
-  const [dataUnica, setDataUnica] = useState(() => formatarData(dataPadraoNoMes(mesVisto)));
+  const [dataUnica, setDataUnica] = useState(() =>
+    formatarData(
+      preenchido.data && /^\d{4}-\d{2}-\d{2}$/.test(preenchido.data)
+        ? preenchido.data
+        : dataPadraoNoMes(mesVisto)
+    )
+  );
   const [temVencimento, setTemVencimento] = useState(true);
   const [parcelasTotal, setParcelasTotal] = useState(preenchido.parcelas ?? '2');
   const [categoriaId, setCategoriaId] = useState<number | null>(null);
@@ -115,6 +133,11 @@ export default function NovaContaModal() {
   const [compartilhada, setCompartilhada] = useState(false);
 
   const [categorias, setCategorias] = useState<Categoria[]>([]);
+  const sugestaoId = useSugestaoDeCategoria(preenchido.ia ? '' : nome, categorias);
+  const sugestao =
+    sugestaoId !== null && sugestaoId !== categoriaId
+      ? categorias.find((c) => c.id === sugestaoId)
+      : undefined;
   const [pessoas, setPessoas] = useState<Pessoa[]>([]);
   const [pessoasSelecionadas, setPessoasSelecionadas] = useState<number[]>([]);
   const [modoDivisao, setModoDivisao] = useState<ModoDivisao>('igual');
@@ -132,11 +155,12 @@ export default function NovaContaModal() {
       const listaCat = await categoriasRepo.listarTodas(db);
       setCategorias(listaCat);
       if (listaCat.length > 0) {
-        setCategoriaId((atual) => atual ?? listaCat[0].id);
+        const pedida = listaCat.find((c) => c.id === Number(preenchido.categoria));
+        setCategoriaId((atual) => atual ?? pedida?.id ?? listaCat[0].id);
       }
     }
     carregarDados();
-  }, [db]);
+  }, [db, preenchido.categoria]);
 
   // Pessoas recarregam ao voltar da tela de pessoas, sem perder quem já foi escolhido
   useFocusEffect(
@@ -345,6 +369,7 @@ export default function NovaContaModal() {
             estiloFormulario,
           ]}
           keyboardShouldPersistTaps="handled">
+          {preenchido.ia ? <FaixaIa aviso={preenchido.aviso} /> : null}
           {/* Seletor do tipo de conta */}
           <Text
             style={[
@@ -557,6 +582,12 @@ export default function NovaContaModal() {
             onCriarCategoria={criarCategoria}
             onNomePendente={setCategoriaPendente}
           />
+          {sugestao ? (
+            <SugestaoCategoria
+              nomeDaCategoria={sugestao.nome}
+              onUsar={() => setCategoriaId(sugestao.id)}
+            />
+          ) : null}
 
           {/* Conta compartilhada */}
           <Cartao style={{ marginTop: spacing.xl }}>
