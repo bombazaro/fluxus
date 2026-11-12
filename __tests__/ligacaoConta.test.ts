@@ -2,6 +2,7 @@ import { SQLiteDatabase } from 'expo-sqlite';
 import {
   apagarDadosDaNuvem,
   ErroOutraConta,
+  ligarAparelhoVazio,
   ligarConta,
   temDadosParaProteger,
 } from '../src/services/sync/ligacao';
@@ -143,5 +144,43 @@ describe('ligarConta', () => {
     const a = await criarBanco();
     await a.runAsync(sql);
     expect(await temDadosParaProteger(a)).toBe(true);
+  });
+});
+
+describe('ligarAparelhoVazio', () => {
+  const ligadoA = async (db: SQLiteDatabase) =>
+    (
+      await db.getFirstAsync<{ valor: string }>(
+        "SELECT valor FROM sync_estado WHERE chave = 'usuario_id';"
+      )
+    )?.valor ?? null;
+
+  it('aparelho vazio e sem ligação: liga sozinho e os dados da conta chegam', async () => {
+    const [a, vazio] = [await criarBanco(), await criarBanco()];
+    const { rede } = criarRedeFalsa();
+    await novaConta(a, 'Aluguel');
+    await ligarConta(a, rede, 'u1');
+    expect(await ligarAparelhoVazio(vazio, rede, 'u1')).toBe(true);
+    expect(await ligadoA(vazio)).toBe('u1');
+    await sincronizar(vazio, rede);
+    expect(await nomes(vazio)).toEqual(['Aluguel']);
+  });
+
+  it('aparelho com dados próprios não liga sozinho (a pessoa decide, com backup)', async () => {
+    const a = await criarBanco();
+    const { rede, linhas } = criarRedeFalsa();
+    await novaConta(a, 'Aluguel');
+    expect(await ligarAparelhoVazio(a, rede, 'u1')).toBe(false);
+    expect(await ligadoA(a)).toBeNull();
+    expect(linhas()).toHaveLength(0);
+  });
+
+  it('aparelho já ligado (à mesma ou a outra conta) não é mexido', async () => {
+    const a = await criarBanco();
+    const { rede } = criarRedeFalsa();
+    await ligarConta(a, rede, 'u1');
+    expect(await ligarAparelhoVazio(a, rede, 'u1')).toBe(false);
+    expect(await ligarAparelhoVazio(a, rede, 'u2')).toBe(false);
+    expect(await ligadoA(a)).toBe('u1');
   });
 });
