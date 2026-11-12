@@ -124,6 +124,17 @@ describe('validarResposta', () => {
     expect(c.avisos).toEqual([]);
   });
 
+  it('conta única sem data avisa para preencher o vencimento', () => {
+    const c = cadastro(
+      validarResposta(
+        resposta({ tipo: 'unica', data: null, valor_centavos: 18000 }),
+        ctx('luz 180 vence dia 15')
+      )
+    );
+    expect(c.dataIso).toBeNull();
+    expect(c.avisos.join(' ')).toMatch(/vencimento/i);
+  });
+
   it.each([0, 32, 1.5, '5', null])('dia de vencimento inválido (%p) vira null', (d) => {
     const c = cadastro(
       validarResposta(

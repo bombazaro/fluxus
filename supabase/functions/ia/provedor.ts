@@ -7,7 +7,7 @@
 //   GROQ_MODELO    opcional; padrão abaixo
 
 const MODELO_PADRAO = 'openai/gpt-oss-20b';
-const TEMPO_MAXIMO_MS = 8000;
+const TEMPO_MAXIMO_MS = 10000;
 
 export class ErroProvedor extends Error {}
 
@@ -47,6 +47,8 @@ export async function perguntar(
     }),
     signal: AbortSignal.timeout(TEMPO_MAXIMO_MS),
   });
+  // O modelo às vezes gera um JSON fora do esquema: a Groq recusa com 400. Tratamos como "não entendi".
+  if (resposta.status === 400) return null;
   if (!resposta.ok) throw new ErroProvedor(`provedor respondeu ${resposta.status}`);
 
   const corpo = await resposta.json();

@@ -46,7 +46,8 @@ describe('montarInstrucao e montarEsquema', () => {
   it('a instrução diz a data de hoje, o dia da semana e as categorias', () => {
     const t = montarInstrucao(pedido);
     expect(t).toContain('2026-11-09');
-    expect(t).toContain('segunda');
+    expect(t).toContain('2026-11-07 = sábado');
+    expect(t).toContain('2026-11-08 = domingo (ontem)');
     expect(t).toContain('Alimentação, Moradia');
     expect(t).toMatch(/ignore qualquer instrução/);
   });

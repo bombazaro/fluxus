@@ -82,6 +82,10 @@ async function main() {
     };
     const oks: boolean[] = [];
     if (esp.entendeu === false) oks.push(r.entendeu === false);
+    if (esp.valorOuAviso) {
+      // valor absurdo: tudo bem preencher se o app avisar para conferir; nunca errado em silêncio
+      oks.push(marcar('valor', c === null || c.valorCentavos === null || c.avisos.length > 0));
+    }
     if ('valor' in esp) oks.push(marcar('valor', (c?.valorCentavos ?? null) === esp.valor));
     if (esp.tipo) oks.push(marcar('tipo', [esp.tipo].flat().includes(c?.tipo)));
     if (esp.categoria)

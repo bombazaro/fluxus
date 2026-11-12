@@ -30,7 +30,7 @@ export class ErroIa extends Error {
   }
 }
 
-const TEMPO_MAXIMO_MS = 8000;
+const TEMPO_MAXIMO_MS = 12000;
 const MINIMO_LETRAS_SUGESTAO = 3;
 
 function traduzirErro(erro: unknown): ErroIa {

@@ -63,21 +63,50 @@ export function montarInstrucao(pedido: Pedido): string {
       `Categorias possíveis: ${lista}. Se nenhuma combinar com clareza, devolva null. ${REGRAS_COMUNS}`
     );
   }
-  const d = new Date(`${pedido.hoje}T00:00:00Z`);
-  const dia = ['domingo', 'segunda', 'terça', 'quarta', 'quinta', 'sexta', 'sábado'][d.getUTCDay()];
   return (
     `Você transforma uma frase sobre um gasto pessoal brasileiro em um cadastro. ` +
-    `Hoje é ${pedido.hoje} (${dia}-feira). Categorias possíveis: ${lista}. ` +
-    `Tipos: "pago" (gasto que já aconteceu, sem recorrência), "fixa" (conta que se repete todo mês; ` +
-    `use dia_vencimento), "unica" (conta a pagar uma vez, com vencimento em data), ` +
-    `"parcelada" (compra em parcelas; valor_centavos é o valor de UMA parcela e parcelas o total). ` +
-    `valor_centavos é inteiro em centavos (R$ 23,50 = 2350; "mil" = 100000). ` +
-    `Datas em AAAA-MM-DD: "ontem", "sábado" (o último), "dia 3" (do mês corrente) são relativas a hoje. ` +
-    `Se o valor estiver ausente ou ambíguo (dois valores), use null e explique em motivo. ` +
-    `Se a categoria não combinar com clareza, use null; nunca invente categoria. ` +
-    `Se o texto não for um gasto, devolva entendeu=false com um motivo curto em português. ` +
+    `Hoje é ${pedido.hoje}. Calendário (use exatamente estas datas):\n${calendario(pedido.hoje)}\n` +
+    `Categorias possíveis: ${lista}. ` +
+    `Tipos: "pago" (gasto de hoje ou de uma data passada, sem recorrência: "paguei", "gastei", ` +
+    `compras do dia a dia); "fixa" (SÓ quando o texto diz que se repete: "todo mês", "por mês", ` +
+    `"mensal", "todo dia 5"; use dia_vencimento e data null); "unica" (conta a pagar uma vez, com ` +
+    `vencimento futuro: "vence", "vencimento", data depois de hoje; preencha SEMPRE data com a ` +
+    `data completa AAAA-MM-DD e deixe dia_vencimento null); "parcelada" ` +
+    `(compra em parcelas: valor_centavos é o valor de UMA parcela, parcelas o total). ` +
+    `Uma data de hoje ou do passado, sem "vence", é sempre "pago". "vence dia 15" sem repetição ` +
+    `é "unica" com a próxima data com esse dia. ` +
+    `valor_centavos é inteiro em CENTAVOS: R$ 150 = 15000; R$ 23,50 = 2350; "mil" = R$ 1000 = 100000; ` +
+    `R$ 1.200 = 120000. Multiplique sempre os reais por 100. ` +
+    `"dia 3" é o dia 3 do mês corrente; "sábado" é o último sábado do calendário. ` +
+    `Se o valor estiver ausente ou ambíguo (dois valores soltos), use null e explique em motivo. ` +
+    `Categoria: escolha a que melhor combina; se nenhuma combinar, use "Outros" quando existir, ` +
+    `senão null; nunca invente categoria. ` +
+    `Se o texto não for um gasto, devolva entendeu=false e motivo curto em português. ` +
     REGRAS_COMUNS
   );
+}
+
+/** Últimos dias e o próximo, com o nome do dia da semana, para a IA não errar a conta de datas. */
+function calendario(hoje: string): string {
+  const nomes = ['domingo', 'segunda', 'terça', 'quarta', 'quinta', 'sexta', 'sábado'];
+  const linhas: string[] = [];
+  for (let delta = -7; delta <= 3; delta++) {
+    const d = new Date(Date.parse(`${hoje}T00:00:00Z`) + delta * 86_400_000);
+    const rotulo =
+      delta === 0
+        ? 'hoje'
+        : delta === 1
+          ? 'amanhã'
+          : delta === -1
+            ? 'ontem'
+            : delta === -2
+              ? 'anteontem'
+              : '';
+    linhas.push(
+      `${d.toISOString().slice(0, 10)} = ${nomes[d.getUTCDay()]}${rotulo ? ` (${rotulo})` : ''}`
+    );
+  }
+  return linhas.join('; ');
 }
 
 /**

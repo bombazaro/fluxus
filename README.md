@@ -90,6 +90,30 @@ está na nuvem. O que vai para a nuvem e como funciona o servidor: [docs/privaci
 e [supabase/README.md](supabase/README.md). Para ativar a conta num build, defina
 `EXPO_PUBLIC_SUPABASE_URL` e `EXPO_PUBLIC_SUPABASE_KEY` (veja `.env.example`).
 
+## IA no cadastro (opcional)
+
+**Problema que resolve:** cadastrar um gasto pede nome, valor, data e categoria. A IA reduz isso a
+uma frase ("paguei 150 de mercado ontem") e sugere a categoria enquanto você digita o nome.
+
+**Como funciona:** só para quem entrou na conta. O app manda o texto para uma função no Supabase
+(`supabase/functions/ia`), que confere o login, limita o uso (50 por pessoa por dia), chama o modelo
+(Groq, `openai/gpt-oss-20b`, plano gratuito, saída em JSON estrito) e devolve só campos conhecidos.
+A chave fica só no servidor. A IA **nunca salva nada**: ela preenche o formulário, e você confere e
+salva. O app valida a resposta de novo (valor, data, categoria) e deixa em branco, com aviso, o que
+não confere. Sem conta ou sem internet, o cadastro manual continua igual. O provedor é trocável
+(só `provedor.ts`); o primeiro tentado, o Gemini, foi trocado porque as chaves novas do Google
+(`AQ.`) falham em chamadas diretas à API.
+
+**Como foi testado:** 22 frases (`__tests__/ia/casos.json`) rodadas de verdade com
+`npx tsx scripts/avaliar-ia.ts` (data fixa 09/11/2026). Resultado em 10/11/2026: **19 de 22 frases
+totalmente corretas (86%)**; tipo 18/18, valor 21/21, categoria 16/18, data 11/12; e 9 de 9
+categorias acertadas só pelo nome. Erros restantes: "vence dia 15" sem a data completa (o app avisa
+para preencher), "internet" sugerida como Assinaturas e "ração" como Alimentação (a frase não diz).
+
+**Limites:** pode errar valor e data em frases ambíguas (por isso os campos vêm editáveis e os
+duvidosos ficam destacados); só usa categorias que já existem; não preenche divisão com pessoas; o
+texto digitado é enviado à Groq (não é guardado pelo Fluxus).
+
 ## Stack
 
 Expo (development build) · TypeScript estrito · Expo Router · expo-sqlite · Zustand · expo-notifications · react-native-svg · Jest

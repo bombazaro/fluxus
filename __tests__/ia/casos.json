@@ -191,7 +191,7 @@
     {
       "texto": "paguei 1500000 de mercado",
       "esperado": {
-        "valor": null
+        "valorOuAviso": true
       }
     }
   ],

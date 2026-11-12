@@ -104,6 +104,9 @@ export function validarResposta(bruta: unknown, ctx: ContextoValidacao): Resulta
     avisos.push('Confira a data: usei a de hoje.');
   }
 
+  if (tipo === 'unica' && dataIso === null)
+    avisos.push('Não achei a data de vencimento. Preencha.');
+
   // dia de vencimento e parcelas
   const dia = bruta.dia_vencimento;
   const diaVencimento = ehInteiro(dia) && dia >= 1 && dia <= 31 ? dia : null;
