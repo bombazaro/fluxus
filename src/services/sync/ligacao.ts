@@ -89,3 +89,23 @@ export async function temDadosParaProteger(db: SQLiteDatabase): Promise<boolean>
   );
   return l?.tem === 1;
 }
+
+/**
+ * Aparelho sem nenhuma ligação e sem nada criado pela pessoa (ex.: o login ficou salvo, mas o
+ * banco do aparelho foi apagado): liga à conta sozinho para os dados voltarem, sem backup, pois
+ * não há o que proteger. Devolve true se ligou. Aparelho com dados próprios, ou já ligado
+ * (a esta ou a outra conta), não é mexido: nesses casos a pessoa decide na tela de conta.
+ */
+export async function ligarAparelhoVazio(
+  db: SQLiteDatabase,
+  rede: Rede,
+  usuarioId: string
+): Promise<boolean> {
+  const ligado = await db.getFirstAsync<{ valor: string }>(
+    "SELECT valor FROM sync_estado WHERE chave = 'usuario_id';"
+  );
+  if (ligado) return false;
+  if (await temDadosParaProteger(db)) return false;
+  await ligarConta(db, rede, usuarioId);
+  return true;
+}
